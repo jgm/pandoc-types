@@ -1,0 +1,19 @@
+Name:                pandoc-types
+Version:             1.7
+Synopsis:            Types for representing a structured document
+Homepage:            http://johnmacfarlane.net/pandoc
+License:             GPL
+License-file:        COPYING
+Author:              John MacFarlane
+Maintainer:          jgm@berkeley.edu
+Copyright:           (c) 2006-2010 John MacFarlane
+Category:            Text
+Build-type:          Simple
+Cabal-version:       >=1.2
+Library
+  Exposed-modules:   Text.Pandoc.Definition
+  if impl(ghc >= 6.10)
+    Build-depends:     base >= 4 && < 5, syb
+  else
+    Build-depends:     base >= 3 && < 4
+

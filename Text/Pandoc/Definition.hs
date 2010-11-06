@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fglasgow-exts #-} -- for deriving Typeable
+{-# LANGUAGE DeriveDataTypeable #-}
 {-
 Copyright (C) 2006-2010 John MacFarlane <jgm@berkeley.edu>
 

@@ -133,15 +133,17 @@ data Citation = Citation { citationId      :: String
                          , citationPrefix  :: String
                          , citationLocator :: String
                          , citationNoteNum :: Int
-                         , citationAutOnly :: Bool
-                         , citationNoAut   :: Bool
+                         , citationVariant :: CitationVariant
                          , citationHash    :: Int
                          }
                 deriving (Show, Ord, Read, Typeable, Data)
 
+data CitationVariant = AuthorOnlyCitation | SuppressAuthorCitation | ParentheticalCitation 
+                deriving (Show, Ord, Read, Typeable, Data, Eq)
+
 instance Eq Citation where
-    (==) (Citation _ _ _ _ _ _ ha)
-         (Citation _ _ _ _ _ _ hb) = ha == hb
+    (==) (Citation _ _ _ _ _ ha)
+         (Citation _ _ _ _ _ hb) = ha == hb
 
 -- | Applies a transformation on @a@s to matching elements in a @b@.
 processWith :: (Data a, Data b) => (a -> a) -> b -> b

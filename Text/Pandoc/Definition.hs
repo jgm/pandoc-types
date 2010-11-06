@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 {- |
    Module      : Text.Pandoc.Definition
    Copyright   : Copyright (C) 2006-2010 John MacFarlane
-   License     : GNU GPL, version 2 or above 
+   License     : GNU GPL, version 2 or above
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>
    Stability   : alpha
@@ -42,9 +42,9 @@ data Meta = Meta { docTitle   :: [Inline]
             deriving (Eq, Ord, Show, Read, Typeable, Data)
 
 -- | Alignment of a table column.
-data Alignment = AlignLeft 
-               | AlignRight 
-               | AlignCenter 
+data Alignment = AlignLeft
+               | AlignRight
+               | AlignCenter
                | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data)
 
 -- | List attributes.
@@ -53,37 +53,37 @@ type ListAttributes = (Int, ListNumberStyle, ListNumberDelim)
 -- | Style of list numbers.
 data ListNumberStyle = DefaultStyle
                      | Example
-                     | Decimal 
-                     | LowerRoman 
+                     | Decimal
+                     | LowerRoman
                      | UpperRoman
-                     | LowerAlpha 
+                     | LowerAlpha
                      | UpperAlpha deriving (Eq, Ord, Show, Read, Typeable, Data)
 
 -- | Delimiter of list numbers.
 data ListNumberDelim = DefaultDelim
                      | Period
-                     | OneParen 
+                     | OneParen
                      | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data)
 
 -- | Attributes: identifier, classes, key-value pairs
 type Attr = (String, [String], [(String, String)])
 
 -- | Block element.
-data Block  
+data Block
     = Plain [Inline]        -- ^ Plain text, not a paragraph
     | Para [Inline]         -- ^ Paragraph
-    | CodeBlock Attr String -- ^ Code block (literal) with attributes 
+    | CodeBlock Attr String -- ^ Code block (literal) with attributes
     | RawHtml String        -- ^ Raw HTML block (literal)
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
     | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
                             -- and a list of items, each a list of blocks)
     | BulletList [[Block]]  -- ^ Bullet list (list of items, each
                             -- a list of blocks)
-    | DefinitionList [([Inline],[[Block]])]  -- ^ Definition list 
+    | DefinitionList [([Inline],[[Block]])]  -- ^ Definition list
                             -- Each list item is a pair consisting of a
                             -- term (a list of inlines) and one or more
                             -- definitions (each a list of blocks)
-    | Header Int [Inline]   -- ^ Header - level (integer) and text (inlines) 
+    | Header Int [Inline]   -- ^ Header - level (integer) and text (inlines)
     | HorizontalRule        -- ^ Horizontal rule
     | Table [Inline] [Alignment] [Double] [[Block]] [[[Block]]]  -- ^ Table,
                             -- with caption, column alignments,
@@ -103,7 +103,7 @@ type Target = (String, String)
 data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data)
 
 -- | Inline elements.
-data Inline 
+data Inline
     = Str String            -- ^ Text (string)
     | Emph [Inline]         -- ^ Emphasized text (list of inlines)
     | Strong [Inline]       -- ^ Strongly emphasized text (list of inlines)
@@ -126,7 +126,7 @@ data Inline
     | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
                             -- and target
-    | Note [Block]          -- ^ Footnote or endnote 
+    | Note [Block]          -- ^ Footnote or endnote
     deriving (Show, Eq, Ord, Read, Typeable, Data)
 
 data Citation = Citation { citationId      :: String

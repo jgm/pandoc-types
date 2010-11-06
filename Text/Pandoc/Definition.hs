@@ -132,16 +132,18 @@ data Inline
 data Citation = Citation { citationId      :: String
                          , citationPrefix  :: String
                          , citationLocator :: String
+                         , citationMode    :: CitationMode
                          , citationNoteNum :: Int
-                         , citationAutOnly :: Bool
-                         , citationNoAut   :: Bool
                          , citationHash    :: Int
                          }
                 deriving (Show, Ord, Read, Typeable, Data)
 
 instance Eq Citation where
-    (==) (Citation _ _ _ _ _ _ ha)
-         (Citation _ _ _ _ _ _ hb) = ha == hb
+    (==) (Citation _ _ _ _ _ ha)
+         (Citation _ _ _ _ _ hb) = ha == hb
+
+data CitationMode = AuthorOnly | SuppressAuthor | NormalCitation
+                    deriving (Show, Eq, Ord, Read, Typeable, Data)
 
 -- | Applies a transformation on @a@s to matching elements in a @b@.
 processWith :: (Data a, Data b) => (a -> a) -> b -> b
@@ -162,4 +164,3 @@ processPandoc = processWith
 {-# DEPRECATED queryPandoc "Use queryWith instead" #-}
 queryPandoc :: Data a => (a -> [b]) -> Pandoc -> [b]
 queryPandoc = queryWith
-

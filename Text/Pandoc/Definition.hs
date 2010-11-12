@@ -142,7 +142,7 @@ instance Eq Citation where
     (==) (Citation _ _ _ _ _ ha)
          (Citation _ _ _ _ _ hb) = ha == hb
 
-data CitationMode = AuthorOnly | SuppressAuthor | NormalCitation
+data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data)
 
 -- | Applies a transformation on @a@s to matching elements in a @b@.

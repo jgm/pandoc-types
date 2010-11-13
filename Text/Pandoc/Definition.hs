@@ -136,11 +136,11 @@ data Citation = Citation { citationId      :: String
                          , citationNoteNum :: Int
                          , citationHash    :: Int
                          }
-                deriving (Show, Ord, Read, Typeable, Data)
+                deriving (Show, Eq, Read, Typeable, Data)
 
-instance Eq Citation where
-    (==) (Citation _ _ _ _ _ ha)
-         (Citation _ _ _ _ _ hb) = ha == hb
+instance Ord Citation where
+    compare (Citation _ _ _ _ _ ha)
+            (Citation _ _ _ _ _ hb) = compare ha hb
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data)

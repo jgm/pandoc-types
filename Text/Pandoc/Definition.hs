@@ -131,7 +131,8 @@ data Inline
     deriving (Show, Eq, Ord, Read, Typeable, Data)
 
 data Citation = Citation { citationId      :: String
-                         , citationPrefix  :: String
+                         , citationPrefix  :: [Inline]
+                         , citationSuffix  :: [Inline]
                          , citationLocator :: String
                          , citationMode    :: CitationMode
                          , citationNoteNum :: Int

@@ -32,6 +32,7 @@ of documents.
 module Text.Pandoc.Definition where
 
 import Data.Generics
+import Data.Ord (comparing)
 
 data Pandoc = Pandoc Meta [Block] deriving (Eq, Ord, Read, Show, Typeable, Data)
 
@@ -139,8 +140,7 @@ data Citation = Citation { citationId      :: String
                 deriving (Show, Eq, Read, Typeable, Data)
 
 instance Ord Citation where
-    compare (Citation _ _ _ _ _ ha)
-            (Citation _ _ _ _ _ hb) = compare ha hb
+    compare = comparing citationHash
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data)

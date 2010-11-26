@@ -133,7 +133,6 @@ data Inline
 data Citation = Citation { citationId      :: String
                          , citationPrefix  :: [Inline]
                          , citationSuffix  :: [Inline]
-                         , citationLocator :: String
                          , citationMode    :: CitationMode
                          , citationNoteNum :: Int
                          , citationHash    :: Int

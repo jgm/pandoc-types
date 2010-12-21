@@ -27,17 +27,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
    Portability : portable
 
 Some convenience functions for building pandoc documents
-programmatically.  Example of use:
+programmatically.  Example of use (requires the OverloadedStrings
+language extension):
 
-> {-# LANGUAGE OverloadedStrings #-}
 > import Text.Pandoc.Builder
-> 
+>
 > myDoc :: Pandoc
 > myDoc = setTitle "My title" $ doc $
 >   para "This is the first paragraph" +++
->   para ("And" +++ space +++ emph "another" +++ ".") +++
+>   para ("And " +++ emph "another" +++ ".") +++
 >   bulletList [ plain $ "item one"
->              , plain $ "item two and a" +++ space +++
+>              , plain $ "item two and a " +++
 >                  link "/url" "go to url" "link"
 >              ]
 
@@ -94,7 +94,8 @@ import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
 import Data.DList hiding (map)
-import Data.List (intersperse)
+import Data.List (groupBy)
+import Data.Char (isSpace)
 
 newtype Inlines = Inlines { unInlines :: DList Inline }
                   deriving (Monoid)
@@ -136,7 +137,12 @@ inline = Inlines . singleton
 -- | Convert a string to Inlines, treating interword spaces as 'Space's.
 -- If you want a 'Str' with literal spaces, use rawStr.
 str :: String -> Inlines
-str = Inlines . fromList . intersperse Space . (map Str) . words
+str = Inlines . fromList . (map conv) . breakBySpaces
+  where breakBySpaces = groupBy sameCategory
+        sameCategory x y = (isSpace x && isSpace y) ||
+                           not (isSpace x || isSpace y)
+        conv xs | all isSpace xs = Space
+        conv xs = Str xs
 
 rawStr :: String -> Inlines
 rawStr = inline . Str

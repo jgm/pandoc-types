@@ -54,8 +54,8 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , setDate
                            -- * Inline list builders
                            , inline
+                           , text
                            , str
-                           , rawStr
                            , emph
                            , strong
                            , strikeout
@@ -110,7 +110,7 @@ instance Show Blocks where
   show (Blocks x) = "Blocks (fromList " ++ show (toList x) ++ ")"
 
 instance IsString Inlines where
-  fromString = str
+  fromString = text
 
 (+++) :: Monoid m => m -> m -> m
 (+++) = mappend
@@ -135,17 +135,17 @@ inline :: Inline -> Inlines
 inline = Inlines . singleton
 
 -- | Convert a string to Inlines, treating interword spaces as 'Space's.
--- If you want a 'Str' with literal spaces, use rawStr.
-str :: String -> Inlines
-str = Inlines . fromList . (map conv) . breakBySpaces
+-- If you want a 'Str' with literal spaces, use 'rawStr'.
+text :: String -> Inlines
+text = Inlines . fromList . (map conv) . breakBySpaces
   where breakBySpaces = groupBy sameCategory
         sameCategory x y = (isSpace x && isSpace y) ||
                            not (isSpace x || isSpace y)
         conv xs | all isSpace xs = Space
         conv xs = Str xs
 
-rawStr :: String -> Inlines
-rawStr = inline . Str
+str :: String -> Inlines
+str = inline . Str
 
 emph :: Inlines -> Inlines
 emph = inline . Emph . toList . unInlines

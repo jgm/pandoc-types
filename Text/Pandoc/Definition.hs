@@ -160,10 +160,3 @@ processWithM f = everywhereM (mkM f)
 queryWith :: (Data a, Data c) => (a -> [b]) -> c -> [b]
 queryWith f = everything (++) ([] `mkQ` f)
 
-{-# DEPRECATED processPandoc "Use processWith instead" #-}
-processPandoc :: Data a => (a -> a) -> Pandoc -> Pandoc
-processPandoc = processWith
-
-{-# DEPRECATED queryPandoc "Use queryWith instead" #-}
-queryPandoc :: Data a => (a -> [b]) -> Pandoc -> [b]
-queryPandoc = queryWith

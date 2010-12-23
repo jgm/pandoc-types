@@ -45,7 +45,11 @@ language extension):
 
 module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , Inlines
+                           , fromInlines
+                           , toInlines
                            , Blocks
+                           , fromBlocks
+                           , toBlocks
                            , (+++)
                            -- * Document builders
                            , doc
@@ -63,6 +67,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , subscript
                            , smallcaps
                            , quoted
+                           , cite
                            , code
                            , space
                            , emdash
@@ -103,14 +108,26 @@ newtype Inlines = Inlines { unInlines :: DList Inline }
 instance Show Inlines where
   show (Inlines x) = "Inlines (fromList " ++ show (toList x) ++ ")"
 
+instance IsString Inlines where
+  fromString = text
+
+fromInlines :: Inlines -> [Inline]
+fromInlines = toList . unInlines
+
+toInlines :: [Inline] -> Inlines
+toInlines = Inlines . fromList
+
 newtype Blocks = Blocks { unBlocks :: DList Block }
                  deriving (Monoid)
 
 instance Show Blocks where
   show (Blocks x) = "Blocks (fromList " ++ show (toList x) ++ ")"
 
-instance IsString Inlines where
-  fromString = text
+fromBlocks :: Blocks -> [Block]
+fromBlocks = toList . unBlocks
+
+toBlocks :: [Block] -> Blocks
+toBlocks = Blocks . fromList
 
 (+++) :: Monoid m => m -> m -> m
 (+++) = mappend
@@ -121,13 +138,13 @@ doc :: Blocks -> Pandoc
 doc = Pandoc (Meta [] [] []) . toList . unBlocks
 
 setTitle :: Inlines -> Pandoc -> Pandoc
-setTitle t (Pandoc m bs) = Pandoc m{ docTitle = toList $ unInlines $ t } bs
+setTitle t (Pandoc m bs) = Pandoc m{ docTitle = fromInlines t } bs
 
 setAuthors :: [Inlines] -> Pandoc -> Pandoc
-setAuthors as (Pandoc m bs) = Pandoc m{ docAuthors = map (toList . unInlines) as } bs
+setAuthors as (Pandoc m bs) = Pandoc m{ docAuthors = map (fromInlines) as } bs
 
 setDate :: Inlines -> Pandoc -> Pandoc
-setDate d (Pandoc m bs) = Pandoc m{ docDate = toList $ unInlines $ d } bs
+setDate d (Pandoc m bs) = Pandoc m{ docDate = fromInlines d } bs
 
 -- Inline list builders
 
@@ -148,25 +165,28 @@ str :: String -> Inlines
 str = inline . Str
 
 emph :: Inlines -> Inlines
-emph = inline . Emph . toList . unInlines
+emph = inline . Emph . fromInlines
 
 strong :: Inlines -> Inlines
-strong = inline . Strong . toList . unInlines
+strong = inline . Strong . fromInlines
 
 strikeout :: Inlines -> Inlines
-strikeout = inline . Strikeout . toList . unInlines
+strikeout = inline . Strikeout . fromInlines
 
 superscript :: Inlines -> Inlines
-superscript = inline . Superscript . toList . unInlines
+superscript = inline . Superscript . fromInlines
 
 subscript :: Inlines -> Inlines
-subscript = inline . Subscript . toList . unInlines
+subscript = inline . Subscript . fromInlines
 
 smallcaps :: Inlines -> Inlines
-smallcaps = inline . SmallCaps . toList . unInlines
+smallcaps = inline . SmallCaps . fromInlines
 
 quoted :: QuoteType -> Inlines -> Inlines
-quoted qt = inline . Quoted qt . toList . unInlines
+quoted qt = inline . Quoted qt . fromInlines
+
+cite :: [Citation] -> Inlines -> Inlines
+cite cts = inline . Cite cts . fromInlines
 
 code :: String -> Inlines
 code = inline . Code
@@ -205,7 +225,7 @@ image :: String -> String -> Inlines -> Inlines
 image url title x = inline $ Link (toList $ unInlines x) (url, title)
 
 note :: Blocks -> Inlines
-note = inline . Note . toList . unBlocks
+note = inline . Note . fromBlocks
 
 -- Block list builders
 
@@ -213,10 +233,10 @@ block :: Block -> Blocks
 block = Blocks . singleton
 
 para :: Inlines -> Blocks
-para = block . Para . toList . unInlines
+para = block . Para . fromInlines
 
 plain :: Inlines -> Blocks
-plain = block . Para . toList . unInlines
+plain = block . Para . fromInlines
 
 codeBlock :: Attr -> String -> Blocks
 codeBlock attrs = block . CodeBlock attrs
@@ -225,24 +245,24 @@ rawHtml :: String -> Blocks
 rawHtml = block . RawHtml
 
 blockQuote :: Blocks -> Blocks
-blockQuote = block . BlockQuote . toList . unBlocks
+blockQuote = block . BlockQuote . fromBlocks
 
 orderedList :: Maybe ListAttributes -> [Blocks] -> Blocks
 orderedList mbattrs =
-  block . OrderedList attrs .  map (toList . unBlocks)
+  block . OrderedList attrs .  map (fromBlocks)
     where attrs = case mbattrs of
                        Nothing  -> (1, DefaultStyle, DefaultDelim)
                        Just a   -> a
 
 bulletList :: [Blocks] -> Blocks
-bulletList = block . BulletList . map (toList . unBlocks)
+bulletList = block . BulletList . map (fromBlocks)
 
 definitionList :: [(Inlines, [Blocks])] -> Blocks
 definitionList = block . DefinitionList .
-  map (\(t,ds) -> (toList (unInlines t), map (toList . unBlocks) ds))
+  map (\(t,ds) -> (toList (unInlines t), map (fromBlocks) ds))
 
 header :: Int -> Inlines -> Blocks
-header level = block . Header level . toList . unInlines
+header level = block . Header level . fromInlines
 
 horizontalRule :: Blocks
 horizontalRule = block HorizontalRule
@@ -251,5 +271,5 @@ table :: Inlines -> [(Alignment, Double)] -> [Blocks] -> [[Blocks]]
       -> Blocks
 table caption cellspecs headers rows = block $
   Table (toList $ unInlines caption) aligns widths
-      (map (toList . unBlocks) headers) (map (map (toList . unBlocks)) rows)
+      (map (fromBlocks) headers) (map (map (fromBlocks)) rows)
    where (aligns, widths) = unzip cellspecs

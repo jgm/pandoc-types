@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-
 Copyright (C) 2010 John MacFarlane <jgm@berkeley.edu>
 

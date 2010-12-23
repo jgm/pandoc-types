@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
 {-
 Copyright (C) 2010 John MacFarlane <jgm@berkeley.edu>
 
@@ -45,11 +45,9 @@ language extension):
 
 module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , Inlines
-                           , fromInlines
-                           , toInlines
                            , Blocks
-                           , fromBlocks
-                           , toBlocks
+                           , toList
+                           , mempty
                            , (+++)
                            -- * Document builders
                            , doc
@@ -57,7 +55,6 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , setAuthors
                            , setDate
                            -- * Inline list builders
-                           , inline
                            , text
                            , str
                            , emph
@@ -81,12 +78,11 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , image
                            , note
                            -- * Block list builders
-                           , block
                            , para
                            , plain
                            , codeBlock
                            , rawHtml
-                           , blockQuote
+                           , singletonQuote
                            , bulletList
                            , orderedList
                            , definitionList
@@ -98,36 +94,20 @@ where
 import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
-import Data.DList hiding (map)
+import Data.Sequence (Seq, fromList, singleton)
+import Data.Foldable (Foldable, toList)
 import Data.List (groupBy)
 import Data.Char (isSpace)
 
-newtype Inlines = Inlines { unInlines :: DList Inline }
-                  deriving (Monoid)
+type Inlines = Seq Inline
 
-instance Show Inlines where
-  show (Inlines x) = "Inlines (fromList " ++ show (toList x) ++ ")"
+-- Foldable gives us toList
+-- Monoid gives us mappend, mempty
 
 instance IsString Inlines where
   fromString = text
 
-fromInlines :: Inlines -> [Inline]
-fromInlines = toList . unInlines
-
-toInlines :: [Inline] -> Inlines
-toInlines = Inlines . fromList
-
-newtype Blocks = Blocks { unBlocks :: DList Block }
-                 deriving (Monoid)
-
-instance Show Blocks where
-  show (Blocks x) = "Blocks (fromList " ++ show (toList x) ++ ")"
-
-fromBlocks :: Blocks -> [Block]
-fromBlocks = toList . unBlocks
-
-toBlocks :: [Block] -> Blocks
-toBlocks = Blocks . fromList
+type Blocks = Seq Block
 
 (+++) :: Monoid m => m -> m -> m
 (+++) = mappend
@@ -135,26 +115,23 @@ toBlocks = Blocks . fromList
 -- Document builders
 
 doc :: Blocks -> Pandoc
-doc = Pandoc (Meta [] [] []) . toList . unBlocks
+doc = Pandoc (Meta [] [] []) . toList
 
 setTitle :: Inlines -> Pandoc -> Pandoc
-setTitle t (Pandoc m bs) = Pandoc m{ docTitle = fromInlines t } bs
+setTitle t (Pandoc m bs) = Pandoc m{ docTitle = toList t } bs
 
 setAuthors :: [Inlines] -> Pandoc -> Pandoc
-setAuthors as (Pandoc m bs) = Pandoc m{ docAuthors = map (fromInlines) as } bs
+setAuthors as (Pandoc m bs) = Pandoc m{ docAuthors = map toList as } bs
 
 setDate :: Inlines -> Pandoc -> Pandoc
-setDate d (Pandoc m bs) = Pandoc m{ docDate = fromInlines d } bs
+setDate d (Pandoc m bs) = Pandoc m{ docDate = toList d } bs
 
 -- Inline list builders
-
-inline :: Inline -> Inlines
-inline = Inlines . singleton
 
 -- | Convert a string to Inlines, treating interword spaces as 'Space's.
 -- If you want a 'Str' with literal spaces, use 'rawStr'.
 text :: String -> Inlines
-text = Inlines . fromList . (map conv) . breakBySpaces
+text = fromList . (map conv) . breakBySpaces
   where breakBySpaces = groupBy sameCategory
         sameCategory x y = (isSpace x && isSpace y) ||
                            not (isSpace x || isSpace y)
@@ -162,114 +139,111 @@ text = Inlines . fromList . (map conv) . breakBySpaces
         conv xs = Str xs
 
 str :: String -> Inlines
-str = inline . Str
+str = singleton . Str
 
 emph :: Inlines -> Inlines
-emph = inline . Emph . fromInlines
+emph = singleton . Emph . toList
 
 strong :: Inlines -> Inlines
-strong = inline . Strong . fromInlines
+strong = singleton . Strong . toList
 
 strikeout :: Inlines -> Inlines
-strikeout = inline . Strikeout . fromInlines
+strikeout = singleton . Strikeout . toList
 
 superscript :: Inlines -> Inlines
-superscript = inline . Superscript . fromInlines
+superscript = singleton . Superscript . toList
 
 subscript :: Inlines -> Inlines
-subscript = inline . Subscript . fromInlines
+subscript = singleton . Subscript . toList
 
 smallcaps :: Inlines -> Inlines
-smallcaps = inline . SmallCaps . fromInlines
+smallcaps = singleton . SmallCaps . toList
 
 quoted :: QuoteType -> Inlines -> Inlines
-quoted qt = inline . Quoted qt . fromInlines
+quoted qt = singleton . Quoted qt . toList
 
 cite :: [Citation] -> Inlines -> Inlines
-cite cts = inline . Cite cts . fromInlines
+cite cts = singleton . Cite cts . toList
 
 code :: String -> Inlines
-code = inline . Code
+code = singleton . Code
 
 space :: Inlines
-space = inline Space
+space = singleton Space
 
 emdash :: Inlines
-emdash = inline EmDash
+emdash = singleton EmDash
 
 endash :: Inlines
-endash = inline EnDash
+endash = singleton EnDash
 
 apostrophe :: Inlines
-apostrophe = inline Apostrophe
+apostrophe = singleton Apostrophe
 
 ellipses :: Inlines
-ellipses = inline Ellipses
+ellipses = singleton Ellipses
 
 linebreak :: Inlines
-linebreak = inline LineBreak
+linebreak = singleton LineBreak
 
 math :: MathType -> String -> Inlines
-math mt = inline . Math mt
+math mt = singleton . Math mt
 
 tex :: String -> Inlines
-tex = inline . TeX
+tex = singleton . TeX
 
 htmlInline :: String -> Inlines
-htmlInline = inline . HtmlInline
+htmlInline = singleton . HtmlInline
 
 link :: String -> String -> Inlines -> Inlines
-link url title x = inline $ Link (toList $ unInlines x) (url, title)
+link url title x = singleton $ Link (toList x) (url, title)
 
 image :: String -> String -> Inlines -> Inlines
-image url title x = inline $ Link (toList $ unInlines x) (url, title)
+image url title x = singleton $ Link (toList x) (url, title)
 
 note :: Blocks -> Inlines
-note = inline . Note . fromBlocks
+note = singleton . Note . toList
 
 -- Block list builders
 
-block :: Block -> Blocks
-block = Blocks . singleton
-
 para :: Inlines -> Blocks
-para = block . Para . fromInlines
+para = singleton . Para . toList
 
 plain :: Inlines -> Blocks
-plain = block . Para . fromInlines
+plain = singleton . Para . toList
 
 codeBlock :: Attr -> String -> Blocks
-codeBlock attrs = block . CodeBlock attrs
+codeBlock attrs = singleton . CodeBlock attrs
 
 rawHtml :: String -> Blocks
-rawHtml = block . RawHtml
+rawHtml = singleton . RawHtml
 
-blockQuote :: Blocks -> Blocks
-blockQuote = block . BlockQuote . fromBlocks
+singletonQuote :: Blocks -> Blocks
+singletonQuote = singleton . BlockQuote . toList
 
 orderedList :: Maybe ListAttributes -> [Blocks] -> Blocks
 orderedList mbattrs =
-  block . OrderedList attrs .  map (fromBlocks)
+  singleton . OrderedList attrs .  map toList
     where attrs = case mbattrs of
                        Nothing  -> (1, DefaultStyle, DefaultDelim)
                        Just a   -> a
 
 bulletList :: [Blocks] -> Blocks
-bulletList = block . BulletList . map (fromBlocks)
+bulletList = singleton . BulletList . map toList
 
 definitionList :: [(Inlines, [Blocks])] -> Blocks
-definitionList = block . DefinitionList .
-  map (\(t,ds) -> (toList (unInlines t), map (fromBlocks) ds))
+definitionList = singleton . DefinitionList .
+  map (\(t,ds) -> (toList t, map toList ds))
 
 header :: Int -> Inlines -> Blocks
-header level = block . Header level . fromInlines
+header level = singleton . Header level . toList
 
 horizontalRule :: Blocks
-horizontalRule = block HorizontalRule
+horizontalRule = singleton HorizontalRule
 
 table :: Inlines -> [(Alignment, Double)] -> [Blocks] -> [[Blocks]]
       -> Blocks
-table caption cellspecs headers rows = block $
-  Table (toList $ unInlines caption) aligns widths
-      (map (fromBlocks) headers) (map (map (fromBlocks)) rows)
+table caption cellspecs headers rows = singleton $
+  Table (toList caption) aligns widths
+      (map toList headers) (map (map toList) rows)
    where (aligns, widths) = unzip cellspecs

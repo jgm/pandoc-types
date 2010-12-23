@@ -130,7 +130,7 @@ setDate d (Pandoc m bs) = Pandoc m{ docDate = toList d } bs
 -- Inline list builders
 
 -- | Convert a string to Inlines, treating interword spaces as 'Space's.
--- If you want a 'Str' with literal spaces, use 'rawStr'.
+-- If you want a 'Str' with literal spaces, use 'str'.
 text :: String -> Inlines
 text = fromList . (map conv) . breakBySpaces
   where breakBySpaces = groupBy sameCategory

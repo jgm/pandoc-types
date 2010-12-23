@@ -200,7 +200,7 @@ link :: String -> String -> Inlines -> Inlines
 link url title x = singleton $ Link (toList x) (url, title)
 
 image :: String -> String -> Inlines -> Inlines
-image url title x = singleton $ Link (toList x) (url, title)
+image url title x = singleton $ Image (toList x) (url, title)
 
 note :: Blocks -> Inlines
 note = singleton . Note . toList
@@ -211,7 +211,7 @@ para :: Inlines -> Blocks
 para = singleton . Para . toList
 
 plain :: Inlines -> Blocks
-plain = singleton . Para . toList
+plain = singleton . Plain . toList
 
 codeBlock :: Attr -> String -> Blocks
 codeBlock attrs = singleton . CodeBlock attrs
@@ -227,7 +227,7 @@ orderedList mbattrs =
   singleton . OrderedList attrs .  map toList
     where attrs = case mbattrs of
                        Nothing  -> (1, DefaultStyle, DefaultDelim)
-                       Just a   -> a
+                       Just x   -> x
 
 bulletList :: [Blocks] -> Blocks
 bulletList = singleton . BulletList . map toList

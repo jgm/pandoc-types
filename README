@@ -4,3 +4,6 @@ structured documents.
 
 These definitions have been put in a separate package so that other
 packages can use them without drawing in all of pandoc's dependencies.
+
+A builder module, which makes it easy to generate Pandoc structures
+programmatically, is also provided.

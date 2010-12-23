@@ -34,10 +34,10 @@ language extension):
 >
 > myDoc :: Pandoc
 > myDoc = setTitle "My title" $ doc $
->   para "This is the first paragraph" ><
->   para ("And " >< emph "another" >< ".") ><
+>   para "This is the first paragraph" +++
+>   para ("And " +++ emph "another" +++ ".") +++
 >   bulletList [ plain $ "item one"
->              , plain $ "item two and a " ><
+>              , plain $ "item two and a " +++
 >                  link "/url" "go to url" "link"
 >              ]
 
@@ -49,7 +49,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , toList
                            , fromList
                            , empty
-                           , (><)
+                           , (+++)
                            -- * Document builders
                            , doc
                            , setTitle
@@ -109,6 +109,9 @@ instance IsString Inlines where
   fromString = text
 
 type Blocks = Seq Block
+
+(+++) :: Monoid a => a -> a -> a
+(+++) = mappend
 
 -- Document builders
 

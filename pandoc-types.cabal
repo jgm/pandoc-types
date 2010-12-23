@@ -1,17 +1,19 @@
 Name:                pandoc-types
 Version:             1.7
 Synopsis:            Types for representing a structured document
-Description:         This package contains definitions of the types
-                     pandoc uses to represent structured documents.
-                     These definitions have been moved into their
-                     own package to make it easier for other packages
-                     to export native pandoc documents without depending
-                     on the whole pandoc package.  It also allows pandoc
-                     to depend on other packages that use the pandoc
-                     types (such as citeproc-hs).
+Description:         This package contains definitions for the Pandoc data
+                     structure, which is used by pandoc to represent
+                     structured documents.
                      .
-                     The package also includes a module for building
-                     pandoc documents programmatically.
+                     Starting with pandoc 1.7, these definitions have been put
+                     in a separate package, so that other packages can use
+                     them without drawing in all of pandoc's dependencies, and
+                     so that pandoc can depend on packages (like citeproc-hs)
+                     that use them.
+                     .
+                     A builder module, which makes it easy to generate Pandoc
+                     structures programmatically, has also been provided.
+
 Homepage:            http://johnmacfarlane.net/pandoc
 License:             GPL
 License-file:        COPYING

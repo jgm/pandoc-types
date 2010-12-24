@@ -1,11 +1,3 @@
 pandoc-types contains definitions for the Pandoc data structure,
 which is used by [pandoc] (http://johnmacfarlane.net/pandoc) to represent
 structured documents.
-
-Starting with pandoc 1.7, these definitions have been put in a separate
-package, so that other packages can use them without drawing in all of pandoc's
-dependencies, and so that pandoc can depend on packages (like citeproc-hs)
-that use them.
-
-A builder module, which makes it easy to generate Pandoc structures
-programmatically, has also been provided.

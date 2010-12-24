@@ -114,6 +114,7 @@ instance IsString Inlines where
 
 type Blocks = Seq Block
 
+-- | Concatenate two 'Inlines' or two 'Blocks'.
 (+++) :: Monoid a => a -> a -> a
 (+++) = mappend
 
@@ -133,7 +134,7 @@ setDate d (Pandoc m bs) = Pandoc m{ docDate = toList d } bs
 
 -- Inline list builders
 
--- | Convert a string to Inlines, treating interword spaces as 'Space's.
+-- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's.
 -- If you want a 'Str' with literal spaces, use 'str'.
 text :: String -> Inlines
 text = fromList . (map conv) . breakBySpaces

@@ -114,10 +114,12 @@ where
 import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
+import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, fromList, singleton, empty, (><))
 import Data.Foldable (Foldable, toList)
 import Data.List (groupBy)
 import Data.Char (isSpace)
+import Control.Arrow ((***))
 
 type Inlines = Seq Inline
 
@@ -152,7 +154,7 @@ setDate d (Pandoc m bs) = Pandoc m{ docDate = toList d } bs
 -- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's.
 -- If you want a 'Str' with literal spaces, use 'str'.
 text :: String -> Inlines
-text = fromList . (map conv) . breakBySpaces
+text = fromList . map conv . breakBySpaces
   where breakBySpaces = groupBy sameCategory
         sameCategory x y = (isSpace x && isSpace y) ||
                            not (isSpace x || isSpace y)
@@ -267,16 +269,13 @@ blockQuote = singleton . BlockQuote . toList
 orderedList :: Maybe ListAttributes -> [Blocks] -> Blocks
 orderedList mbattrs =
   singleton . OrderedList attrs .  map toList
-    where attrs = case mbattrs of
-                       Nothing  -> (1, DefaultStyle, DefaultDelim)
-                       Just x   -> x
+    where attrs = fromMaybe (1, DefaultStyle, DefaultDelim) mbattrs
 
 bulletList :: [Blocks] -> Blocks
 bulletList = singleton . BulletList . map toList
 
 definitionList :: [(Inlines, [Blocks])] -> Blocks
-definitionList = singleton . DefinitionList .
-  map (\(t,ds) -> (toList t, map toList ds))
+definitionList = singleton . DefinitionList .  map (toList *** map toList)
 
 header :: Int  -- ^ Level
        -> Inlines

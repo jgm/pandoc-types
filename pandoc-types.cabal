@@ -11,7 +11,7 @@ Description:         This package contains definitions for the Pandoc data
                      so that pandoc can depend on packages (like citeproc-hs)
                      that use them.
                      .
-                     A builder module, which makes it easy to generate Pandoc
+                     A builder module, which makes it easy to generate pandoc
                      documents programmatically, has also been provided.
 
 Homepage:            http://johnmacfarlane.net/pandoc

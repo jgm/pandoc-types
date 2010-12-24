@@ -3,16 +3,18 @@ Version:             1.7
 Synopsis:            Types for representing a structured document
 Description:         This package contains definitions for the 'Pandoc' data
                      structure, which is used by pandoc to represent
-                     structured documents.
-                     .
-                     Starting with pandoc 1.7, these definitions have been put
-                     in a separate package, so that other packages can use
-                     them without drawing in all of pandoc's dependencies, and
+                     structured documents.  These definitions used to live
+                     in the pandoc package, but starting with pandoc 1.7, they
+                     have been split off, so that other packages can use them
+                     without drawing in all of pandoc's dependencies, and
                      pandoc itself can depend on packages (like citeproc-hs)
                      that use them.
                      .
-                     A builder module has also been provided, to make it easier
-                     to build pandoc documents programmatically.
+                     @Text.Pandoc.Builder@ provides functions for building
+                     up @Pandoc@ structures programmatically.
+                     .
+                     @Text.Pandoc.Generic@ provides generic functions for
+                     manipulating Pandoc documents.
 
 Homepage:            http://johnmacfarlane.net/pandoc
 License:             GPL

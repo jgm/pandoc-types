@@ -36,9 +36,9 @@ Example of use (requires the @OverloadedStrings@ language extension):
 > myDoc = setTitle "My title" $ doc $
 >   para "This is the first paragraph" +++
 >   para ("And " +++ emph "another" +++ ".") +++
->   bulletList [ plain $ "item one"
->              , plain $ "item two and a " +++
->                  link "/url" "go to url" "link"
+>   bulletList [ para "item one" +++ para "continuation"
+>              , plain ("item two and a " +++
+>                  link "/url" "go to url" "link")
 >              ]
 
 Isn't that nicer than writing the following?
@@ -52,9 +52,33 @@ Isn't that nicer than writing the following?
 >  [Para [Str "This",Space,Str "is",Space,Str "the",Space,Str "first",
 >   Space,Str "paragraph"]
 >  ,Para [Str "And",Space,Emph [Str "another"],Str "."]
->  ,BulletList [[Plain [Str "item",Space,Str "one"]]
+>  ,BulletList [[Para [Str "item",Space,Str "one"]
+>               ,Para [Str "continuation"]]
 >              ,[Plain [Str "item",Space,Str "two",Space,Str "and", Space,
 >                 Str "a",Space,Link [Str "link"] ("/url","go to url")]]]]
+
+And of course, you can use Haskell to define your own builders:
+
+> import Text.Pandoc.Builder
+> import Text.JSON
+> import Control.Arrow ((***))
+>
+> -- | Converts a JSON document into 'Blocks'.
+> json :: String -> Blocks
+> json x =
+>   case decode x of
+>        Ok y    -> jsValueToBlocks y
+>        Error y -> error y
+>    where jsValueToBlocks x =
+>           case x of
+>            JSNull         -> empty
+>            JSBool x       -> plain $ text $ show x
+>            JSRational _ x -> plain $ text $ show x
+>            JSString x     -> plain $ text $ fromJSString x
+>            JSArray xs     -> bulletList $ map jsValueToBlocks xs
+>            JSObject x     -> definitionList $
+>                               map (text *** (:[]) . jsValueToBlocks) $
+>                               fromJSObject x
 
 -}
 
@@ -103,6 +127,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , rawHtml
                            , blockQuote
                            , bulletList
+                           , orderedListWith
                            , orderedList
                            , definitionList
                            , header
@@ -266,10 +291,13 @@ rawHtml = singleton . RawHtml
 blockQuote :: Blocks -> Blocks
 blockQuote = singleton . BlockQuote . toList
 
-orderedList :: Maybe ListAttributes -> [Blocks] -> Blocks
-orderedList mbattrs =
-  singleton . OrderedList attrs .  map toList
-    where attrs = fromMaybe (1, DefaultStyle, DefaultDelim) mbattrs
+-- | Ordered list with attributes.
+orderedListWith :: ListAttributes -> [Blocks] -> Blocks
+orderedListWith attrs = singleton . OrderedList attrs .  map toList
+
+-- | Ordered list with default attributes.
+orderedList :: [Blocks] -> Blocks
+orderedList = orderedListWith (1, DefaultStyle, DefaultDelim)
 
 bulletList :: [Blocks] -> Blocks
 bulletList = singleton . BulletList . map toList

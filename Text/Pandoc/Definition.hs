@@ -147,16 +147,3 @@ instance Ord Citation where
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data)
-
--- | Applies a transformation on @a@s to matching elements in a @b@.
-processWith :: (Data a, Data b) => (a -> a) -> b -> b
-processWith f = everywhere (mkT f)
-
--- | Like 'processWith', but with monadic transformations.
-processWithM :: (Monad m, Data a, Data b) => (a -> m a) -> b -> m b
-processWithM f = everywhereM (mkM f)
-
--- | Runs a query on matching @a@ elements in a @c@.
-queryWith :: (Data a, Data c) => (a -> [b]) -> c -> [b]
-queryWith f = everything (++) ([] `mkQ` f)
-

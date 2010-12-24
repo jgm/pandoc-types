@@ -74,6 +74,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , apostrophe
                            , linebreak
                            , math
+                           , displayMath
                            , tex
                            , htmlInline
                            , link
@@ -194,8 +195,13 @@ ellipses = singleton Ellipses
 linebreak :: Inlines
 linebreak = singleton LineBreak
 
-math :: MathType -> String -> Inlines
-math mt = singleton . Math mt
+-- | Inline math
+math :: String -> Inlines
+math = singleton . Math InlineMath
+
+-- | Display math
+displayMath :: String -> Inlines
+displayMath = singleton . Math DisplayMath
 
 tex :: String -> Inlines
 tex = singleton . TeX

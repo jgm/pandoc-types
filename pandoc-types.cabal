@@ -22,7 +22,6 @@ License-file:        COPYING
 Author:              John MacFarlane
 Maintainer:          jgm@berkeley.edu
 Bug-Reports:         http://code.google.com/p/pandoc/issues/list
-Homepage:            http://github.com/jgm/pandoc-types
 Copyright:           (c) 2006-2010 John MacFarlane
 Category:            Text
 Build-type:          Simple

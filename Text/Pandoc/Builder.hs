@@ -93,6 +93,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , header
                            , horizontalRule
                            , table
+                           , simpleTable
                            )
 where
 import Text.Pandoc.Definition
@@ -255,15 +256,26 @@ definitionList :: [(Inlines, [Blocks])] -> Blocks
 definitionList = singleton . DefinitionList .
   map (\(t,ds) -> (toList t, map toList ds))
 
-header :: Int -> Inlines -> Blocks
+header :: Int  -- ^ Level
+       -> Inlines
+       -> Blocks
 header level = singleton . Header level . toList
 
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule
 
-table :: Inlines -> [(Alignment, Double)] -> [Blocks] -> [[Blocks]]
+table :: Inlines               -- ^ Caption
+      -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
+      -> [Blocks]              -- ^ Headers
+      -> [[Blocks]]            -- ^ Rows
       -> Blocks
 table caption cellspecs headers rows = singleton $
   Table (toList caption) aligns widths
       (map toList headers) (map (map toList) rows)
    where (aligns, widths) = unzip cellspecs
+
+-- | A simple table without a caption.
+simpleTable :: [Blocks]   -- ^ Headers
+            -> [[Blocks]] -- ^ Rows
+            -> Blocks
+simpleTable = table empty []

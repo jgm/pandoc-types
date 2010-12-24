@@ -64,7 +64,8 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , superscript
                            , subscript
                            , smallcaps
-                           , quoted
+                           , singleQuoted
+                           , doubleQuoted
                            , cite
                            , code
                            , space
@@ -159,6 +160,12 @@ subscript = singleton . Subscript . toList
 
 smallcaps :: Inlines -> Inlines
 smallcaps = singleton . SmallCaps . toList
+
+singleQuoted :: Inlines -> Inlines
+singleQuoted = quoted SingleQuote
+
+doubleQuoted :: Inlines -> Inlines
+doubleQuoted = quoted DoubleQuote
 
 quoted :: QuoteType -> Inlines -> Inlines
 quoted qt = singleton . Quoted qt . toList

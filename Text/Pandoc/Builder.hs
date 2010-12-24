@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
    Portability : portable
 
 Some convenience functions for building pandoc documents
-programmatically.  Example of use (requires the OverloadedStrings
+programmatically.  Example of use (requires the @OverloadedStrings@
 language extension):
 
 > import Text.Pandoc.Builder

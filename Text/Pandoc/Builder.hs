@@ -211,10 +211,16 @@ tex = singleton . TeX
 htmlInline :: String -> Inlines
 htmlInline = singleton . HtmlInline
 
-link :: String -> String -> Inlines -> Inlines
+link :: String  -- ^ URL
+     -> String  -- ^ Title
+     -> Inlines -- ^ Label
+     -> Inlines
 link url title x = singleton $ Link (toList x) (url, title)
 
-image :: String -> String -> Inlines -> Inlines
+image :: String  -- ^ URL
+      -> String  -- ^ Title
+      -> Inlines -- ^ Alt text
+      -> Inlines
 image url title x = singleton $ Image (toList x) (url, title)
 
 note :: Blocks -> Inlines

@@ -26,9 +26,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
    Stability   : alpha
    Portability : portable
 
-Some convenience functions for building pandoc documents
-programmatically.  Example of use (requires the @OverloadedStrings@
-language extension):
+Convenience functions for building pandoc documents programmatically.
+
+Example of use (requires the @OverloadedStrings@ language extension):
 
 > import Text.Pandoc.Builder
 >
@@ -40,6 +40,21 @@ language extension):
 >              , plain $ "item two and a " +++
 >                  link "/url" "go to url" "link"
 >              ]
+
+Isn't that nicer than writing the following?
+
+> import Text.Pandoc.Definition
+>
+> myDoc :: Pandoc
+> myDoc = Pandoc (Meta {docTitle = [Str "My",Space,Str "title"]
+>                      , docAuthors = []
+>                      , docDate = []})
+>  [Para [Str "This",Space,Str "is",Space,Str "the",Space,Str "first",
+>   Space,Str "paragraph"]
+>  ,Para [Str "And",Space,Emph [Str "another"],Str "."]
+>  ,BulletList [[Plain [Str "item",Space,Str "one"]]
+>              ,[Plain [Str "item",Space,Str "two",Space,Str "and", Space,
+>                 Str "a",Space,Link [Str "link"] ("/url","go to url")]]]]
 
 -}
 
@@ -114,7 +129,7 @@ instance IsString Inlines where
 
 type Blocks = Seq Block
 
--- | Concatenate two 'Inlines' or two 'Blocks'.
+-- | Concatenate two 'Inlines's or two 'Blocks's.
 (+++) :: Monoid a => a -> a -> a
 (+++) = mappend
 

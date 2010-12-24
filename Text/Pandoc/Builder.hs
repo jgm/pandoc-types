@@ -86,7 +86,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , codeBlockWith
                            , codeBlock
                            , rawHtml
-                           , singletonQuote
+                           , blockQuote
                            , bulletList
                            , orderedList
                            , definitionList
@@ -238,8 +238,8 @@ codeBlock = codeBlockWith ("",[],[])
 rawHtml :: String -> Blocks
 rawHtml = singleton . RawHtml
 
-singletonQuote :: Blocks -> Blocks
-singletonQuote = singleton . BlockQuote . toList
+blockQuote :: Blocks -> Blocks
+blockQuote = singleton . BlockQuote . toList
 
 orderedList :: Maybe ListAttributes -> [Blocks] -> Blocks
 orderedList mbattrs =

@@ -83,6 +83,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            -- * Block list builders
                            , para
                            , plain
+                           , codeBlockWith
                            , codeBlock
                            , rawHtml
                            , singletonQuote
@@ -226,8 +227,13 @@ para = singleton . Para . toList
 plain :: Inlines -> Blocks
 plain = singleton . Plain . toList
 
-codeBlock :: Attr -> String -> Blocks
-codeBlock attrs = singleton . CodeBlock attrs
+-- | A code block with attributes.
+codeBlockWith :: Attr -> String -> Blocks
+codeBlockWith attrs = singleton . CodeBlock attrs
+
+-- | A plain code block.
+codeBlock :: String -> Blocks
+codeBlock = codeBlockWith ("",[],[])
 
 rawHtml :: String -> Blocks
 rawHtml = singleton . RawHtml

@@ -1,5 +1,5 @@
 Name:                pandoc-types
-Version:             1.7
+Version:             1.8
 Synopsis:            Types for representing a structured document
 Description:         This package contains definitions for the 'Pandoc' data
                      structure, which is used by pandoc to represent

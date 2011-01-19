@@ -72,12 +72,15 @@ type Attr = (String, [String], [(String, String)])
 -- | Table cells are list of Blocks
 type TableCell = [Block]
 
+-- | Formats for raw blocks
+type Format = String
+
 -- | Block element.
 data Block
     = Plain [Inline]        -- ^ Plain text, not a paragraph
     | Para [Inline]         -- ^ Paragraph
     | CodeBlock Attr String -- ^ Code block (literal) with attributes
-    | RawHtml String        -- ^ Raw HTML block (literal)
+    | RawBlock [Format] String -- ^ Raw block with list of allowed formats
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
     | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
                             -- and a list of items, each a list of blocks)
@@ -125,8 +128,7 @@ data Inline
     | Ellipses              -- ^ Ellipses
     | LineBreak             -- ^ Hard line break
     | Math MathType String  -- ^ TeX math (literal)
-    | TeX String            -- ^ LaTeX code (literal)
-    | HtmlInline String     -- ^ HTML code (literal)
+    | RawInline [Format] String -- ^ Raw inline with list of allowed formats
     | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
                             -- and target

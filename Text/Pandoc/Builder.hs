@@ -114,8 +114,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , linebreak
                            , math
                            , displayMath
-                           , tex
-                           , htmlInline
+                           , rawInline
                            , link
                            , image
                            , note
@@ -124,7 +123,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , plain
                            , codeBlockWith
                            , codeBlock
-                           , rawHtml
+                           , rawBlock
                            , blockQuote
                            , bulletList
                            , orderedListWith
@@ -248,11 +247,8 @@ math = singleton . Math InlineMath
 displayMath :: String -> Inlines
 displayMath = singleton . Math DisplayMath
 
-tex :: String -> Inlines
-tex = singleton . TeX
-
-htmlInline :: String -> Inlines
-htmlInline = singleton . HtmlInline
+rawInline :: [Format] -> String -> Inlines
+rawInline formats = singleton . RawInline formats
 
 link :: String  -- ^ URL
      -> String  -- ^ Title
@@ -285,8 +281,8 @@ codeBlockWith attrs = singleton . CodeBlock attrs
 codeBlock :: String -> Blocks
 codeBlock = codeBlockWith ("",[],[])
 
-rawHtml :: String -> Blocks
-rawHtml = singleton . RawHtml
+rawBlock :: [Format] -> String -> Blocks
+rawBlock formats = singleton . RawBlock formats
 
 blockQuote :: Blocks -> Blocks
 blockQuote = singleton . BlockQuote . toList

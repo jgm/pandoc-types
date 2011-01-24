@@ -80,7 +80,7 @@ data Block
     = Plain [Inline]        -- ^ Plain text, not a paragraph
     | Para [Inline]         -- ^ Paragraph
     | CodeBlock Attr String -- ^ Code block (literal) with attributes
-    | RawBlock [Format] String -- ^ Raw block with list of allowed formats
+    | RawBlock Format String -- ^ Raw block
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
     | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
                             -- and a list of items, each a list of blocks)
@@ -128,7 +128,7 @@ data Inline
     | Ellipses              -- ^ Ellipses
     | LineBreak             -- ^ Hard line break
     | Math MathType String  -- ^ TeX math (literal)
-    | RawInline [Format] String -- ^ Raw inline with list of allowed formats
+    | RawInline Format String -- ^ Raw inline
     | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
                             -- and target

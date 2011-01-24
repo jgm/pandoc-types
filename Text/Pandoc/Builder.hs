@@ -247,8 +247,8 @@ math = singleton . Math InlineMath
 displayMath :: String -> Inlines
 displayMath = singleton . Math DisplayMath
 
-rawInline :: [Format] -> String -> Inlines
-rawInline formats = singleton . RawInline formats
+rawInline :: Format -> String -> Inlines
+rawInline format = singleton . RawInline format
 
 link :: String  -- ^ URL
      -> String  -- ^ Title
@@ -281,8 +281,8 @@ codeBlockWith attrs = singleton . CodeBlock attrs
 codeBlock :: String -> Blocks
 codeBlock = codeBlockWith ("",[],[])
 
-rawBlock :: [Format] -> String -> Blocks
-rawBlock formats = singleton . RawBlock formats
+rawBlock :: Format -> String -> Blocks
+rawBlock format = singleton . RawBlock format
 
 blockQuote :: Blocks -> Blocks
 blockQuote = singleton . BlockQuote . toList

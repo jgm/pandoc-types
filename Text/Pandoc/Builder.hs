@@ -106,6 +106,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , singleQuoted
                            , doubleQuoted
                            , cite
+                           , codeWith
                            , code
                            , space
                            , emdash
@@ -218,8 +219,13 @@ quoted qt = singleton . Quoted qt . toList
 cite :: [Citation] -> Inlines -> Inlines
 cite cts = singleton . Cite cts . toList
 
+-- | Inline code with attributes.
+codeWith :: Attr -> String -> Inlines
+codeWith attrs = singleton . Code attrs
+
+-- | Plain inline code.
 code :: String -> Inlines
-code = singleton . Code
+code = codeWith ("",[],[])
 
 space :: Inlines
 space = singleton Space

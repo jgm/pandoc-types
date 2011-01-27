@@ -120,7 +120,7 @@ data Inline
     | SmallCaps [Inline]    -- ^ Small caps text (list of inlines)
     | Quoted QuoteType [Inline] -- ^ Quoted text (list of inlines)
     | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
-    | Code String           -- ^ Inline code (literal)
+    | Code Attr String      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
     | EmDash                -- ^ Em dash
     | EnDash                -- ^ En dash

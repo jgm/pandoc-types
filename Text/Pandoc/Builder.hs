@@ -225,7 +225,7 @@ codeWith attrs = singleton . Code attrs
 
 -- | Plain inline code.
 code :: String -> Inlines
-code = codeWith ("",[],[])
+code = codeWith nullAttr
 
 space :: Inlines
 space = singleton Space
@@ -285,7 +285,7 @@ codeBlockWith attrs = singleton . CodeBlock attrs
 
 -- | A plain code block.
 codeBlock :: String -> Blocks
-codeBlock = codeBlockWith ("",[],[])
+codeBlock = codeBlockWith nullAttr
 
 rawBlock :: Format -> String -> Blocks
 rawBlock format = singleton . RawBlock format

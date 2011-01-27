@@ -69,6 +69,9 @@ data ListNumberDelim = DefaultDelim
 -- | Attributes: identifier, classes, key-value pairs
 type Attr = (String, [String], [(String, String)])
 
+nullAttr :: Attr
+nullAttr = ("",[],[])
+
 -- | Table cells are list of Blocks
 type TableCell = [Block]
 

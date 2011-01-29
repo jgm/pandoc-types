@@ -143,7 +143,6 @@ import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, fromList, singleton, empty, (><))
 import Data.Foldable (Foldable, toList)
 import Data.List (groupBy)
-import Data.Char (isSpace)
 import Control.Arrow ((***))
 
 type Inlines = Seq Inline
@@ -181,10 +180,14 @@ setDate d (Pandoc m bs) = Pandoc m{ docDate = toList d } bs
 text :: String -> Inlines
 text = fromList . map conv . breakBySpaces
   where breakBySpaces = groupBy sameCategory
-        sameCategory x y = (isSpace x && isSpace y) ||
-                           not (isSpace x || isSpace y)
-        conv xs | all isSpace xs = Space
+        sameCategory x y = (is_space x && is_space y) ||
+                           (not $ is_space x && is_space y)
+        conv xs | all is_space xs = Space
         conv xs = Str xs
+        is_space ' '  = True
+        is_space '\n' = True
+        is_space '\t' = True
+        is_space _    = False
 
 str :: String -> Inlines
 str = singleton . Str

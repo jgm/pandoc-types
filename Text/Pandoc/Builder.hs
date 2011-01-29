@@ -181,7 +181,7 @@ text :: String -> Inlines
 text = fromList . map conv . breakBySpaces
   where breakBySpaces = groupBy sameCategory
         sameCategory x y = (is_space x && is_space y) ||
-                           (not $ is_space x && is_space y)
+                           (not $ is_space x || is_space y)
         conv xs | all is_space xs = Space
         conv xs = Str xs
         is_space ' '  = True

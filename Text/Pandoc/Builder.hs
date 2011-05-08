@@ -332,4 +332,8 @@ table caption cellspecs headers rows = singleton $
 simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
-simpleTable = table empty []
+simpleTable headers = table empty (mapConst defaults headers) headers
+  where defaults = (AlignDefault, 0)
+
+mapConst :: Functor f => b -> f a -> f b
+mapConst = fmap . const

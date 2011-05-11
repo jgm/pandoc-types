@@ -25,7 +25,12 @@ Bug-Reports:         http://code.google.com/p/pandoc/issues/list
 Copyright:           (c) 2006-2010 John MacFarlane
 Category:            Text
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.6
+
+Source-repository head
+  type:          git
+  location:      git://github.com/jgm/pandoc-types.git
+
 Library
   Exposed-modules:   Text.Pandoc.Definition
                      Text.Pandoc.Generic

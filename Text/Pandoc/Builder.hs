@@ -109,6 +109,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , codeWith
                            , code
                            , space
+                           , ellipses
                            , emdash
                            , endash
                            , apostrophe

@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
+    DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
 {-
 Copyright (C) 2010 John MacFarlane <jgm@berkeley.edu>
 
@@ -28,16 +29,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Convenience functions for building pandoc documents programmatically.
 
-Example of use (requires the @OverloadedStrings@ language extension):
+Example of use:
 
+> {-# LANGUAGE OverloadedStrings #-}
 > import Text.Pandoc.Builder
 >
 > myDoc :: Pandoc
 > myDoc = setTitle "My title" $ doc $
->   para "This is the first paragraph" +++
->   para ("And " +++ emph "another" +++ ".") +++
->   bulletList [ para "item one" +++ para "continuation"
->              , plain ("item two and a " +++
+>   para "This is the first paragraph" <>
+>   para ("And " <> emph "another" <> ".") <>
+>   bulletList [ para "item one" <> para "continuation"
+>              , plain ("item two and a " <>
 >                  link "/url" "go to url" "link")
 >              ]
 
@@ -83,12 +85,11 @@ And of course, you can use Haskell to define your own builders:
 -}
 
 module Text.Pandoc.Builder ( module Text.Pandoc.Definition
-                           , Inlines
-                           , Blocks
-                           , toList
-                           , fromList
+                           , Inlines(..)
+                           , Blocks(..)
                            , empty
-                           , (+++)
+                           , (<>)
+                           , Listable(..)
                            -- * Document builders
                            , doc
                            , setTitle
@@ -120,6 +121,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , link
                            , image
                            , note
+                           , trimInlines
                            -- * Block list builders
                            , para
                            , plain
@@ -141,24 +143,87 @@ import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
 import Data.Maybe (fromMaybe)
-import Data.Sequence (Seq, fromList, singleton, empty, (><))
-import Data.Foldable (Foldable, toList)
-import Data.List (groupBy)
+import Data.Sequence (Seq, (|>), empty, viewr, viewl, ViewR(..), ViewL(..))
+import qualified Data.Sequence as Seq
+import Data.Foldable (Foldable)
+import qualified Data.Foldable as F
+import Data.List (groupBy, intersperse)
+import Data.Data
+import Data.Typeable
 import Control.Arrow ((***))
 
-type Inlines = Seq Inline
+(<>) :: Monoid a => a -> a -> a
+(<>) = mappend
 
--- Foldable gives us toList
--- Monoid gives us mappend, mempty
+newtype Inlines = Inlines { unInlines :: Seq Inline }
+                deriving (Data, Ord, Eq, Typeable)
+
+-- We show an Inlines just like [Inline].
+instance Show Inlines where
+  show = show . F.toList . unInlines
+
+instance Read Inlines where
+  readsPrec n = map (\(x,y) -> (Inlines . Seq.fromList $ x, y)) . readsPrec n
+
+instance Monoid Inlines where
+  mempty = Inlines mempty
+  (Inlines xs) `mappend` (Inlines ys) =
+    case (viewr xs, viewl ys) of
+      (EmptyR, _) -> Inlines ys
+      (_, EmptyL) -> Inlines xs
+      (xs' :> x, y :< ys') -> Inlines (meld `mappend` ys')
+        where meld = case (x, y) of
+                          (Space, Space)     -> xs' |> Space
+                          (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
+                          (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
+                          (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
+                          (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
+                          (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
+                          (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
+                          (Space, LineBreak) -> xs' |> LineBreak
+                          _                  -> xs' |> x |> y
 
 instance IsString Inlines where
   fromString = text
 
-type Blocks = Seq Block
+newtype Blocks = Blocks { unBlocks :: Seq Block }
+                deriving (Data, Ord, Eq, Typeable, Monoid)
 
--- | Concatenate two 'Inlines's or two 'Blocks's.
-(+++) :: Monoid a => a -> a -> a
-(+++) = mappend
+-- We show a Blocks just like [Block].
+instance Show Blocks where
+  show = show . F.toList . unBlocks
+
+instance Read Blocks where
+  readsPrec n = map (\(x,y) -> (Blocks . Seq.fromList $ x, y)) . readsPrec n
+
+class Listable a b where
+  toList     :: a -> [b]
+  fromList   :: [b] -> a
+  foldMap    :: (b -> a) -> a -> a
+  singleton  :: b -> a
+  foldlM     :: Monad m => (a -> b -> m a) -> a -> a -> m a
+  isNull     :: a -> Bool
+
+instance Listable Inlines Inline where
+  toList         = F.toList . unInlines
+  fromList       = Inlines . Seq.fromList
+  foldMap f      = F.foldMap f . unInlines
+  singleton      = Inlines . Seq.singleton
+  foldlM f x     = F.foldlM f x . unInlines
+  isNull         = Seq.null . unInlines
+
+instance Listable Blocks Block where
+  toList         = F.toList . unBlocks
+  fromList       = Blocks . Seq.fromList
+  foldMap  f     = F.foldMap f . unBlocks
+  singleton      = Blocks . Seq.singleton
+  foldlM f x     = F.foldlM f x . unBlocks
+  isNull         = Seq.null . unBlocks
+
+-- | Trim leading and trailing Sp (spaces) from an Inlines.
+trimInlines :: Inlines -> Inlines
+trimInlines (Inlines ils) = Inlines $ Seq.dropWhileL (== Space) $
+                            Seq.dropWhileR (== Space) $ ils
 
 -- Document builders
 
@@ -333,7 +398,7 @@ table caption cellspecs headers rows = singleton $
 simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
-simpleTable headers = table empty (mapConst defaults headers) headers
+simpleTable headers = table mempty (mapConst defaults headers) headers
   where defaults = (AlignDefault, 0)
 
 mapConst :: Functor f => b -> f a -> f b

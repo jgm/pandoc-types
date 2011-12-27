@@ -110,10 +110,6 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , codeWith
                            , code
                            , space
-                           , ellipses
-                           , emdash
-                           , endash
-                           , apostrophe
                            , linebreak
                            , math
                            , displayMath
@@ -298,18 +294,6 @@ code = codeWith nullAttr
 
 space :: Inlines
 space = singleton Space
-
-emdash :: Inlines
-emdash = singleton EmDash
-
-endash :: Inlines
-endash = singleton EnDash
-
-apostrophe :: Inlines
-apostrophe = singleton Apostrophe
-
-ellipses :: Inlines
-ellipses = singleton Ellipses
 
 linebreak :: Inlines
 linebreak = singleton LineBreak

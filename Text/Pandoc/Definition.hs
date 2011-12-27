@@ -125,10 +125,6 @@ data Inline
     | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
     | Code Attr String      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
-    | EmDash                -- ^ Em dash
-    | EnDash                -- ^ En dash
-    | Apostrophe            -- ^ Apostrophe
-    | Ellipses              -- ^ Ellipses
     | LineBreak             -- ^ Hard line break
     | Math MathType String  -- ^ TeX math (literal)
     | RawInline Format String -- ^ Raw inline

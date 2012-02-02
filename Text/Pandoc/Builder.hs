@@ -64,6 +64,7 @@ And of course, you can use Haskell to define your own builders:
 > import Text.Pandoc.Builder
 > import Text.JSON
 > import Control.Arrow ((***))
+> import Data.Monoid (mempty)
 >
 > -- | Converts a JSON document into 'Blocks'.
 > json :: String -> Blocks
@@ -73,7 +74,7 @@ And of course, you can use Haskell to define your own builders:
 >        Error y -> error y
 >    where jsValueToBlocks x =
 >           case x of
->            JSNull         -> empty
+>            JSNull         -> mempty
 >            JSBool x       -> plain $ text $ show x
 >            JSRational _ x -> plain $ text $ show x
 >            JSString x     -> plain $ text $ fromJSString x
@@ -87,7 +88,6 @@ And of course, you can use Haskell to define your own builders:
 module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , Inlines(..)
                            , Blocks(..)
-                           , empty
                            , (<>)
                            , Listable(..)
                            -- * Document builders
@@ -139,7 +139,7 @@ import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
 import Data.Maybe (fromMaybe)
-import Data.Sequence (Seq, (|>), empty, viewr, viewl, ViewR(..), ViewL(..))
+import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F

@@ -137,7 +137,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Data.String
-import Data.Monoid
+import Data.Monoid ((<>))
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq

@@ -226,8 +226,16 @@ instance Listable Blocks Block where
 
 -- | Trim leading and trailing Sp (spaces) from an Inlines.
 trimInlines :: Inlines -> Inlines
+#if MIN_VERSION_containers(0,4,0)
 trimInlines (Inlines ils) = Inlines $ Seq.dropWhileL (== Space) $
                             Seq.dropWhileR (== Space) $ ils
+#else
+-- for GHC 6.12, we need to workaround a bug in dropWhileR
+-- see http://hackage.haskell.org/trac/ghc/ticket/4157
+trimInlines (Inlines ils) = Inlines $ Seq.dropWhileL (== Space) $
+                            Seq.reverse $ Seq.dropWhileL (== Space) $
+                            Seq.reverse ils
+#endif
 
 -- Document builders
 

@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
-    DeriveDataTypeable, GeneralizedNewtypeDeriving #-}
+    DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP #-}
 {-
 Copyright (C) 2010 John MacFarlane <jgm@berkeley.edu>
 
@@ -148,8 +148,16 @@ import Data.Data
 import Data.Typeable
 import Control.Arrow ((***))
 
-(<>) :: Monoid a => a -> a -> a
+#if MIN_VERSION_base(4,5,0)
+-- (<>) is defined in Data.Monoid
+#else
+infixr 6 <>
+
+-- | An infix synonym for 'mappend'.
+(<>) :: Monoid m => m -> m -> m
 (<>) = mappend
+{-# INLINE (<>) #-}
+#endif
 
 newtype Inlines = Inlines { unInlines :: Seq Inline }
                 deriving (Data, Ord, Eq, Typeable)

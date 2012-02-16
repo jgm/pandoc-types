@@ -1,4 +1,9 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE CPP, DeriveDataTypeable #-}
+
+#ifdef GENERICS
+{-# LANGUAGE DeriveGeneric #-}
+#endif
+
 {-
 Copyright (C) 2006-2010 John MacFarlane <jgm@berkeley.edu>
 
@@ -31,22 +36,29 @@ of documents.
 -}
 module Text.Pandoc.Definition where
 
-import Data.Generics
+import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
 
-data Pandoc = Pandoc Meta [Block] deriving (Eq, Ord, Read, Show, Typeable, Data)
+#ifdef GENERICS
+import GHC.Generics (Generic)
+#define GENERIC , Generic
+#else
+#define GENERIC
+#endif
+
+data Pandoc = Pandoc Meta [Block] deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
 
 -- | Bibliographic information for the document:  title, authors, date.
 data Meta = Meta { docTitle   :: [Inline]
                  , docAuthors :: [[Inline]]
                  , docDate    :: [Inline] }
-            deriving (Eq, Ord, Show, Read, Typeable, Data)
+            deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft
                | AlignRight
                | AlignCenter
-               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data)
+               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
 
 -- | List attributes.
 type ListAttributes = (Int, ListNumberStyle, ListNumberDelim)
@@ -58,13 +70,13 @@ data ListNumberStyle = DefaultStyle
                      | LowerRoman
                      | UpperRoman
                      | LowerAlpha
-                     | UpperAlpha deriving (Eq, Ord, Show, Read, Typeable, Data)
+                     | UpperAlpha deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
 
 -- | Delimiter of list numbers.
 data ListNumberDelim = DefaultDelim
                      | Period
                      | OneParen
-                     | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data)
+                     | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
 
 -- | Attributes: identifier, classes, key-value pairs
 type Attr = (String, [String], [(String, String)])
@@ -101,16 +113,16 @@ data Block
                             -- column headers (each a list of blocks), and
                             -- rows (each a list of lists of blocks)
     | Null                  -- ^ Nothing
-    deriving (Eq, Ord, Read, Show, Typeable, Data)
+    deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
 
 -- | Type of quotation marks to use in Quoted inline.
-data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data)
+data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
 
 -- | Link target (URL, title).
 type Target = (String, String)
 
 -- | Type of math element (display or inline).
-data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data)
+data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
 
 -- | Inline elements.
 data Inline
@@ -132,7 +144,7 @@ data Inline
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
                             -- and target
     | Note [Block]          -- ^ Footnote or endnote
-    deriving (Show, Eq, Ord, Read, Typeable, Data)
+    deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
 
 data Citation = Citation { citationId      :: String
                          , citationPrefix  :: [Inline]
@@ -141,10 +153,10 @@ data Citation = Citation { citationId      :: String
                          , citationNoteNum :: Int
                          , citationHash    :: Int
                          }
-                deriving (Show, Eq, Read, Typeable, Data)
+                deriving (Show, Eq, Read, Typeable, Data GENERIC)
 
 instance Ord Citation where
     compare = comparing citationHash
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
-                    deriving (Show, Eq, Ord, Read, Typeable, Data)
+                    deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)

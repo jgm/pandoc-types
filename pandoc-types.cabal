@@ -38,3 +38,6 @@ Library
   else
     Build-depends:     base >= 3 && < 4, containers >= 0.3
 
+  if impl(ghc >= 7.2.1)
+    cpp-options:    -DGENERICS
+    build-depends:  ghc-prim >= 0.2

@@ -1,7 +1,10 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
-    DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP #-}
+    DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving #-}
+#ifdef GENERICS
+{-# LANGUAGE DeriveGeneric #-}
+#endif
 {-
-Copyright (C) 2010 John MacFarlane <jgm@berkeley.edu>
+Copyright (C) 2010-2012 John MacFarlane <jgm@berkeley.edu>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -86,10 +89,15 @@ And of course, you can use Haskell to define your own builders:
 -}
 
 module Text.Pandoc.Builder ( module Text.Pandoc.Definition
-                           , Inlines(..)
-                           , Blocks(..)
+                           , Many(..)
+                           , Inlines
+                           , Blocks
                            , (<>)
-                           , Listable(..)
+                           , singleton
+                           , toList
+                           , fromList
+                           , isNull
+                           -- , Listable(..)
                            -- * Document builders
                            , doc
                            , setTitle
@@ -146,7 +154,11 @@ import qualified Data.Foldable as F
 import Data.List (groupBy, intersperse)
 import Data.Data
 import Data.Typeable
+import Data.Traversable
 import Control.Arrow ((***))
+#ifdef GENERICS
+import GHC.Generics (Generic)
+#endif
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -159,23 +171,37 @@ infixr 6 <>
 {-# INLINE (<>) #-}
 #endif
 
-newtype Inlines = Inlines { unInlines :: Seq Inline }
-                deriving (Data, Ord, Eq, Typeable)
+newtype Many a = Many { unMany :: Seq a }
+                 deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
 
--- We show an Inlines just like [Inline].
-instance Show Inlines where
-  show = show . F.toList . unInlines
+#ifdef GENERICS
+deriving instance Generic (Many a)
+#endif
 
-instance Read Inlines where
-  readsPrec n = map (\(x,y) -> (Inlines . Seq.fromList $ x, y)) . readsPrec n
+toList :: Many a -> [a]
+toList = F.toList
+
+singleton :: a -> Many a
+singleton = Many . Seq.singleton
+
+fromList :: [a] -> Many a
+fromList = Many . Seq.fromList
+
+isNull :: Many a -> Bool
+isNull = Seq.null . unMany
+
+type Inlines = Many Inline
+type Blocks  = Many Block
+
+deriving instance Monoid Blocks
 
 instance Monoid Inlines where
-  mempty = Inlines mempty
-  (Inlines xs) `mappend` (Inlines ys) =
+  mempty = Many mempty
+  (Many xs) `mappend` (Many ys) =
     case (viewr xs, viewl ys) of
-      (EmptyR, _) -> Inlines ys
-      (_, EmptyL) -> Inlines xs
-      (xs' :> x, y :< ys') -> Inlines (meld `mappend` ys')
+      (EmptyR, _) -> Many ys
+      (_, EmptyL) -> Many xs
+      (xs' :> x, y :< ys') -> Many (meld `mappend` ys')
         where meld = case (x, y) of
                           (Space, Space)     -> xs' |> Space
                           (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
@@ -188,51 +214,17 @@ instance Monoid Inlines where
                           _                  -> xs' |> x |> y
 
 instance IsString Inlines where
-  fromString = text
-
-newtype Blocks = Blocks { unBlocks :: Seq Block }
-                deriving (Data, Ord, Eq, Typeable, Monoid)
-
--- We show a Blocks just like [Block].
-instance Show Blocks where
-  show = show . F.toList . unBlocks
-
-instance Read Blocks where
-  readsPrec n = map (\(x,y) -> (Blocks . Seq.fromList $ x, y)) . readsPrec n
-
-class Listable a b where
-  toList     :: a -> [b]
-  fromList   :: [b] -> a
-  foldMap    :: (b -> a) -> a -> a
-  singleton  :: b -> a
-  foldlM     :: Monad m => (a -> b -> m a) -> a -> a -> m a
-  isNull     :: a -> Bool
-
-instance Listable Inlines Inline where
-  toList         = F.toList . unInlines
-  fromList       = Inlines . Seq.fromList
-  foldMap f      = F.foldMap f . unInlines
-  singleton      = Inlines . Seq.singleton
-  foldlM f x     = F.foldlM f x . unInlines
-  isNull         = Seq.null . unInlines
-
-instance Listable Blocks Block where
-  toList         = F.toList . unBlocks
-  fromList       = Blocks . Seq.fromList
-  foldMap  f     = F.foldMap f . unBlocks
-  singleton      = Blocks . Seq.singleton
-  foldlM f x     = F.foldlM f x . unBlocks
-  isNull         = Seq.null . unBlocks
+   fromString = text
 
 -- | Trim leading and trailing Sp (spaces) from an Inlines.
 trimInlines :: Inlines -> Inlines
 #if MIN_VERSION_containers(0,4,0)
-trimInlines (Inlines ils) = Inlines $ Seq.dropWhileL (== Space) $
+trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
                             Seq.dropWhileR (== Space) $ ils
 #else
 -- for GHC 6.12, we need to workaround a bug in dropWhileR
 -- see http://hackage.haskell.org/trac/ghc/ticket/4157
-trimInlines (Inlines ils) = Inlines $ Seq.dropWhileL (== Space) $
+trimInlines (Inlines ils) = Many $ Seq.dropWhileL (== Space) $
                             Seq.reverse $ Seq.dropWhileL (== Space) $
                             Seq.reverse ils
 #endif
@@ -403,3 +395,4 @@ simpleTable headers = table mempty (mapConst defaults headers) headers
 
 mapConst :: Functor f => b -> f a -> f b
 mapConst = fmap . const
+

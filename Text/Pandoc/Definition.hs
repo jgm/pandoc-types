@@ -142,7 +142,6 @@ data Inline
     | RawInline Format String -- ^ Raw inline
     | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
-                            -- and target
     | Note [Block]          -- ^ Footnote or endnote
     deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
 

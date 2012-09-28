@@ -224,7 +224,7 @@ trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
 #else
 -- for GHC 6.12, we need to workaround a bug in dropWhileR
 -- see http://hackage.haskell.org/trac/ghc/ticket/4157
-trimInlines (Inlines ils) = Many $ Seq.dropWhileL (== Space) $
+trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
                             Seq.reverse $ Seq.dropWhileL (== Space) $
                             Seq.reverse ils
 #endif

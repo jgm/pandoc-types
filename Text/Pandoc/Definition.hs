@@ -145,13 +145,12 @@ data Inline
     | Note [Block]          -- ^ Footnote or endnote
     deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
 
-data Citation = Citation { citationId             :: String
-                         , citationPrefix         :: [Inline]
-                         , citationSuffix         :: [Inline]
-                         , citationMode           :: CitationMode
-                         , citationNoteNum        :: Int
-                         , citationSuppressParens :: Bool
-                         , citationHash           :: Int
+data Citation = Citation { citationId      :: String
+                         , citationPrefix  :: [Inline]
+                         , citationSuffix  :: [Inline]
+                         , citationMode    :: CitationMode
+                         , citationNoteNum :: Int
+                         , citationHash    :: Int
                          }
                 deriving (Show, Eq, Read, Typeable, Data GENERIC)
 

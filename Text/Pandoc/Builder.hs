@@ -138,6 +138,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , orderedList
                            , definitionList
                            , header
+                           , headerWith
                            , horizontalRule
                            , table
                            , simpleTable
@@ -371,7 +372,10 @@ definitionList = singleton . DefinitionList .  map (toList *** map toList)
 header :: Int  -- ^ Level
        -> Inlines
        -> Blocks
-header level = singleton . Header level . toList
+header = headerWith nullAttr
+
+headerWith :: Attr -> Int -> Inlines -> Blocks
+headerWith attr level = singleton . Header level attr . toList
 
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule

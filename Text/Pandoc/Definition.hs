@@ -105,7 +105,7 @@ data Block
                             -- Each list item is a pair consisting of a
                             -- term (a list of inlines) and one or more
                             -- definitions (each a list of blocks)
-    | Header Int [Inline]   -- ^ Header - level (integer) and text (inlines)
+    | Header Int Attr [Inline] -- ^ Header - level (integer) and text (inlines)
     | HorizontalRule        -- ^ Horizontal rule
     | Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]  -- ^ Table,
                             -- with caption, column alignments,

@@ -139,6 +139,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , definitionList
                            , header
                            , headerWith
+                           , newPage
                            , horizontalRule
                            , table
                            , simpleTable
@@ -376,6 +377,9 @@ header = headerWith nullAttr
 
 headerWith :: Attr -> Int -> Inlines -> Blocks
 headerWith attr level = singleton . Header level attr . toList
+
+newPage :: Blocks
+newPage = singleton NewPage
 
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule

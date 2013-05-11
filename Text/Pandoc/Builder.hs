@@ -51,9 +51,7 @@ Isn't that nicer than writing the following?
 > import Text.Pandoc.Definition
 >
 > myDoc :: Pandoc
-> myDoc = Pandoc (Meta {docTitle = [Str "My",Space,Str "title"]
->                      , docAuthors = []
->                      , docDate = []})
+> myDoc = Pandoc (Meta [("title", [Plain [Str "My",Space,Str "title"]])]
 >  [Para [Str "This",Space,Str "is",Space,Str "the",Space,Str "first",
 >   Space,Str "paragraph"]
 >  ,Para [Str "And",Space,Emph [Str "another"],Str "."]
@@ -97,9 +95,11 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , toList
                            , fromList
                            , isNull
-                           -- , Listable(..)
                            -- * Document builders
                            , doc
+                           , ToBlocks(..)
+                           , setMeta
+                           , setMetas
                            , setTitle
                            , setAuthors
                            , setDate
@@ -233,16 +233,40 @@ trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
 -- Document builders
 
 doc :: Blocks -> Pandoc
-doc = Pandoc (Meta [] [] []) . toList
+doc = Pandoc (Meta []) . toList
 
-setTitle :: Inlines -> Pandoc -> Pandoc
-setTitle t (Pandoc m bs) = Pandoc m{ docTitle = toList t } bs
+class ToBlocks a where
+  toBlocks :: a -> Blocks
 
-setAuthors :: [Inlines] -> Pandoc -> Pandoc
-setAuthors as (Pandoc m bs) = Pandoc m{ docAuthors = map toList as } bs
+instance ToBlocks Blocks where
+  toBlocks = id
 
-setDate :: Inlines -> Pandoc -> Pandoc
-setDate d (Pandoc m bs) = Pandoc m{ docDate = toList d } bs
+instance ToBlocks Block where
+  toBlocks = singleton
+
+instance ToBlocks Inlines where
+  toBlocks = plain
+
+instance ToBlocks String where
+  toBlocks = plain . text
+
+setMeta :: ToBlocks a => String -> a -> Pandoc -> Pandoc
+setMeta key val (Pandoc (Meta ms) bs) = Pandoc (Meta ms') bs
+    where ms' = (key, toList $ toBlocks val) : [(x,y) | (x,y) <- ms, x /= key]
+
+setMetas :: ToBlocks a => String -> [a] -> Pandoc -> Pandoc
+setMetas key vals (Pandoc (Meta ms) bs) = Pandoc (Meta ms') bs
+    where ms' = [(key, toList $ toBlocks val) | val <- vals] ++
+                [(x,y) | (x,y) <- ms, x /= key]
+
+setTitle :: ToBlocks a => a -> Pandoc -> Pandoc
+setTitle = setMeta "title"
+
+setAuthors :: ToBlocks a => [a] -> Pandoc -> Pandoc
+setAuthors = setMetas "author"
+
+setDate :: ToBlocks a => a -> Pandoc -> Pandoc
+setDate = setMeta "date"
 
 -- Inline list builders
 

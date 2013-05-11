@@ -5,7 +5,7 @@
 #endif
 
 {-
-Copyright (C) 2006-2010 John MacFarlane <jgm@berkeley.edu>
+Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -34,10 +34,33 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 Definition of 'Pandoc' data structure for format-neutral representation
 of documents.
 -}
-module Text.Pandoc.Definition where
+module Text.Pandoc.Definition ( Pandoc(..)
+                              , Meta(..)
+                              , getMeta
+                              , getMetas
+                              , docTitle
+                              , docAuthors
+                              , docDate
+                              , Block(..)
+                              , Inline(..)
+                              , Alignment(..)
+                              , ListAttributes
+                              , ListNumberStyle(..)
+                              , ListNumberDelim(..)
+                              , Attr
+                              , nullAttr
+                              , TableCell
+                              , Format
+                              , QuoteType(..)
+                              , Target
+                              , MathType(..)
+                              , Citation(..)
+                              , CitationMode(..)
+                              ) where
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
+import Control.Monad (guard)
 
 #ifdef GENERICS
 import GHC.Generics (Generic)
@@ -49,10 +72,38 @@ import GHC.Generics (Generic)
 data Pandoc = Pandoc Meta [Block] deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
 
 -- | Bibliographic information for the document:  title, authors, date.
-data Meta = Meta { docTitle   :: [Inline]
-                 , docAuthors :: [[Inline]]
-                 , docDate    :: [Inline] }
-            deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+newtype Meta = Meta { unMeta :: [(String, [Block])] }
+               deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+
+-- Helper functions to extract metadata
+
+-- | Retrieve the metadata value for a given @key@.  If no value
+-- is found, returns an empty list of blocks.  If multiple values
+-- are found, returns the first.
+getMeta :: String -> Meta -> [Block]
+getMeta key (Meta xs) = maybe [] id $ lookup key xs
+
+-- | Retrieve all the metadata values for a given @key@.
+getMetas :: String -> Meta -> [[Block]]
+getMetas key (Meta xs) = [y | (k,y) <- xs, k == key]
+
+extractInlines :: Block -> [Inline]
+extractInlines (Plain ils) = ils
+extractInlines (Para ils ) = ils
+extractInlines _           = []
+
+-- | Extract document title from metadata; works just like the old @docTitle@.
+docTitle :: Meta -> [Inline]
+docTitle (Meta xs) = maybe [] (concatMap extractInlines) $ lookup "title" xs
+
+-- | Extract document authors from metadata; works just like the old
+-- @docAuthors@.
+docAuthors :: Meta -> [[Inline]]
+docAuthors (Meta xs) = [concatMap extractInlines ys | ("author", ys) <- xs]
+
+-- | Extract date from metadata; works just like the old @docDate@.
+docDate :: Meta -> [Inline]
+docDate (Meta xs) = maybe [] (concatMap extractInlines) $ lookup "date" xs
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft

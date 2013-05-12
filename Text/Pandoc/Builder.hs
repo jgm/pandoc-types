@@ -97,9 +97,8 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , isNull
                            -- * Document builders
                            , doc
-                           , ToBlocks(..)
+                           , ToMetaValue(..)
                            , setMeta
-                           , setMetas
                            , setTitle
                            , setAuthors
                            , setDate
@@ -148,6 +147,7 @@ import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
 import Data.Maybe (fromMaybe)
+import qualified Data.Map as M
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
 import Data.Foldable (Foldable)
@@ -233,39 +233,40 @@ trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
 -- Document builders
 
 doc :: Blocks -> Pandoc
-doc = Pandoc (Meta []) . toList
+doc = Pandoc nullMeta . toList
 
-class ToBlocks a where
-  toBlocks :: a -> Blocks
+class ToMetaValue a where
+  toMetaValue :: a -> MetaValue
 
-instance ToBlocks Blocks where
-  toBlocks = id
+instance ToMetaValue MetaValue where
+  toMetaValue = id
 
-instance ToBlocks Block where
-  toBlocks = singleton
+instance ToMetaValue Blocks where
+  toMetaValue = MetaBlocks . toList
 
-instance ToBlocks Inlines where
-  toBlocks = plain
+instance ToMetaValue Block where
+  toMetaValue = MetaBlocks . (:[])
 
-instance ToBlocks String where
-  toBlocks = plain . text
+instance ToMetaValue Inlines where
+  toMetaValue = MetaBlocks . toList . plain
 
-setMeta :: ToBlocks a => String -> a -> Pandoc -> Pandoc
+instance ToMetaValue a => ToMetaValue [a] where
+  toMetaValue = MetaList . map toMetaValue
+
+instance ToMetaValue a => ToMetaValue (M.Map String a) where
+  toMetaValue = MetaMap . M.map toMetaValue
+
+setMeta :: ToMetaValue a => String -> a -> Pandoc -> Pandoc
 setMeta key val (Pandoc (Meta ms) bs) = Pandoc (Meta ms') bs
-    where ms' = (key, toList $ toBlocks val) : [(x,y) | (x,y) <- ms, x /= key]
+  where ms' = M.insert key (toMetaValue val) ms
 
-setMetas :: ToBlocks a => String -> [a] -> Pandoc -> Pandoc
-setMetas key vals (Pandoc (Meta ms) bs) = Pandoc (Meta ms') bs
-    where ms' = [(key, toList $ toBlocks val) | val <- vals] ++
-                [(x,y) | (x,y) <- ms, x /= key]
-
-setTitle :: ToBlocks a => a -> Pandoc -> Pandoc
+setTitle :: ToMetaValue a => a -> Pandoc -> Pandoc
 setTitle = setMeta "title"
 
-setAuthors :: ToBlocks a => [a] -> Pandoc -> Pandoc
-setAuthors = setMetas "author"
+setAuthors :: ToMetaValue a => [a] -> Pandoc -> Pandoc
+setAuthors = setMeta "author"
 
-setDate :: ToBlocks a => a -> Pandoc -> Pandoc
+setDate :: ToMetaValue a => a -> Pandoc -> Pandoc
 setDate = setMeta "date"
 
 -- Inline list builders

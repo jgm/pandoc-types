@@ -36,8 +36,9 @@ of documents.
 -}
 module Text.Pandoc.Definition ( Pandoc(..)
                               , Meta(..)
-                              , getMeta
-                              , getMetas
+                              , MetaValue(..)
+                              , nullMeta
+                              , lookupMeta
                               , docTitle
                               , docAuthors
                               , docDate
@@ -61,6 +62,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
 import Control.Monad (guard)
+import qualified Data.Map as M
 
 #ifdef GENERICS
 import GHC.Generics (Generic)
@@ -69,23 +71,28 @@ import GHC.Generics (Generic)
 #define GENERIC
 #endif
 
-data Pandoc = Pandoc Meta [Block] deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
+data Pandoc = Pandoc { docMeta :: Meta
+                     , docBody :: [Block]
+                     } deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
 
--- | Bibliographic information for the document:  title, authors, date.
-newtype Meta = Meta { unMeta :: [(String, [Block])] }
+-- | Metadata for the document:  title, authors, date.
+newtype Meta = Meta { unMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+
+data MetaValue = MetaMap (M.Map String MetaValue)
+               | MetaList [MetaValue]
+               | MetaString String
+               | MetaBlocks [Block]
+               deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+
+nullMeta :: Meta
+nullMeta = Meta M.empty
 
 -- Helper functions to extract metadata
 
--- | Retrieve the metadata value for a given @key@.  If no value
--- is found, returns an empty list of blocks.  If multiple values
--- are found, returns the first.
-getMeta :: String -> Meta -> [Block]
-getMeta key (Meta xs) = maybe [] id $ lookup key xs
-
--- | Retrieve all the metadata values for a given @key@.
-getMetas :: String -> Meta -> [[Block]]
-getMetas key (Meta xs) = [y | (k,y) <- xs, k == key]
+-- | Retrieve the metadata value for a given @key@.
+lookupMeta :: String -> Meta -> Maybe MetaValue
+lookupMeta key (Meta m) = M.lookup key m
 
 extractInlines :: Block -> [Inline]
 extractInlines (Plain ils) = ils
@@ -94,16 +101,27 @@ extractInlines _           = []
 
 -- | Extract document title from metadata; works just like the old @docTitle@.
 docTitle :: Meta -> [Inline]
-docTitle (Meta xs) = maybe [] (concatMap extractInlines) $ lookup "title" xs
+docTitle meta =
+  case lookupMeta "title" meta of
+         Just (MetaBlocks bs) -> concatMap extractInlines bs
+         _                    -> []
 
 -- | Extract document authors from metadata; works just like the old
 -- @docAuthors@.
 docAuthors :: Meta -> [[Inline]]
-docAuthors (Meta xs) = [concatMap extractInlines ys | ("author", ys) <- xs]
+docAuthors meta =
+  case lookupMeta "author" meta of
+        Just (MetaBlocks bs)  -> [concatMap extractInlines bs]
+        Just (MetaList   ms)  -> [concatMap extractInlines bs |
+                                    MetaBlocks bs <- ms]
+        _                     -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
-docDate (Meta xs) = maybe [] (concatMap extractInlines) $ lookup "date" xs
+docDate meta =
+  case lookupMeta "date" meta of
+         Just (MetaBlocks bs) -> concatMap extractInlines bs
+         _                    -> []
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft

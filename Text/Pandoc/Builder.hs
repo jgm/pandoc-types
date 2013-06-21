@@ -98,7 +98,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            -- * Document builders
                            , doc
                            , ToMetaValue(..)
-                           , setMeta
+                           , HasMeta(..)
                            , setTitle
                            , setAuthors
                            , setDate
@@ -256,9 +256,16 @@ instance ToMetaValue a => ToMetaValue [a] where
 instance ToMetaValue a => ToMetaValue (M.Map String a) where
   toMetaValue = MetaMap . M.map toMetaValue
 
-setMeta :: ToMetaValue a => String -> a -> Pandoc -> Pandoc
-setMeta key val (Pandoc (Meta ms) bs) = Pandoc (Meta ms') bs
-  where ms' = M.insert key (toMetaValue val) ms
+class HasMeta a where
+  setMeta :: ToMetaValue b => String -> b -> a -> a
+
+instance HasMeta Meta where
+  setMeta key val (Meta ms) = Meta $ M.insert key (toMetaValue val) ms
+
+instance HasMeta Pandoc where
+  setMeta key val (Pandoc (Meta ms) bs) =
+    let ms' = M.insert key (toMetaValue val) ms
+    in   Pandoc (Meta ms') bs
 
 setTitle :: ToMetaValue a => a -> Pandoc -> Pandoc
 setTitle = setMeta "title"

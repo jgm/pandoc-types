@@ -258,14 +258,17 @@ instance ToMetaValue a => ToMetaValue (M.Map String a) where
 
 class HasMeta a where
   setMeta :: ToMetaValue b => String -> b -> a -> a
+  deleteMeta :: String -> a -> a
 
 instance HasMeta Meta where
   setMeta key val (Meta ms) = Meta $ M.insert key (toMetaValue val) ms
+  deleteMeta key (Meta ms) = Meta $ M.delete key ms
 
 instance HasMeta Pandoc where
   setMeta key val (Pandoc (Meta ms) bs) =
-    let ms' = M.insert key (toMetaValue val) ms
-    in   Pandoc (Meta ms') bs
+    Pandoc (Meta $ M.insert key (toMetaValue val) ms) bs
+  deleteMeta key (Pandoc (Meta ms) bs) =
+    Pandoc (Meta $ M.delete key ms) bs
 
 setTitle :: ToMetaValue a => a -> Pandoc -> Pandoc
 setTitle = setMeta "title"

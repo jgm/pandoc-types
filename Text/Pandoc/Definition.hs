@@ -71,9 +71,8 @@ import GHC.Generics (Generic)
 #define GENERIC
 #endif
 
-data Pandoc = Pandoc { docMeta :: Meta
-                     , docBody :: [Block]
-                     } deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
+data Pandoc = Pandoc Meta [Block]
+              deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
 
 -- | Metadata for the document:  title, authors, date.
 newtype Meta = Meta { unMeta :: M.Map String MetaValue }
@@ -82,6 +81,7 @@ newtype Meta = Meta { unMeta :: M.Map String MetaValue }
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaList [MetaValue]
                | MetaString String
+               | MetaInlines [Inline]
                | MetaBlocks [Block]
                deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
 
@@ -94,34 +94,28 @@ nullMeta = Meta M.empty
 lookupMeta :: String -> Meta -> Maybe MetaValue
 lookupMeta key (Meta m) = M.lookup key m
 
-extractInlines :: Block -> [Inline]
-extractInlines (Plain ils) = ils
-extractInlines (Para ils ) = ils
-extractInlines _           = []
-
 -- | Extract document title from metadata; works just like the old @docTitle@.
 docTitle :: Meta -> [Inline]
 docTitle meta =
   case lookupMeta "title" meta of
-         Just (MetaBlocks bs) -> concatMap extractInlines bs
-         _                    -> []
+         Just (MetaInlines ils) -> ils
+         _                      -> []
 
 -- | Extract document authors from metadata; works just like the old
 -- @docAuthors@.
 docAuthors :: Meta -> [[Inline]]
 docAuthors meta =
   case lookupMeta "author" meta of
-        Just (MetaBlocks bs)  -> [concatMap extractInlines bs]
-        Just (MetaList   ms)  -> [concatMap extractInlines bs |
-                                    MetaBlocks bs <- ms]
-        _                     -> []
+        Just (MetaInlines ils) -> [ils]
+        Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms]
+        _                      -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
 docDate meta =
   case lookupMeta "date" meta of
-         Just (MetaBlocks bs) -> concatMap extractInlines bs
-         _                    -> []
+         Just (MetaInlines ils) -> ils
+         _                      -> []
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft

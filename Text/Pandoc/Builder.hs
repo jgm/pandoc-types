@@ -244,11 +244,8 @@ instance ToMetaValue MetaValue where
 instance ToMetaValue Blocks where
   toMetaValue = MetaBlocks . toList
 
-instance ToMetaValue Block where
-  toMetaValue = MetaBlocks . (:[])
-
 instance ToMetaValue Inlines where
-  toMetaValue = MetaBlocks . toList . plain
+  toMetaValue = MetaInlines . toList
 
 instance ToMetaValue a => ToMetaValue [a] where
   toMetaValue = MetaList . map toMetaValue

@@ -38,6 +38,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , Meta(..)
                               , MetaValue(..)
                               , nullMeta
+                              , isNullMeta
                               , lookupMeta
                               , docTitle
                               , docAuthors

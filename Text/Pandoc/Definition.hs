@@ -88,6 +88,9 @@ data MetaValue = MetaMap (M.Map String MetaValue)
 nullMeta :: Meta
 nullMeta = Meta M.empty
 
+isNullMeta :: Meta -> Bool
+isNullMeta (Meta m) = M.null m
+
 -- Helper functions to extract metadata
 
 -- | Retrieve the metadata value for a given @key@.

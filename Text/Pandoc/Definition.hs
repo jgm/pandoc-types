@@ -1,8 +1,4 @@
-{-# LANGUAGE CPP, DeriveDataTypeable #-}
-
-#ifdef GENERICS
-{-# LANGUAGE DeriveGeneric #-}
-#endif
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
 
 {-
 Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
@@ -62,29 +58,24 @@ module Text.Pandoc.Definition ( Pandoc(..)
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
+import Data.Aeson (FromJSON(..), ToJSON(..))
 import Control.Monad (guard)
 import qualified Data.Map as M
-
-#ifdef GENERICS
 import GHC.Generics (Generic)
-#define GENERIC , Generic
-#else
-#define GENERIC
-#endif
 
 data Pandoc = Pandoc Meta [Block]
-              deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
+              deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 -- | Metadata for the document:  title, authors, date.
 newtype Meta = Meta { unMeta :: M.Map String MetaValue }
-               deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaList [MetaValue]
                | MetaString String
                | MetaInlines [Inline]
                | MetaBlocks [Block]
-               deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 nullMeta :: Meta
 nullMeta = Meta M.empty
@@ -125,7 +116,7 @@ docDate meta =
 data Alignment = AlignLeft
                | AlignRight
                | AlignCenter
-               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | List attributes.
 type ListAttributes = (Int, ListNumberStyle, ListNumberDelim)
@@ -137,13 +128,13 @@ data ListNumberStyle = DefaultStyle
                      | LowerRoman
                      | UpperRoman
                      | LowerAlpha
-                     | UpperAlpha deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+                     | UpperAlpha deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | Delimiter of list numbers.
 data ListNumberDelim = DefaultDelim
                      | Period
                      | OneParen
-                     | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data GENERIC)
+                     | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | Attributes: identifier, classes, key-value pairs
 type Attr = (String, [String], [(String, String)])
@@ -180,16 +171,16 @@ data Block
                             -- column headers (each a list of blocks), and
                             -- rows (each a list of lists of blocks)
     | Null                  -- ^ Nothing
-    deriving (Eq, Ord, Read, Show, Typeable, Data GENERIC)
+    deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 -- | Type of quotation marks to use in Quoted inline.
-data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
+data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Link target (URL, title).
 type Target = (String, String)
 
 -- | Type of math element (display or inline).
-data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
+data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Inline elements.
 data Inline
@@ -210,7 +201,7 @@ data Inline
     | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
     | Note [Block]          -- ^ Footnote or endnote
-    deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
+    deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 data Citation = Citation { citationId      :: String
                          , citationPrefix  :: [Inline]
@@ -219,10 +210,48 @@ data Citation = Citation { citationId      :: String
                          , citationNoteNum :: Int
                          , citationHash    :: Int
                          }
-                deriving (Show, Eq, Read, Typeable, Data GENERIC)
+                deriving (Show, Eq, Read, Typeable, Data, Generic)
 
 instance Ord Citation where
     compare = comparing citationHash
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
-                    deriving (Show, Eq, Ord, Read, Typeable, Data GENERIC)
+                    deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
+-- derive generic instances of FromJSON, ToJSON:
+
+instance FromJSON MetaValue
+instance ToJSON MetaValue
+
+instance FromJSON Meta
+instance ToJSON Meta
+
+instance FromJSON CitationMode
+instance ToJSON CitationMode
+
+instance FromJSON Citation
+instance ToJSON Citation
+
+instance FromJSON QuoteType
+instance ToJSON QuoteType
+
+instance FromJSON MathType
+instance ToJSON MathType
+
+instance FromJSON ListNumberStyle
+instance ToJSON ListNumberStyle
+
+instance FromJSON ListNumberDelim
+instance ToJSON ListNumberDelim
+
+instance FromJSON Alignment
+instance ToJSON Alignment
+
+instance FromJSON Inline
+instance ToJSON Inline
+
+instance FromJSON Block
+instance ToJSON Block
+
+instance FromJSON Pandoc
+instance ToJSON Pandoc

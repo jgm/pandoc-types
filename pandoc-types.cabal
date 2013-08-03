@@ -15,6 +15,9 @@ Description:         This package contains definitions for the 'Pandoc' data
                      .
                      @Text.Pandoc.Generic@ provides generic functions for
                      manipulating Pandoc documents.
+                     .
+                     @Text.Pandoc.JSON@ provides functions for serializing
+                     and deserializing a @Pandoc@ structure to and from JSON.
 
 Homepage:            http://johnmacfarlane.net/pandoc
 License:             GPL
@@ -33,11 +36,10 @@ Library
   Exposed-modules:   Text.Pandoc.Definition
                      Text.Pandoc.Generic
                      Text.Pandoc.Builder
-  if impl(ghc >= 6.10)
-    Build-depends:     base >= 4 && < 5, syb, containers >= 0.3
-  else
-    Build-depends:     base >= 3 && < 4, containers >= 0.3
-
-  if impl(ghc >= 7.2.1)
-    cpp-options:    -DGENERICS
-    build-depends:  ghc-prim >= 0.2
+                     Text.Pandoc.JSON
+  Build-depends:     base >= 4 && < 5,
+                     containers >= 0.3,
+                     syb >= 0.1 && < 0.5,
+                     ghc-prim >= 0.2,
+                     bytestring >= 0.9 && < 0.10,
+                     aeson >= 0.6 && < 0.7

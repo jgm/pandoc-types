@@ -247,6 +247,9 @@ instance ToMetaValue Blocks where
 instance ToMetaValue Inlines where
   toMetaValue = MetaInlines . toList
 
+instance ToMetaValue Bool where
+  toMetaValue = MetaBool
+
 instance ToMetaValue a => ToMetaValue [a] where
   toMetaValue = MetaList . map toMetaValue
 

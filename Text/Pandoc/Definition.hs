@@ -72,6 +72,7 @@ newtype Meta = Meta { unMeta :: M.Map String MetaValue }
 
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaList [MetaValue]
+               | MetaBool Bool
                | MetaString String
                | MetaInlines [Inline]
                | MetaBlocks [Block]

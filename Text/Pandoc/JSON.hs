@@ -75,25 +75,21 @@ class ToJSONFilter a where
 
 instance (Data a) => ToJSONFilter (a -> a) where
   toJSONFilter f = BL.getContents >>=
-    BL.putStr . encode . (bottomUp f :: Pandoc -> Pandoc) . checkJSON .
+    BL.putStr . encode . (bottomUp f :: Pandoc -> Pandoc) . either error id .
     eitherDecode'
 
 instance (Data a) => ToJSONFilter (a -> IO a) where
   toJSONFilter f = BL.getContents >>=
-     (bottomUpM f :: Pandoc -> IO Pandoc) . checkJSON . eitherDecode' >>=
+     (bottomUpM f :: Pandoc -> IO Pandoc) . either error id . eitherDecode' >>=
      BL.putStr . encode
 
 instance (Data a) => ToJSONFilter (a -> [a]) where
   toJSONFilter f = BL.getContents >>=
     BL.putStr . encode . (bottomUp (concatMap f) :: Pandoc -> Pandoc) .
-      checkJSON . eitherDecode'
+      either error id . eitherDecode'
 
 instance (Data a) => ToJSONFilter (a -> IO [a]) where
   toJSONFilter f = BL.getContents >>=
     (bottomUpM (fmap concat . mapM f) :: Pandoc -> IO Pandoc)
-      . checkJSON . eitherDecode' >>=
+      . either error id . eitherDecode' >>=
     BL.putStr . encode
-
-checkJSON :: Either String a -> a
-checkJSON (Left errMsg) = error errMsg
-checkJSON (Right r)     = r

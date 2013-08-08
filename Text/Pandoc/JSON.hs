@@ -41,10 +41,12 @@ module Text.Pandoc.JSON ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Text.Pandoc.Generic
+import Data.Maybe (listToMaybe)
 import Data.Data
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Aeson
+import System.Environment (getArgs)
 
 -- | 'toJSONFilter' convert a function into a filter that reads pandoc's
 -- JSON serialized output from stdin, transforms it by walking the AST
@@ -93,3 +95,9 @@ instance (Data a) => ToJSONFilter (a -> IO [a]) where
     (bottomUpM (fmap concat . mapM f) :: Pandoc -> IO Pandoc)
       . either error id . eitherDecode' >>=
     BL.putStr . encode
+
+instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where
+  toJSONFilter f = getArgs >>= toJSONFilter . f
+
+instance (ToJSONFilter a) => ToJSONFilter (Maybe String -> a) where
+  toJSONFilter f = getArgs >>= toJSONFilter . f . listToMaybe

@@ -1,8 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
-    DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving #-}
-#ifdef GENERICS
-{-# LANGUAGE DeriveGeneric #-}
-#endif
+    DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving,
+    DeriveGeneric #-}
 {-
 Copyright (C) 2010-2012 John MacFarlane <jgm@berkeley.edu>
 
@@ -157,9 +155,7 @@ import Data.Data
 import Data.Typeable
 import Data.Traversable
 import Control.Arrow ((***))
-#ifdef GENERICS
 import GHC.Generics (Generic)
-#endif
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -175,9 +171,7 @@ infixr 6 <>
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
 
-#ifdef GENERICS
 deriving instance Generic (Many a)
-#endif
 
 toList :: Many a -> [a]
 toList = F.toList

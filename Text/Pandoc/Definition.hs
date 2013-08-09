@@ -54,6 +54,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , MathType(..)
                               , Citation(..)
                               , CitationMode(..)
+                              , def
                               ) where
 
 import Data.Generics (Data, Typeable)
@@ -62,6 +63,8 @@ import Data.Aeson (FromJSON(..), ToJSON(..))
 import Control.Monad (guard)
 import qualified Data.Map as M
 import GHC.Generics (Generic)
+import Data.Default
+import Data.Monoid
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -83,6 +86,19 @@ nullMeta = Meta M.empty
 
 isNullMeta :: Meta -> Bool
 isNullMeta (Meta m) = M.null m
+
+instance Default Meta where
+  def = nullMeta
+
+instance Monoid Meta where
+  mempty = nullMeta
+  mappend (Meta m1) (Meta m2) = Meta (M.union m1 m2)
+  -- earlier values (m1) override later
+
+instance Monoid Pandoc where
+  mempty = Pandoc nullMeta []
+  mappend (Pandoc m1 bs1) (Pandoc m2 bs2) =
+    Pandoc (mappend m1 m2) (mappend bs1 bs2)
 
 -- Helper functions to extract metadata
 

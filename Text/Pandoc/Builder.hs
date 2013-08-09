@@ -122,6 +122,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , link
                            , image
                            , note
+                           , spanWith
                            , trimInlines
                            -- * Block list builders
                            , para
@@ -139,6 +140,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , horizontalRule
                            , table
                            , simpleTable
+                           , divWith
                            )
 where
 import Text.Pandoc.Definition
@@ -362,6 +364,9 @@ image url title x = singleton $ Image (toList x) (url, title)
 note :: Blocks -> Inlines
 note = singleton . Note . toList
 
+spanWith :: Attr -> Inlines -> Inlines
+spanWith attr = singleton . Span attr . toList
+
 -- Block list builders
 
 para :: Inlines -> Blocks
@@ -425,6 +430,9 @@ simpleTable :: [Blocks]   -- ^ Headers
             -> Blocks
 simpleTable headers = table mempty (mapConst defaults headers) headers
   where defaults = (AlignDefault, 0)
+
+divWith :: Attr -> Blocks -> Blocks
+divWith attr = singleton . Div attr . toList
 
 mapConst :: Functor f => b -> f a -> f b
 mapConst = fmap . const

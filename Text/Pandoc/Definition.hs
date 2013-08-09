@@ -187,6 +187,7 @@ data Block
                             -- relative column widths (0 = default),
                             -- column headers (each a list of blocks), and
                             -- rows (each a list of lists of blocks)
+    | Div Attr [Block]      -- ^ Generic block container with attributes
     | Null                  -- ^ Nothing
     deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
@@ -218,6 +219,7 @@ data Inline
     | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
     | Image [Inline] Target -- ^ Image:  alt text (list of inlines), target
     | Note [Block]          -- ^ Footnote or endnote
+    | Span Attr [Inline]    -- ^ Generic inline container with attributes
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 data Citation = Citation { citationId      :: String

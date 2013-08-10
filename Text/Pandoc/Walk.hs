@@ -28,9 +28,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
    Portability : portable
 
 Functions for manipulating 'Pandoc' documents or extracting
-information from them by walking the 'Pandoc' structure.
+information from them by walking the 'Pandoc' structure (or
+intermediate structures like '[Block]' or '[Inline]'.
 These are faster (by a factor of four or five) than the generic
-functions defined in 'Text.Pandoc.Generic'.
+functions defined in @Text.Pandoc.Generic@.
 
 Here's a simple example, defining a function that replaces all the level 3+
 headers in a document with regular paragraphs in ALL CAPS:

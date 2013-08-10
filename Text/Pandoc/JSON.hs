@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-
 Copyright (C) 2013 John MacFarlane <jgm@berkeley.edu>
 
@@ -28,19 +28,37 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Functions for serializing the Pandoc AST to JSON and deserializing from JSON.
 
-Example of use:
+Example of use:  The following script (`capitalize.hs`) reads
+reads a JSON representation of a Pandoc document from stdin,
+and writes a JSON representation of a Pandoc document to stdout.
+It changes all regular text in the document to uppercase, without
+affecting URLs, code, tags, etc.  Run the script with
 
-TODO
+> pandoc -t json | runghc capitalize.hs | pandoc -f json
+
+or (making capitalize.hs executable)
+
+> pandoc --filter ./capitalize.hs
+
+> -- capitalize.hs
+> import Text.Pandoc.JSON
+> import Data.Char (toUpper)
+>
+> main :: IO ()
+> main = toJSONFilter capitalizeStrings
+>
+> capitalizeStrings :: Inline -> Inline
+> capitalizeStrings (Str s) = Str $ map toUpper s
+> capitalizeStrings x       = x
 
 -}
 
 module Text.Pandoc.JSON ( module Text.Pandoc.Definition
-                        , module Text.Pandoc.Generic
                         , ToJSONFilter(..)
                         )
 where
 import Text.Pandoc.Definition
-import Text.Pandoc.Generic
+import Text.Pandoc.Walk
 import Data.Maybe (listToMaybe)
 import Data.Data
 import Data.ByteString.Lazy (ByteString)
@@ -51,50 +69,23 @@ import System.Environment (getArgs)
 -- | 'toJSONFilter' convert a function into a filter that reads pandoc's
 -- JSON serialized output from stdin, transforms it by walking the AST
 -- and applying the specified function, and serializes the result as JSON
--- to stdout.  Usage example:
+-- to stdout.
 --
--- > -- capitalize.hs
--- > -- run with:      pandoc -t json | runghc capitalize.hs | pandoc -f json
--- >
--- > import Text.Pandoc.JSON
--- > import Data.Char (toUpper)
--- >
--- > main :: IO ()
--- > main = toJSONFilter capitalizeStrings
--- >
--- > capitalizeStrings :: Inline -> Inline
--- > capitalizeStrings (Str s) = Str $ map toUpper s
--- > capitalizeStrings x       = x
---
--- The function can be any type @(a -> a)@, @(a -> IO a)@, @(a -> [a])@,
--- or @(a -> IO [a])@, where @a@ is an instance of 'Data'.
--- So, for example, @a@ can be 'Pandoc', 'Inline', 'Block', ['Inline'],
--- ['Block'], 'Meta', 'ListNumberStyle', 'Alignment', 'ListNumberDelim',
--- 'QuoteType', etc. See 'Text.Pandoc.Definition'.
+-- The function can be of type @(a -> a)@ or @(a -> IO a)@, for
+-- @a@ = 'Block', 'Inline', 'Pandoc', 'Meta', or 'MetaValue'.
 
 class ToJSONFilter a where
   toJSONFilter :: a -> IO ()
 
-instance (Data a) => ToJSONFilter (a -> a) where
+instance (Walkable a Pandoc) => ToJSONFilter (a -> a) where
   toJSONFilter f = BL.getContents >>=
-    BL.putStr . encode . (bottomUp f :: Pandoc -> Pandoc) . either error id .
+    BL.putStr . encode . (walk f :: Pandoc -> Pandoc) . either error id .
     eitherDecode'
 
-instance (Data a) => ToJSONFilter (a -> IO a) where
+instance (Walkable a Pandoc) => ToJSONFilter (a -> IO a) where
   toJSONFilter f = BL.getContents >>=
-     (bottomUpM f :: Pandoc -> IO Pandoc) . either error id . eitherDecode' >>=
+     (walkM f :: Pandoc -> IO Pandoc) . either error id . eitherDecode' >>=
      BL.putStr . encode
-
-instance (Data a) => ToJSONFilter (a -> [a]) where
-  toJSONFilter f = BL.getContents >>=
-    BL.putStr . encode . (bottomUp (concatMap f) :: Pandoc -> Pandoc) .
-      either error id . eitherDecode'
-
-instance (Data a) => ToJSONFilter (a -> IO [a]) where
-  toJSONFilter f = BL.getContents >>=
-    (bottomUpM (fmap concat . mapM f) :: Pandoc -> IO Pandoc)
-      . either error id . eitherDecode' >>=
-    BL.putStr . encode
 
 instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where
   toJSONFilter f = getArgs >>= toJSONFilter . f

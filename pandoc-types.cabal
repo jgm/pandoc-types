@@ -16,6 +16,9 @@ Description:         This package contains definitions for the 'Pandoc' data
                      @Text.Pandoc.Generic@ provides generic functions for
                      manipulating Pandoc documents.
                      .
+                     @Text.Pandoc.Walk@ provides faster, nongeneric functions
+                     for manipulating Pandoc documents.
+                     .
                      @Text.Pandoc.JSON@ provides functions for serializing
                      and deserializing a @Pandoc@ structure to and from JSON.
 
@@ -35,6 +38,7 @@ Source-repository    head
 Library
   Exposed-modules:   Text.Pandoc.Definition
                      Text.Pandoc.Generic
+                     Text.Pandoc.Walk
                      Text.Pandoc.Builder
                      Text.Pandoc.JSON
   Build-depends:     base >= 4 && < 5,

@@ -35,7 +35,7 @@ headers in a document with regular paragraphs in ALL CAPS:
 > import Data.Char (toUpper)
 >
 > modHeader :: Block -> Block
-> modHeader (Header n xs) | n >= 3 = Para $ bottomUp allCaps xs
+> modHeader (Header n _ xs) | n >= 3 = Para $ bottomUp allCaps xs
 > modHeader x = x
 >
 > allCaps :: Inline -> Inline

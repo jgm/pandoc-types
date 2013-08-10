@@ -63,6 +63,7 @@ import Control.Monad (guard)
 import qualified Data.Map as M
 import GHC.Generics (Generic)
 import Data.Char (toLower)
+import Data.String
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -150,6 +151,9 @@ type TableCell = [Block]
 -- | Formats for raw blocks
 newtype Format = Format { unFormat :: String }
                deriving (Read, Typeable, Data, Generic)
+
+instance IsString Format where
+  fromString f = Format $ map toLower f
 
 instance Show Format where
   show (Format f) = "Format " ++ show (map toLower f)

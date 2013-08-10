@@ -102,4 +102,4 @@ instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where
   toJSONFilter f = getArgs >>= toJSONFilter . f
 
 instance (ToJSONFilter a) => ToJSONFilter (Maybe Format -> a) where
-  toJSONFilter f = getArgs >>= toJSONFilter . f . listToMaybe
+  toJSONFilter f = getArgs >>= toJSONFilter . f . fmap Format . listToMaybe

@@ -45,10 +45,10 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListAttributes
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
+                              , Format(..)
                               , Attr
                               , nullAttr
                               , TableCell
-                              , Format
                               , QuoteType(..)
                               , Target
                               , MathType(..)
@@ -62,6 +62,7 @@ import Data.Aeson (FromJSON(..), ToJSON(..))
 import Control.Monad (guard)
 import qualified Data.Map as M
 import GHC.Generics (Generic)
+import Data.Char (toLower)
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -147,7 +148,17 @@ nullAttr = ("",[],[])
 type TableCell = [Block]
 
 -- | Formats for raw blocks
-type Format = String
+newtype Format = Format { unFormat :: String }
+               deriving (Read, Typeable, Data, Generic)
+
+instance Show Format where
+  show (Format f) = "Format " ++ show (map toLower f)
+
+instance Eq Format where
+  Format x == Format y = map toLower x == map toLower y
+
+instance Ord Format where
+  compare (Format x) (Format y) = compare (map toLower x) (map toLower y)
 
 -- | Block element.
 data Block
@@ -249,6 +260,9 @@ instance ToJSON ListNumberDelim
 
 instance FromJSON Alignment
 instance ToJSON Alignment
+
+instance FromJSON Format
+instance ToJSON Format
 
 instance FromJSON Inline
 instance ToJSON Inline

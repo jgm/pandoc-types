@@ -71,8 +71,19 @@ import System.Environment (getArgs)
 -- and applying the specified function, and serializes the result as JSON
 -- to stdout.
 --
--- The function can be of type @(a -> a)@ or @(a -> IO a)@, for
--- @a@ = 'Block', 'Inline', 'Pandoc', 'Meta', or 'MetaValue'.
+-- For a straight transformation, use a function of type @a -> a@ or
+-- @a -> IO a@ where @a@ = 'Block', 'Inline','Pandoc', 'Meta', or 'MetaValue'.
+--
+-- If your transformation needs to be sensitive to the script's arguments,
+-- use a function of type @[String] -> a -> a@ (with @a@ constrained as above).
+-- The @[String]@ will be populated with the script's arguments.
+--
+-- An alternative is to use the type @Maybe Format -> a -> a@.
+-- This is appropriate when the first argument of the script (if present)
+-- will be the target format, and allows scripts to behave differently
+-- depending on the target format.  The pandoc executable automatically
+-- provides the target format as argument when scripts are called using
+-- the `--filter` option.
 
 class ToJSONFilter a where
   toJSONFilter :: a -> IO ()
@@ -90,5 +101,5 @@ instance (Walkable a Pandoc) => ToJSONFilter (a -> IO a) where
 instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where
   toJSONFilter f = getArgs >>= toJSONFilter . f
 
-instance (ToJSONFilter a) => ToJSONFilter (Maybe String -> a) where
+instance (ToJSONFilter a) => ToJSONFilter (Maybe Format -> a) where
   toJSONFilter f = getArgs >>= toJSONFilter . f . listToMaybe

@@ -40,6 +40,7 @@ or (making capitalize.hs executable)
 
 > pandoc --filter ./capitalize.hs
 
+> #!/usr/bin/env runghc
 > -- capitalize.hs
 > import Text.Pandoc.JSON
 > import Data.Char (toUpper)

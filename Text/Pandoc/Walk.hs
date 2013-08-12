@@ -68,6 +68,7 @@ module Text.Pandoc.Walk (Walkable(..))
 where
 import Control.Applicative ((<$>), (<*>))
 import Text.Pandoc.Definition
+import Text.Pandoc.Builder ((<>))
 import Data.Monoid
 import qualified Data.Traversable as T
 import Data.Traversable (Traversable, traverse)

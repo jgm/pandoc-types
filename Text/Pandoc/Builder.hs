@@ -373,7 +373,9 @@ para :: Inlines -> Blocks
 para = singleton . Para . toList
 
 plain :: Inlines -> Blocks
-plain = singleton . Plain . toList
+plain ils = if isNull ils
+               then mempty
+               else singleton . Plain . toList $ ils
 
 -- | A code block with attributes.
 codeBlockWith :: Attr -> String -> Blocks

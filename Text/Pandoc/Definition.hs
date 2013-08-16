@@ -69,7 +69,7 @@ data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 -- | Metadata for the document:  title, authors, date.
-newtype Meta = Meta (M.Map String MetaValue)
+newtype Meta = Meta { unMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 data MetaValue = MetaMap (M.Map String MetaValue)

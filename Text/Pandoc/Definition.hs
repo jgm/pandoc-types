@@ -64,13 +64,25 @@ import qualified Data.Map as M
 import GHC.Generics (Generic)
 import Data.String
 import Data.Char (toLower)
+import Data.Monoid
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+instance Monoid Pandoc where
+  mempty = Pandoc mempty mempty
+  (Pandoc m1 bs1) `mappend` (Pandoc m2 bs2) =
+    Pandoc (m1 `mappend` m2) (bs1 `mappend` bs2)
+
 -- | Metadata for the document:  title, authors, date.
 newtype Meta = Meta { unMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+instance Monoid Meta where
+  mempty = Meta (M.empty)
+  (Meta m1) `mappend` (Meta m2) = Meta (M.union m2 m1)
+  -- note: M.union is left-biased, and we want the second value to
+  -- overwrite the first
 
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaList [MetaValue]

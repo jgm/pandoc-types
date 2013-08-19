@@ -80,9 +80,9 @@ newtype Meta = Meta { unMeta :: M.Map String MetaValue }
 
 instance Monoid Meta where
   mempty = Meta (M.empty)
-  (Meta m1) `mappend` (Meta m2) = Meta (M.union m2 m1)
-  -- note: M.union is left-biased, and we want the second value to
-  -- overwrite the first
+  (Meta m1) `mappend` (Meta m2) = Meta (M.union m1 m2)
+  -- note: M.union is left-biased, so if there are fields in both m1
+  -- and m2, m1 wins.
 
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaList [MetaValue]

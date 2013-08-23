@@ -324,6 +324,16 @@ instance Walkable Inline Pandoc where
                              return $ Pandoc m' bs'
   query f (Pandoc m bs) = query f m <> query f bs
 
+instance Walkable Pandoc Pandoc where
+  walk f = f
+  walkM f = f
+  query f = f
+
+instance Walkable Meta Meta where
+  walk f = f
+  walkM f = f
+  query f = f
+
 instance Walkable Inline Meta where
   walk f (Meta metamap)  = Meta $ walk f metamap
   walkM f (Meta metamap) = Meta <$> walkM f metamap

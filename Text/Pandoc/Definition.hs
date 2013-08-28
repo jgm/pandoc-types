@@ -108,8 +108,9 @@ lookupMeta key (Meta m) = M.lookup key m
 docTitle :: Meta -> [Inline]
 docTitle meta =
   case lookupMeta "title" meta of
-         Just (MetaInlines ils) -> ils
-         _                      -> []
+         Just (MetaInlines ils)        -> ils
+         Just (MetaBlocks [Plain ils]) -> ils
+         _                             -> []
 
 -- | Extract document authors from metadata; works just like the old
 -- @docAuthors@.
@@ -117,15 +118,17 @@ docAuthors :: Meta -> [[Inline]]
 docAuthors meta =
   case lookupMeta "author" meta of
         Just (MetaInlines ils) -> [ils]
-        Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms]
+        Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms] ++
+                                  [ils | MetaBlocks [Plain ils] <- ms]
         _                      -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
 docDate meta =
   case lookupMeta "date" meta of
-         Just (MetaInlines ils) -> ils
-         _                      -> []
+         Just (MetaInlines ils)        -> ils
+         Just (MetaBlocks [Plain ils]) -> ils
+         _                             -> []
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft

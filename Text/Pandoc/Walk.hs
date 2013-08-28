@@ -387,3 +387,8 @@ instance Walkable Block MetaValue where
   query f (MetaInlines xs) = query f xs
   query f (MetaBlocks bs)  = query f bs
   query f (MetaMap m)      = query f m
+
+instance Walkable a b => Walkable a [b] where
+  walk f xs  = map (walk f) xs
+  walkM f xs = mapM (walkM f) xs
+  query f xs = mconcat $ map (query f) xs

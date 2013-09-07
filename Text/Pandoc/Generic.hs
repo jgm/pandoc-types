@@ -124,14 +124,3 @@ bottomUpM f = everywhereM (mkM f)
 -- of the queries are combined using 'mappend'.
 queryWith :: (Data a, Monoid b, Data c) => (a -> b) -> c -> b
 queryWith f = everything mappend (mempty `mkQ` f)
-
-{-# DEPRECATED processWith "Use bottomUp instead" #-}
--- | Deprecated synonym for @bottomUp@.
-processWith :: (Data a, Data b) => (a -> a) -> b -> b
-processWith = bottomUp
-
-{-# DEPRECATED processWithM "Use bottomUpM instead" #-}
--- | Deprecated synonym for @bottomUpM@.
-processWithM :: (Monad m, Data a, Data b) => (a -> m a) -> b -> m b
-processWithM = bottomUpM
-

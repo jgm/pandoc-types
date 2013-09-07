@@ -268,13 +268,13 @@ instance HasMeta Pandoc where
   deleteMeta key (Pandoc (Meta ms) bs) =
     Pandoc (Meta $ M.delete key ms) bs
 
-setTitle :: ToMetaValue a => a -> Pandoc -> Pandoc
+setTitle :: Inlines -> Pandoc -> Pandoc
 setTitle = setMeta "title"
 
-setAuthors :: ToMetaValue a => [a] -> Pandoc -> Pandoc
+setAuthors :: [Inlines] -> Pandoc -> Pandoc
 setAuthors = setMeta "author"
 
-setDate :: ToMetaValue a => a -> Pandoc -> Pandoc
+setDate :: Inlines -> Pandoc -> Pandoc
 setDate = setMeta "date"
 
 -- Inline list builders

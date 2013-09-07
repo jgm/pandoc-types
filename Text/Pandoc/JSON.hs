@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 Functions for serializing the Pandoc AST to JSON and deserializing from JSON.
 
-Example of use:  The following script (`capitalize.hs`) reads
+Example of use:  The following script (@capitalize.hs@) reads
 reads a JSON representation of a Pandoc document from stdin,
 and writes a JSON representation of a Pandoc document to stdout.
 It changes all regular text in the document to uppercase, without
@@ -41,7 +41,6 @@ or (making capitalize.hs executable)
 > pandoc --filter ./capitalize.hs
 
 > #!/usr/bin/env runghc
-> -- capitalize.hs
 > import Text.Pandoc.JSON
 > import Data.Char (toUpper)
 >

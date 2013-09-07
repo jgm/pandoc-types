@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
    Portability : portable
 
 Generic functions for manipulating 'Pandoc' documents.
+(Note:  the functions defined in @Text.Pandoc.Walk@ should be used instead,
+when possible, as they are much faster.)
 
 Here's a simple example, defining a function that replaces all the level 3+
 headers in a document with regular paragraphs in ALL CAPS:
@@ -55,8 +57,8 @@ seen from this example:
 > normal xs = xs
 >
 > myDoc :: Pandoc
-> myDoc =  Pandoc (Meta {docTitle = [], docAuthors = [], docDate = []})
->  [Para [Str "Hi",Space,Emph [Str "world",Space],Emph [Space,Str "emphasized"]]]
+> myDoc =  Pandoc nullMeta
+>  [ Para [Str "Hi",Space,Emph [Str "world",Space],Emph [Space,Str "emphasized"]]]
 
 Here we want to use 'topDown' to lift @normal@ to @Pandoc -> Pandoc@.
 The top down strategy will collapse the two adjacent @Emph@s first, then
@@ -66,11 +68,11 @@ two @Emph@ inlines would be processed before the @Emph@s were collapsed
 into one.
 
 > topDown normal myDoc ==
->   Pandoc (Meta {docTitle = [], docAuthors = [], docDate = []})
+>   Pandoc nullMeta
 >    [Para [Str "Hi",Space,Emph [Str "world",Space,Str "emphasized"]]]
 >
 > bottomUp normal myDoc ==
->   Pandoc (Meta {docTitle = [], docAuthors = [], docDate = []})
+>   Pandoc nullMeta
 >    [Para [Str "Hi",Space,Emph [Str "world",Space,Space,Str "emphasized"]]]
 
 'bottomUpM' is a monadic version of 'bottomUp'.  It could be used,

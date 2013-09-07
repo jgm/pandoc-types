@@ -1,11 +1,11 @@
 Name:                pandoc-types
 Version:             1.12
 Synopsis:            Types for representing a structured document
-Description:         This package contains definitions for the 'Pandoc' data
+Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent
-                     structured documents.  These definitions used to live
-                     in the pandoc package, but starting with pandoc 1.7, they
-                     have been split off, so that other packages can use them
+                     structured documents.  This module used to live
+                     in the pandoc package, but starting with pandoc 1.7, it
+                     has been split off, so that other packages can use it
                      without drawing in all of pandoc's dependencies, and
                      pandoc itself can depend on packages (like citeproc-hs)
                      that use them.

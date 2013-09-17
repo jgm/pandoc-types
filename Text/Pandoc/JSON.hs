@@ -59,6 +59,7 @@ module Text.Pandoc.JSON ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
+import Text.Pandoc.Generic
 import Data.Maybe (listToMaybe)
 import Data.Data
 import Data.ByteString.Lazy (ByteString)
@@ -96,6 +97,17 @@ instance (Walkable a Pandoc) => ToJSONFilter (a -> a) where
 instance (Walkable a Pandoc) => ToJSONFilter (a -> IO a) where
   toJSONFilter f = BL.getContents >>=
      (walkM f :: Pandoc -> IO Pandoc) . either error id . eitherDecode' >>=
+     BL.putStr . encode
+
+instance Data a => ToJSONFilter (a -> [a]) where
+  toJSONFilter f = BL.getContents >>=
+    BL.putStr . encode . (bottomUp (concatMap f) :: Pandoc -> Pandoc) .
+    either error id . eitherDecode'
+
+instance Data a => ToJSONFilter (a -> IO [a]) where
+  toJSONFilter f = BL.getContents >>=
+     (bottomUpM (fmap concat . mapM f) :: Pandoc -> IO Pandoc) .
+     either error id . eitherDecode' >>=
      BL.putStr . encode
 
 instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where

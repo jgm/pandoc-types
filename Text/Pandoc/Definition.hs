@@ -110,6 +110,7 @@ docTitle meta =
   case lookupMeta "title" meta of
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Plain ils]) -> ils
+         Just (MetaBlocks [Para ils])  -> ils
          _                             -> []
 
 -- | Extract document authors from metadata; works just like the old
@@ -119,7 +120,8 @@ docAuthors meta =
   case lookupMeta "author" meta of
         Just (MetaInlines ils) -> [ils]
         Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms] ++
-                                  [ils | MetaBlocks [Plain ils] <- ms]
+                                  [ils | MetaBlocks [Plain ils] <- ms] ++
+                                  [ils | MetaBlocks [Para ils]  <- ms]
         _                      -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
@@ -128,6 +130,7 @@ docDate meta =
   case lookupMeta "date" meta of
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Plain ils]) -> ils
+         Just (MetaBlocks [Para ils])  -> ils
          _                             -> []
 
 -- | Alignment of a table column.

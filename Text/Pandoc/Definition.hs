@@ -108,6 +108,7 @@ lookupMeta key (Meta m) = M.lookup key m
 docTitle :: Meta -> [Inline]
 docTitle meta =
   case lookupMeta "title" meta of
+         Just (MetaString s)           -> [Str s]
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Plain ils]) -> ils
          Just (MetaBlocks [Para ils])  -> ils
@@ -118,16 +119,19 @@ docTitle meta =
 docAuthors :: Meta -> [[Inline]]
 docAuthors meta =
   case lookupMeta "author" meta of
+        Just (MetaString s)    -> [[Str s]]
         Just (MetaInlines ils) -> [ils]
         Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms] ++
                                   [ils | MetaBlocks [Plain ils] <- ms] ++
-                                  [ils | MetaBlocks [Para ils]  <- ms]
+                                  [ils | MetaBlocks [Para ils]  <- ms] ++
+                                  [[Str x] | MetaString x <- ms]
         _                      -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
 docDate meta =
   case lookupMeta "date" meta of
+         Just (MetaString s)           -> [Str s]
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Plain ils]) -> ils
          Just (MetaBlocks [Para ils])  -> ils

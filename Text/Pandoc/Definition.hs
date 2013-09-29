@@ -378,5 +378,5 @@ instance FromJSON Block
 instance ToJSON Block
 
 instance FromJSON Pandoc
-instance ToJSON Pandoc#endif
+instance ToJSON Pandoc
 #endif

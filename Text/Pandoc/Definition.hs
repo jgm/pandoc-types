@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts, CPP #-}
 
 {-
 Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
@@ -59,9 +59,10 @@ module Text.Pandoc.Definition ( Pandoc(..)
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
 import Data.Aeson (FromJSON(..), ToJSON(..))
+import qualified Data.Aeson.Types as Aeson
 import Control.Monad (guard)
 import qualified Data.Map as M
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Rep (..))
 import Data.String
 import Data.Char (toLower)
 import Data.Monoid
@@ -257,6 +258,89 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 
 -- derive generic instances of FromJSON, ToJSON:
 
+#if MIN_VERSION_aeson(0,6,2)
+jsonOpts :: Aeson.Options
+jsonOpts = Aeson.Options{ Aeson.fieldLabelModifier = id
+                        , Aeson.constructorTagModifier = id
+                        , Aeson.allNullaryToStringTag = True
+                        , Aeson.omitNothingFields = False
+                        , Aeson.sumEncoding = Aeson.ObjectWithSingleField
+                        }
+
+toJSON' :: (Generic a, Aeson.GToJSON (Rep a))
+        => a -> Aeson.Value
+toJSON' = Aeson.genericToJSON jsonOpts
+
+parseJSON' :: (Generic a, Aeson.GFromJSON (Rep a))
+           => Aeson.Value -> Aeson.Parser a
+parseJSON' = Aeson.genericParseJSON jsonOpts
+
+instance FromJSON MetaValue
+  where parseJSON = parseJSON'
+instance ToJSON MetaValue
+  where toJSON = toJSON'
+
+instance FromJSON Meta
+  where parseJSON = parseJSON'
+instance ToJSON Meta
+  where toJSON = toJSON'
+
+instance FromJSON CitationMode
+  where parseJSON = parseJSON'
+instance ToJSON CitationMode
+  where toJSON = toJSON'
+
+instance FromJSON Citation
+  where parseJSON = parseJSON'
+instance ToJSON Citation
+  where toJSON = toJSON'
+
+instance FromJSON QuoteType
+  where parseJSON = parseJSON'
+instance ToJSON QuoteType
+  where toJSON = toJSON'
+
+instance FromJSON MathType
+  where parseJSON = parseJSON'
+instance ToJSON MathType
+  where toJSON = toJSON'
+
+instance FromJSON ListNumberStyle
+  where parseJSON = parseJSON'
+instance ToJSON ListNumberStyle
+  where toJSON = toJSON'
+
+instance FromJSON ListNumberDelim
+  where parseJSON = parseJSON'
+instance ToJSON ListNumberDelim
+  where toJSON = toJSON'
+
+instance FromJSON Alignment
+  where parseJSON = parseJSON'
+instance ToJSON Alignment
+  where toJSON = toJSON'
+
+instance FromJSON Format
+  where parseJSON = parseJSON'
+instance ToJSON Format
+  where toJSON = toJSON'
+
+instance FromJSON Inline
+  where parseJSON = parseJSON'
+instance ToJSON Inline
+  where toJSON = toJSON'
+
+instance FromJSON Block
+  where parseJSON = parseJSON'
+instance ToJSON Block
+  where toJSON = toJSON'
+
+instance FromJSON Pandoc
+  where parseJSON = parseJSON'
+instance ToJSON Pandoc
+  where toJSON = toJSON'
+
+#else
 instance FromJSON MetaValue
 instance ToJSON MetaValue
 
@@ -294,4 +378,5 @@ instance FromJSON Block
 instance ToJSON Block
 
 instance FromJSON Pandoc
-instance ToJSON Pandoc
+instance ToJSON Pandoc#endif
+#endif

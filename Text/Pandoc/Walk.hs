@@ -135,7 +135,7 @@ instance Walkable Inline Inline where
   walkM f (RawInline t s) = f $ RawInline t s
   walkM f (Link xs t)     = Link <$> walkM f xs >>= f . ($ t)
   walkM f (Image xs t)    = Image <$> walkM f xs >>= f . ($ t)
-  walkM f (Note bs)       = Note <$> walkM f bs
+  walkM f (Note bs)       = Note <$> walkM f bs >>= f
   walkM f (Span attr xs)  = Span attr <$> walkM f xs >>= f
 
   query f (Str xs)        = f (Str xs)

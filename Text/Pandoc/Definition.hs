@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts, CPP #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts #-}
 
 {-
 Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
@@ -258,11 +258,10 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 
 -- derive generic instances of FromJSON, ToJSON:
 
-#if MIN_VERSION_aeson(0,6,2)
 jsonOpts :: Aeson.Options
 jsonOpts = Aeson.Options{ Aeson.fieldLabelModifier = id
                         , Aeson.constructorTagModifier = id
-                        , Aeson.allNullaryToStringTag = True
+                        , Aeson.allNullaryToStringTag = False
                         , Aeson.omitNothingFields = False
                         , Aeson.sumEncoding = Aeson.ObjectWithSingleField
                         }
@@ -339,44 +338,3 @@ instance FromJSON Pandoc
   where parseJSON = parseJSON'
 instance ToJSON Pandoc
   where toJSON = toJSON'
-
-#else
-instance FromJSON MetaValue
-instance ToJSON MetaValue
-
-instance FromJSON Meta
-instance ToJSON Meta
-
-instance FromJSON CitationMode
-instance ToJSON CitationMode
-
-instance FromJSON Citation
-instance ToJSON Citation
-
-instance FromJSON QuoteType
-instance ToJSON QuoteType
-
-instance FromJSON MathType
-instance ToJSON MathType
-
-instance FromJSON ListNumberStyle
-instance ToJSON ListNumberStyle
-
-instance FromJSON ListNumberDelim
-instance ToJSON ListNumberDelim
-
-instance FromJSON Alignment
-instance ToJSON Alignment
-
-instance FromJSON Format
-instance ToJSON Format
-
-instance FromJSON Inline
-instance ToJSON Inline
-
-instance FromJSON Block
-instance ToJSON Block
-
-instance FromJSON Pandoc
-instance ToJSON Pandoc
-#endif

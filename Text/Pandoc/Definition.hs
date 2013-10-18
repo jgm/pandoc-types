@@ -263,7 +263,7 @@ jsonOpts = Aeson.Options{ Aeson.fieldLabelModifier = id
                         , Aeson.constructorTagModifier = id
                         , Aeson.allNullaryToStringTag = False
                         , Aeson.omitNothingFields = False
-                        , Aeson.sumEncoding = Aeson.TaggedObject "t" "v"
+                        , Aeson.sumEncoding = Aeson.TaggedObject "t" "c"
                         }
 
 toJSON' :: (Generic a, Aeson.GToJSON (Rep a))

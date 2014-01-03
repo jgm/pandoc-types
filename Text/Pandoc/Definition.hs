@@ -202,7 +202,7 @@ data Block
     | Header Int Attr [Inline] -- ^ Header - level (integer) and text (inlines)
     | HorizontalRule        -- ^ Horizontal rule
     | Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]  -- ^ Table,
-                            -- with caption, column alignments,
+                            -- with caption, column alignments (required),
                             -- relative column widths (0 = default),
                             -- column headers (each a list of blocks), and
                             -- rows (each a list of lists of blocks)

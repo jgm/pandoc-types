@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
     DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving,
-    DeriveGeneric #-}
+    DeriveGeneric, DeriveTraversable #-}
 {-
 Copyright (C) 2010-2012 John MacFarlane <jgm@berkeley.edu>
 

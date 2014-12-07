@@ -56,7 +56,7 @@ linked to in a document:
 
 > extractURL :: Inline -> [String]
 > extractURL (Link _ (u,_)) = [u]
-> extractURL (Image _ (u,_)) = [u]
+> extractURL (Image _ _ (u,_)) = [u]
 > extractURL _ = []
 >
 > extractURLs :: Pandoc -> [String]
@@ -115,7 +115,7 @@ instance Walkable Inline Inline where
   walk f (Math mt s)      = f (Math mt s)
   walk f (RawInline t s)  = f $ RawInline t s
   walk f (Link xs t)      = f $ Link (walk f xs) t
-  walk f (Image xs t)     = f $ Image (walk f xs) t
+  walk f (Image atr xs t) = f $ Image atr (walk f xs) t
   walk f (Note bs)        = f $ Note (walk f bs)
   walk f (Span attr xs)   = f $ Span attr (walk f xs)
 
@@ -136,7 +136,7 @@ instance Walkable Inline Inline where
   walkM f (Math mt s)     = f (Math mt s)
   walkM f (RawInline t s) = f $ RawInline t s
   walkM f (Link xs t)     = Link <$> walkM f xs >>= f . ($ t)
-  walkM f (Image xs t)    = Image <$> walkM f xs >>= f . ($ t)
+  walkM f (Image atr xs t)= Image atr <$> walkM f xs >>= f . ($ t)
   walkM f (Note bs)       = Note <$> walkM f bs >>= f
   walkM f (Span attr xs)  = Span attr <$> walkM f xs >>= f
 
@@ -155,7 +155,7 @@ instance Walkable Inline Inline where
   query f (Math mt s)     = f (Math mt s)
   query f (RawInline t s) = f (RawInline t s)
   query f (Link xs t)     = f (Link xs t) <> query f xs
-  query f (Image xs t)    = f (Image xs t) <> query f xs
+  query f (Image atr xs t)= f (Image atr xs t) <> query f xs
   query f (Note bs)       = f (Note bs) <> query f bs
   query f (Span attr xs)  = f (Span attr xs) <> query f xs
 
@@ -270,7 +270,7 @@ instance Walkable Block Inline where
   walk f (Math mt s)     = Math mt s
   walk f (RawInline t s) = RawInline t s
   walk f (Link xs t)     = Link (walk f xs) t
-  walk f (Image xs t)    = Image (walk f xs) t
+  walk f (Image atr xs t)= Image atr (walk f xs) t
   walk f (Note bs)       = Note (walk f bs)
   walk f (Span attr xs)  = Span attr (walk f xs)
 
@@ -291,7 +291,7 @@ instance Walkable Block Inline where
   walkM f (Math mt s)     = return $ Math mt s
   walkM f (RawInline t s) = return $ RawInline t s
   walkM f (Link xs t)     = (\lab -> Link lab t) <$> walkM f xs
-  walkM f (Image xs t)    = (\lab -> Image lab t) <$> walkM f xs
+  walkM f (Image atr xs t)= (\lab -> Image atr lab t) <$> walkM f xs
   walkM f (Note bs)       = Note <$> walkM f bs
   walkM f (Span attr xs)  = Span attr <$> walkM f xs
 
@@ -310,7 +310,7 @@ instance Walkable Block Inline where
   query f (Math mt s)     = mempty
   query f (RawInline t s) = mempty
   query f (Link xs t)     = query f xs
-  query f (Image xs t)    = query f xs
+  query f (Image atr xs t)= query f xs
   query f (Note bs)       = query f bs
   query f (Span attr xs)  = query f xs
 

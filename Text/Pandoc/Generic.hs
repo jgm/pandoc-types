@@ -94,7 +94,7 @@ linked to in a document:
 
 > extractURL :: Inline -> [String]
 > extractURL (Link _ (u,_)) = [u]
-> extractURL (Image _ (u,_)) = [u]
+> extractURL (Image _ _ (u,_)) = [u]
 > extractURL _ = []
 >
 > extractURLs :: Pandoc -> [String]

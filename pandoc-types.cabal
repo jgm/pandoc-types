@@ -23,8 +23,8 @@ Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      and deserializing a @Pandoc@ structure to and from JSON.
 
 Homepage:            http://johnmacfarlane.net/pandoc
-License:             GPL
-License-file:        COPYING
+License:             BSD3
+License-file:        LICENSE
 Author:              John MacFarlane
 Maintainer:          jgm@berkeley.edu
 Bug-Reports:         http://code.google.com/p/pandoc/issues/list

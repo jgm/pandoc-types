@@ -1,5 +1,5 @@
 Name:                pandoc-types
-Version:             1.12.4.3
+Version:             1.12.4.4
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent
@@ -43,7 +43,7 @@ Library
                      Text.Pandoc.JSON
   Build-depends:     base >= 4 && < 5,
                      containers >= 0.3,
-                     syb >= 0.1 && < 0.5,
+                     syb >= 0.1 && < 0.6,
                      ghc-prim >= 0.2,
                      bytestring >= 0.9 && < 0.11,
                      aeson >= 0.6.2 && < 0.10,

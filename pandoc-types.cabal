@@ -28,7 +28,7 @@ License-file:        LICENSE
 Author:              John MacFarlane
 Maintainer:          jgm@berkeley.edu
 Bug-Reports:         http://code.google.com/p/pandoc/issues/list
-Copyright:           (c) 2006-2010 John MacFarlane
+Copyright:           (c) 2006-2015 John MacFarlane
 Category:            Text
 Build-type:          Simple
 Cabal-version:       >=1.6

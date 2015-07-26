@@ -58,7 +58,7 @@ Isn't that nicer than writing the following?
 >           [Para [Str "item",Space,Str "one"]
 >           ,Para [Str "continuation"]]
 >          ,[Plain [Str "item",Space,Str "two",Space,Str "and",Space,
->                   Str "a",Space,Link [Str "link"] ("/url","go to url")]]]]
+>                   Str "a",Space,Link nullAttr [Str "link"] ("/url","go to url")]]]]
 
 And of course, you can use Haskell to define your own builders:
 
@@ -361,10 +361,10 @@ link url title = linkWith url title nullAttr
 
 linkWith :: String  -- ^ URL
          -> String  -- ^ Title
-         -> Attr    -- ^ attributes, currenlty ignored
+         -> Attr    -- ^ attributes
          -> Inlines -- ^ Label
          -> Inlines
-linkWith url title _ x = singleton $ Link (toList x) (url, title)
+linkWith url title attr x = singleton $ Link attr (toList x) (url, title)
 
 image :: String  -- ^ URL
       -> String  -- ^ Title

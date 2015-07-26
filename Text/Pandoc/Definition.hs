@@ -236,7 +236,7 @@ data Inline
     | LineBreak             -- ^ Hard line break
     | Math MathType String  -- ^ TeX math (literal)
     | RawInline Format String -- ^ Raw inline
-    | Link [Inline] Target  -- ^ Hyperlink: text (list of inlines), target
+    | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
     | Note [Block]          -- ^ Footnote or endnote
     | Span Attr [Inline]    -- ^ Generic inline container with attributes

@@ -260,7 +260,8 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- derive generic instances of FromJSON, ToJSON:
 
 jsonOpts :: Aeson.Options
-jsonOpts = Aeson.Options{ Aeson.fieldLabelModifier = id
+jsonOpts = Aeson.defaultOptions{
+                          Aeson.fieldLabelModifier = id
                         , Aeson.constructorTagModifier = id
                         , Aeson.allNullaryToStringTag = False
                         , Aeson.omitNothingFields = False

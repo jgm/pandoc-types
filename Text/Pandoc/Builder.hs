@@ -58,7 +58,7 @@ Isn't that nicer than writing the following?
 >           [Para [Str "item",Space,Str "one"]
 >           ,Para [Str "continuation"]]
 >          ,[Plain [Str "item",Space,Str "two",Space,Str "and",Space,
->                   Str "a",Space,Link [Str "link"] ("/url","go to url")]]]]
+>                   Str "a",Space,Link nullAttr [Str "link"] ("/url","go to url")]]]]
 
 And of course, you can use Haskell to define your own builders:
 
@@ -122,7 +122,9 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , displayMath
                            , rawInline
                            , link
+                           , linkWith
                            , image
+                           , imageWith
                            , note
                            , spanWith
                            , trimInlines
@@ -355,13 +357,28 @@ link :: String  -- ^ URL
      -> String  -- ^ Title
      -> Inlines -- ^ Label
      -> Inlines
-link url title x = singleton $ Link (toList x) (url, title)
+link url title = linkWith url title nullAttr
+
+linkWith :: String  -- ^ URL
+         -> String  -- ^ Title
+         -> Attr    -- ^ attributes
+         -> Inlines -- ^ Label
+         -> Inlines
+linkWith url title attr x = singleton $ Link attr (toList x) (url, title)
 
 image :: String  -- ^ URL
       -> String  -- ^ Title
       -> Inlines -- ^ Alt text
       -> Inlines
-image url title x = singleton $ Image (toList x) (url, title)
+image url title = imageWith url title nullAttr
+
+imageWith :: String  -- ^ URL
+          -> String  -- ^ Title
+          -> Attr -- ^ attributes
+          -> Inlines -- ^ Alt text
+          -> Inlines
+imageWith url title attr x =
+  singleton $ Image attr (toList x) (url, title)
 
 note :: Blocks -> Inlines
 note = singleton . Note . toList

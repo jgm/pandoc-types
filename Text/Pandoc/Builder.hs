@@ -357,28 +357,27 @@ link :: String  -- ^ URL
      -> String  -- ^ Title
      -> Inlines -- ^ Label
      -> Inlines
-link url title = linkWith url title nullAttr
+link = linkWith nullAttr
 
-linkWith :: String  -- ^ URL
+linkWith :: Attr    -- ^ Attributes
+         -> String  -- ^ URL
          -> String  -- ^ Title
-         -> Attr    -- ^ attributes
          -> Inlines -- ^ Label
          -> Inlines
-linkWith url title attr x = singleton $ Link attr (toList x) (url, title)
+linkWith attr url title x = singleton $ Link attr (toList x) (url, title)
 
 image :: String  -- ^ URL
       -> String  -- ^ Title
       -> Inlines -- ^ Alt text
       -> Inlines
-image url title = imageWith url title nullAttr
+image = imageWith nullAttr
 
-imageWith :: String  -- ^ URL
+imageWith :: Attr -- ^ Attributes
+          -> String  -- ^ URL
           -> String  -- ^ Title
-          -> Attr -- ^ attributes
           -> Inlines -- ^ Alt text
           -> Inlines
-imageWith url title attr x =
-  singleton $ Image attr (toList x) (url, title)
+imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
 
 note :: Blocks -> Inlines
 note = singleton . Note . toList

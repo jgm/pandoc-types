@@ -329,8 +329,8 @@ cite :: [Citation] -> Inlines -> Inlines
 cite cts = singleton . Cite cts . toList
 
 -- | Inline code with attributes.
-codeWith :: Attr -> String -> Inlines
-codeWith attrs = singleton . Code attrs
+codeWith :: ToAttr a => a -> String -> Inlines
+codeWith attrs = singleton . Code (toAttr attrs)
 
 -- | Plain inline code.
 code :: String -> Inlines
@@ -359,12 +359,14 @@ link :: String  -- ^ URL
      -> Inlines
 link = linkWith nullAttr
 
-linkWith :: Attr    -- ^ Attributes
+linkWith :: ToAttr a
+         => a       -- ^ Attributes
          -> String  -- ^ URL
          -> String  -- ^ Title
          -> Inlines -- ^ Label
          -> Inlines
-linkWith attr url title x = singleton $ Link attr (toList x) (url, title)
+linkWith attr url title x =
+  singleton $ Link (toAttr attr) (toList x) (url, title)
 
 image :: String  -- ^ URL
       -> String  -- ^ Title
@@ -372,18 +374,20 @@ image :: String  -- ^ URL
       -> Inlines
 image = imageWith nullAttr
 
-imageWith :: Attr -- ^ Attributes
+imageWith :: ToAttr a
+          => a       -- ^ Attributes
           -> String  -- ^ URL
           -> String  -- ^ Title
           -> Inlines -- ^ Alt text
           -> Inlines
-imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
+imageWith attr url title x =
+  singleton $ Image (toAttr attr) (toList x) (url, title)
 
 note :: Blocks -> Inlines
 note = singleton . Note . toList
 
-spanWith :: Attr -> Inlines -> Inlines
-spanWith attr = singleton . Span attr . toList
+spanWith :: ToAttr a => a -> Inlines -> Inlines
+spanWith attr = singleton . Span (toAttr attr) . toList
 
 -- Block list builders
 
@@ -396,8 +400,8 @@ plain ils = if isNull ils
                else singleton . Plain . toList $ ils
 
 -- | A code block with attributes.
-codeBlockWith :: Attr -> String -> Blocks
-codeBlockWith attrs = singleton . CodeBlock attrs
+codeBlockWith :: ToAttr a => a -> String -> Blocks
+codeBlockWith attrs = singleton . CodeBlock (toAttr attrs)
 
 -- | A plain code block.
 codeBlock :: String -> Blocks
@@ -428,8 +432,8 @@ header :: Int  -- ^ Level
        -> Blocks
 header = headerWith nullAttr
 
-headerWith :: Attr -> Int -> Inlines -> Blocks
-headerWith attr level = singleton . Header level attr . toList
+headerWith :: ToAttr a => a -> Int -> Inlines -> Blocks
+headerWith attr level = singleton . Header level (toAttr attr) . toList
 
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule
@@ -451,8 +455,8 @@ simpleTable :: [Blocks]   -- ^ Headers
 simpleTable headers = table mempty (mapConst defaults headers) headers
   where defaults = (AlignDefault, 0)
 
-divWith :: Attr -> Blocks -> Blocks
-divWith attr = singleton . Div attr . toList
+divWith :: ToAttr a => a -> Blocks -> Blocks
+divWith attr = singleton . Div (toAttr attr) . toList
 
 mapConst :: Functor f => b -> f a -> f b
 mapConst = fmap . const

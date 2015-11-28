@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts,
+             FlexibleInstances, TypeSynonymInstances #-}
 
 {-
 Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
@@ -47,6 +48,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListNumberDelim(..)
                               , Format(..)
                               , Attr(..)
+                              , ToAttr(..)
                               , nullAttr
                               , TableCell
                               , QuoteType(..)
@@ -58,6 +60,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
+import Data.Foldable (toList)
 import Data.Aeson (FromJSON(..), ToJSON(..))
 import qualified Data.Aeson.Types as Aeson
 import Control.Monad (guard)
@@ -166,6 +169,24 @@ data ListNumberDelim = DefaultDelim
 -- | Attributes: identifier, classes, key-value pairs
 newtype Attr = Attr (String, [String], [(String, String)])
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+class ToAttr a where
+  toAttr :: a -> Attr
+
+instance ToAttr Attr where
+  toAttr = id
+
+instance ToAttr (String, [String], [(String, String)]) where
+  toAttr = Attr
+
+instance ToAttr String where
+  toAttr s = Attr (s, [], [])
+
+instance Foldable t => ToAttr (t String) where
+  toAttr x = Attr ("", toList x, [])
+
+instance Foldable t => ToAttr (t (String, String)) where
+  toAttr x = Attr ("", [], toList x)
 
 nullAttr :: Attr
 nullAttr = Attr ("",[],[])

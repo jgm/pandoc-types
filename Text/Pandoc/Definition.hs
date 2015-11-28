@@ -60,7 +60,6 @@ module Text.Pandoc.Definition ( Pandoc(..)
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
-import Data.Foldable (toList)
 import Data.Aeson (FromJSON(..), ToJSON(..))
 import qualified Data.Aeson.Types as Aeson
 import Control.Monad (guard)
@@ -182,11 +181,11 @@ instance ToAttr (String, [String], [(String, String)]) where
 instance ToAttr String where
   toAttr s = Attr (s, [], [])
 
-instance Foldable t => ToAttr (t String) where
-  toAttr x = Attr ("", toList x, [])
+instance ToAttr ([String]) where
+  toAttr xs = Attr ("", xs, [])
 
-instance Foldable t => ToAttr (t (String, String)) where
-  toAttr x = Attr ("", [], toList x)
+instance ToAttr ([(String, String)]) where
+  toAttr xs = Attr ("", [], xs)
 
 nullAttr :: Attr
 nullAttr = Attr ("",[],[])

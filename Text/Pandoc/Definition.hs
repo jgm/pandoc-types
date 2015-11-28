@@ -46,7 +46,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
                               , Format(..)
-                              , Attr
+                              , Attr(..)
                               , nullAttr
                               , TableCell
                               , QuoteType(..)

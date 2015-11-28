@@ -1,5 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts,
-             FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts #-}
 
 {-
 Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
@@ -48,7 +47,6 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListNumberDelim(..)
                               , Format(..)
                               , Attr(..)
-                              , ToAttr(..)
                               , nullAttr
                               , TableCell
                               , QuoteType(..)
@@ -168,24 +166,6 @@ data ListNumberDelim = DefaultDelim
 -- | Attributes: identifier, classes, key-value pairs
 newtype Attr = Attr (String, [String], [(String, String)])
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
-class ToAttr a where
-  toAttr :: a -> Attr
-
-instance ToAttr Attr where
-  toAttr = id
-
-instance ToAttr (String, [String], [(String, String)]) where
-  toAttr = Attr
-
-instance ToAttr String where
-  toAttr s = Attr (s, [], [])
-
-instance ToAttr ([String]) where
-  toAttr xs = Attr ("", xs, [])
-
-instance ToAttr ([(String, String)]) where
-  toAttr xs = Attr ("", [], xs)
 
 nullAttr :: Attr
 nullAttr = Attr ("",[],[])

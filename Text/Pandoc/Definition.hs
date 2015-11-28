@@ -164,10 +164,11 @@ data ListNumberDelim = DefaultDelim
                      | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | Attributes: identifier, classes, key-value pairs
-type Attr = (String, [String], [(String, String)])
+newtype Attr = Attr (String, [String], [(String, String)])
+               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 nullAttr :: Attr
-nullAttr = ("",[],[])
+nullAttr = Attr ("",[],[])
 
 -- | Table cells are list of Blocks
 type TableCell = [Block]
@@ -326,6 +327,11 @@ instance FromJSON Format
 instance ToJSON Format
   where toJSON = toJSON'
 
+instance FromJSON Attr
+  where parseJSON = parseJSON'
+instance ToJSON Attr
+  where toJSON = toJSON'
+
 instance FromJSON Inline
   where parseJSON = parseJSON'
 instance ToJSON Inline
@@ -349,6 +355,7 @@ instance NFData Alignment where rnf = genericRnf
 instance NFData Inline where rnf = genericRnf
 instance NFData MathType where rnf = genericRnf
 instance NFData Format where rnf = genericRnf
+instance NFData Attr where rnf = genericRnf
 instance NFData CitationMode where rnf = genericRnf
 instance NFData QuoteType where rnf = genericRnf
 instance NFData ListNumberDelim where rnf = genericRnf

@@ -117,6 +117,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , codeWith
                            , code
                            , space
+                           , softbreak
                            , linebreak
                            , math
                            , displayMath
@@ -205,6 +206,8 @@ instance Monoid Inlines where
       (xs' :> x, y :< ys') -> Many (meld `mappend` ys')
         where meld = case (x, y) of
                           (Space, Space)     -> xs' |> Space
+                          (Space, SoftBreak) -> xs' |> SoftBreak
+                          (SoftBreak, Space) -> xs' |> SoftBreak
                           (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
                           (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
                           (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
@@ -338,6 +341,9 @@ code = codeWith nullAttr
 
 space :: Inlines
 space = singleton Space
+
+softbreak :: Inlines
+softbreak = singleton SoftBreak
 
 linebreak :: Inlines
 linebreak = singleton LineBreak

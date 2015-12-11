@@ -111,6 +111,7 @@ instance Walkable Inline Inline where
   walk f (Cite cs xs)     = f $ Cite (walk f cs) (walk f xs)
   walk f (Code attr s)    = f $ Code attr s
   walk f Space            = f Space
+  walk f SoftBreak        = f SoftBreak
   walk f LineBreak        = f LineBreak
   walk f (Math mt s)      = f (Math mt s)
   walk f (RawInline t s)  = f $ RawInline t s
@@ -132,6 +133,7 @@ instance Walkable Inline Inline where
                                f $ Cite cs' xs'
   walkM f (Code attr s)   = f $ Code attr s
   walkM f Space           = f Space
+  walkM f SoftBreak       = f SoftBreak
   walkM f LineBreak       = f LineBreak
   walkM f (Math mt s)     = f (Math mt s)
   walkM f (RawInline t s) = f $ RawInline t s
@@ -151,6 +153,7 @@ instance Walkable Inline Inline where
   query f (Cite cs xs)    = f (Cite cs xs) <> query f cs <> query f xs
   query f (Code attr s)   = f (Code attr s)
   query f Space           = f Space
+  query f SoftBreak       = f SoftBreak
   query f LineBreak       = f LineBreak
   query f (Math mt s)     = f (Math mt s)
   query f (RawInline t s) = f (RawInline t s)
@@ -266,6 +269,7 @@ instance Walkable Block Inline where
   walk f (Cite cs xs)    = Cite (walk f cs) (walk f xs)
   walk f (Code attr s)   = Code attr s
   walk f Space           = Space
+  walk f SoftBreak       = SoftBreak
   walk f LineBreak       = LineBreak
   walk f (Math mt s)     = Math mt s
   walk f (RawInline t s) = RawInline t s
@@ -287,6 +291,7 @@ instance Walkable Block Inline where
                                return $ Cite cs' xs'
   walkM f (Code attr s)   = return $ Code attr s
   walkM f Space           = return $ Space
+  walkM f SoftBreak       = return $ SoftBreak
   walkM f LineBreak       = return $ LineBreak
   walkM f (Math mt s)     = return $ Math mt s
   walkM f (RawInline t s) = return $ RawInline t s
@@ -306,6 +311,7 @@ instance Walkable Block Inline where
   query f (Cite cs xs)    = query f cs <> query f xs
   query f (Code attr s)   = mempty
   query f Space           = mempty
+  query f SoftBreak       = mempty
   query f LineBreak       = mempty
   query f (Math mt s)     = mempty
   query f (RawInline t s) = mempty

@@ -220,18 +220,21 @@ instance Monoid Inlines where
 instance IsString Inlines where
    fromString = text
 
--- | Trim leading and trailing Sp (spaces) from an Inlines.
+-- | Trim leading and trailing spaces and softbreaks from an Inlines.
 trimInlines :: Inlines -> Inlines
 #if MIN_VERSION_containers(0,4,0)
-trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
-                            Seq.dropWhileR (== Space) $ ils
+trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
+                            Seq.dropWhileR isSp $ ils
 #else
 -- for GHC 6.12, we need to workaround a bug in dropWhileR
 -- see http://hackage.haskell.org/trac/ghc/ticket/4157
-trimInlines (Many ils) = Many $ Seq.dropWhileL (== Space) $
-                            Seq.reverse $ Seq.dropWhileL (== Space) $
+trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
+                            Seq.reverse $ Seq.dropWhileL isSp $
                             Seq.reverse ils
 #endif
+  where isSp Space = True
+        isSp SoftBreak = True
+        isSp _ = False
 
 -- Document builders
 

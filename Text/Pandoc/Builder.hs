@@ -287,19 +287,26 @@ setDate = setMeta "date"
 
 -- Inline list builders
 
--- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's.
--- If you want a 'Str' with literal spaces, use 'str'.
+-- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's
+-- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
 text :: String -> Inlines
 text = fromList . map conv . breakBySpaces
   where breakBySpaces = groupBy sameCategory
         sameCategory x y = (is_space x && is_space y) ||
                            (not $ is_space x || is_space y)
-        conv xs | all is_space xs = Space
+        conv xs | all is_space xs =
+           if any is_newline xs
+              then SoftBreak
+              else Space
         conv xs = Str xs
-        is_space ' '  = True
-        is_space '\n' = True
-        is_space '\t' = True
-        is_space _    = False
+        is_space ' '    = True
+        is_space '\r'   = True
+        is_space '\n'   = True
+        is_space '\t'   = True
+        is_space _      = False
+        is_newline '\r' = True
+        is_newline '\n' = True
+        is_newline _    = False
 
 str :: String -> Inlines
 str = singleton . Str

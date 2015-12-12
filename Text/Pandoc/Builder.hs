@@ -215,6 +215,10 @@ instance Monoid Inlines where
                           (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
                           (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
                           (Space, LineBreak) -> xs' |> LineBreak
+                          (LineBreak, Space) -> xs' |> LineBreak
+                          (SoftBreak, LineBreak) -> xs' |> LineBreak
+                          (LineBreak, SoftBreak) -> xs' |> LineBreak
+                          (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
 
 instance IsString Inlines where

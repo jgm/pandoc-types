@@ -1,3 +1,4 @@
 [1.16]
 
 * Added Attr field to Image and Link.
+* Added SoftBreak constructor to Inline

@@ -1,7 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, ScopedTypeVariables, CPP #-}
 #if MIN_VERSION_base(4,8,0)
+#define OVERLAPPING {-# OVERLAPPING #-}
 #else
 {-# LANGUAGE OverlappingInstances #-}
+#define OVERLAPPING
 #endif
 {-
 Copyright (C) 2013 John MacFarlane <jgm@berkeley.edu>
@@ -95,8 +97,8 @@ instance (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
   walkM f = T.mapM (walkM f)
   query f = F.foldMap (query f)
 
-instance {-# OVERLAPPING #-} (Walkable a b, Walkable a c)
-         => Walkable a (b,c) where
+instance OVERLAPPING
+        (Walkable a b, Walkable a c) => Walkable a (b,c) where
   walk f (x,y)  = (walk f x, walk f y)
   walkM f (x,y) = do x' <- walkM f x
                      y' <- walkM f y

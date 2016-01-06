@@ -74,14 +74,4 @@ script:
  - cabal build --ghc-options=$GHCOPTS  # this builds all libraries and executables (including tests/benchmarks)
  - cabal test
  - cabal check
-# Test that a source-distribution can be generated
-# (with cabal >= 1.18 'cabal sdist' would work too):
- - ./dist/setup/setup sdist
-
-# Check that the resulting source distribution can be built & installed.
-# If there are no other `.tar.gz` files in `dist`, this can be even simpler:
-# `cabal install --force-reinstalls dist/*-*.tar.gz`
- - SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz &&
-   (cd dist && cabal install --force-reinstalls "$SRC_TGZ")
-
 # EOF

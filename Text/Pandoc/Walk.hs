@@ -1,5 +1,8 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, ScopedTypeVariables,
-    OverlappingInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, ScopedTypeVariables, CPP #-}
+#if MIN_VERSION_base(4,8,0)
+#else
+{-# LANGUAGE OverlappingInstances #-}
+#endif
 {-
 Copyright (C) 2013 John MacFarlane <jgm@berkeley.edu>
 
@@ -92,7 +95,8 @@ instance (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
   walkM f = T.mapM (walkM f)
   query f = F.foldMap (query f)
 
-instance (Walkable a b, Walkable a c) => Walkable a (b,c) where
+instance {-# OVERLAPPING #-} (Walkable a b, Walkable a c)
+         => Walkable a (b,c) where
   walk f (x,y)  = (walk f x, walk f y)
   walkM f (x,y) = do x' <- walkM f x
                      y' <- walkM f y
@@ -417,8 +421,3 @@ instance Walkable Block Citation where
        return $ Citation id' pref' suff' mode notenum hash
   query f (Citation id' pref suff mode notenum hash) =
     query f pref <> query f suff
-
-instance Walkable a b => Walkable a [b] where
-  walk f xs  = map (walk f) xs
-  walkM f xs = mapM (walkM f) xs
-  query f xs = mconcat $ map (query f) xs

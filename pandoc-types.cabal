@@ -37,6 +37,7 @@ Extra-Source-Files:  changelog
 Source-repository    head
   type:              git
   location:          git://github.com/jgm/pandoc-types.git
+
 Library
   Exposed-modules:   Text.Pandoc.Definition
                      Text.Pandoc.Generic
@@ -48,5 +49,8 @@ Library
                      syb >= 0.1 && < 0.7,
                      ghc-prim >= 0.2,
                      bytestring >= 0.9 && < 0.11,
-                     aeson >= 0.6.2 && < 0.11,
-                     deepseq >= 1.4.1 && < 1.5
+                     aeson >= 0.6.2 && < 0.11
+  if impl(ghc < 7.10)
+    Build-depends:   deepseq-generics >= 0.1 && < 0.2
+  else
+    Build-depends:   deepseq >= 1.4.1 && < 1.5

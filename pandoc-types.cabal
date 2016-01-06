@@ -1,5 +1,5 @@
 Name:                pandoc-types
-Version:             1.16
+Version:             1.16.0.1
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent
@@ -48,4 +48,4 @@ Library
                      ghc-prim >= 0.2,
                      bytestring >= 0.9 && < 0.11,
                      aeson >= 0.6.2 && < 0.11,
-                     deepseq-generics >= 0.1 && < 0.2
+                     deepseq >= 1.4.1 && < 1.5

@@ -1,5 +1,5 @@
 Name:                pandoc-types
-Version:             1.16.0.1
+Version:             1.16.1
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent
@@ -44,6 +44,7 @@ Library
                      Text.Pandoc.Walk
                      Text.Pandoc.Builder
                      Text.Pandoc.JSON
+  Other-modules:     Paths_pandoc_types
   Build-depends:     base >= 4 && < 5,
                      containers >= 0.3,
                      syb >= 0.1 && < 0.7,

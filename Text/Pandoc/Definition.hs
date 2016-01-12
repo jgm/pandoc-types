@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts, CPP #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-
 Copyright (C) 2006-2013 John MacFarlane <jgm@berkeley.edu>
@@ -66,11 +67,13 @@ import GHC.Generics (Generic, Rep (..))
 import Data.String
 import Data.Char (toLower)
 import Data.Monoid
+import Data.Version (Version(..))
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else
 import Control.DeepSeq.Generics
 #endif
+import Paths_pandoc_types (version)
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -341,10 +344,23 @@ instance FromJSON Block
 instance ToJSON Block
   where toJSON = toJSON'
 
-instance FromJSON Pandoc
-  where parseJSON = parseJSON'
-instance ToJSON Pandoc
-  where toJSON = toJSON'
+instance FromJSON Pandoc where
+  parseJSON x = case (Aeson.fromJSON x ::
+                        Aeson.Result ([Int], Meta, [Block])) of
+    Aeson.Error s
+      | s == "cannot unpack array of length 2 into a 3-tuple" ->
+          fail $ s ++ "\nExpected versioned JSON."
+      | otherwise -> fail s
+    Aeson.Success (ver, meta, blocks)
+      | take 3 ver == take 3 (versionBranch version) ->
+                             return (Pandoc meta blocks)
+      | otherwise      -> fail $ "Pandoc JSON version mismatch: expected " ++
+                             show (versionBranch version) ++ ", got " ++
+                             show ver
+
+instance ToJSON Pandoc where
+  toJSON (Pandoc meta blocks) =
+    toJSON (versionBranch version :: [Int], meta :: Meta, blocks :: [Block])
 
 -- Instances for deepseq
 #if MIN_VERSION_base(4,8,0)

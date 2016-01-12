@@ -54,6 +54,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , MathType(..)
                               , Citation(..)
                               , CitationMode(..)
+                              , pandocTypesVersion
                               ) where
 
 import Data.Generics (Data, Typeable)
@@ -71,6 +72,8 @@ import Control.DeepSeq
 #else
 import Control.DeepSeq.Generics
 #endif
+import Paths_pandoc_types (version)
+import Data.Version (Version)
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -376,3 +379,6 @@ instance NFData ListNumberStyle where rnf = genericRnf
 instance NFData Block where rnf = genericRnf
 instance NFData Pandoc where rnf = genericRnf
 #endif
+
+pandocTypesVersion :: Version
+pandocTypesVersion = version

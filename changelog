@@ -1,9 +1,9 @@
-[1.16.1.1]
+[1.16.1]
 
   * Allow aeson 0.11.*.
   * Export pandocTypesVersion from Text.Pandoc.Definition.
 
-[1.16.1]
+[1.16.0.1]
 
   * Use deepseq instead of deepseq-generics.  deepseq now allows deriving
     generic NFData instances, so we don't need deepseq-generics.

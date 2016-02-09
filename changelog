@@ -1,3 +1,17 @@
+[1.16.1.1]
+
+  * Allow aeson 0.11.*.
+  * Export pandocTypesVersion from Text.Pandoc.Definition.
+
+[1.16.1]
+
+  * Use deepseq instead of deepseq-generics.  deepseq now allows deriving
+    generic NFData instances, so we don't need deepseq-generics.
+  * Removed unneeded instance, use OVERLAPPING pragma for ghc 7.10.
+  * Added CPP so that deepseq-generics is used for ghc < 7.10.
+  * Added tested-with, generate .travis.yml using make_travis_yml.hs
+  * Added stack.yaml
+
 [1.16]
 
 * Added Attr field to Image and Link.

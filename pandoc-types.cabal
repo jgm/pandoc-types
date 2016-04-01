@@ -27,7 +27,7 @@ License:             BSD3
 License-file:        LICENSE
 Author:              John MacFarlane
 Maintainer:          jgm@berkeley.edu
-Bug-Reports:         http://code.google.com/p/pandoc/issues/list
+Bug-Reports:         https://github.com/jgm/pandoc-types/issues
 Copyright:           (c) 2006-2015 John MacFarlane
 Category:            Text
 Build-type:          Simple

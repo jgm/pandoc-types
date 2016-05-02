@@ -178,6 +178,7 @@ import Data.Typeable
 import Data.Traversable
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
+import Data.Functor ((<$))
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid

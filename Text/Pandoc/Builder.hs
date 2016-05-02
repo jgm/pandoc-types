@@ -483,12 +483,8 @@ table caption cellspecs headers rows = singleton $
 simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
-simpleTable headers = table mempty (mapConst defaults headers) headers
+simpleTable headers = table mempty (defaults <$ headers) headers
   where defaults = (AlignDefault, 0)
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList
-
-mapConst :: Functor f => b -> f a -> f b
-mapConst = fmap . const
-

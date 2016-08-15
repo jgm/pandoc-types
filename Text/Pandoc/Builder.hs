@@ -147,6 +147,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            -- * Block list builders
                            , para
                            , plain
+                           , lineBlock
                            , codeBlockWith
                            , codeBlock
                            , rawBlock
@@ -426,6 +427,9 @@ plain :: Inlines -> Blocks
 plain ils = if isNull ils
                then mempty
                else singleton . Plain . toList $ ils
+
+lineBlock :: [Inlines] -> Blocks
+lineBlock = singleton . LineBlock . map toList
 
 -- | A code block with attributes.
 codeBlockWith :: Attr -> String -> Blocks

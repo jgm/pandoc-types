@@ -291,12 +291,22 @@ jsonOpts = Aeson.defaultOptions{
                         , Aeson.sumEncoding = Aeson.TaggedObject "t" "c"
                         }
 
+#if MIN_VERSION_aeson(1,0,0)
+toJSON' :: (Generic a, Aeson.GToJSON Aeson.Zero (Rep a))
+        => a -> Aeson.Value
+#else
 toJSON' :: (Generic a, Aeson.GToJSON (Rep a))
         => a -> Aeson.Value
+#endif
 toJSON' = Aeson.genericToJSON jsonOpts
 
+#if MIN_VERSION_aeson(1,0,0)
+parseJSON' :: (Generic a, Aeson.GFromJSON Aeson.Zero (Rep a))
+           => Aeson.Value -> Aeson.Parser a
+#else
 parseJSON' :: (Generic a, Aeson.GFromJSON (Rep a))
            => Aeson.Value -> Aeson.Parser a
+#endif
 parseJSON' = Aeson.genericParseJSON jsonOpts
 
 instance FromJSON MetaValue

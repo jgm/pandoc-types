@@ -314,14 +314,14 @@ parseJSON' = Aeson.genericParseJSON jsonOpts
 
 instance FromJSON MetaValue where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "MetaMap"     -> MetaMap     <$> (v .: "c")
-      String "MetaList"    -> MetaList    <$> (v .: "c")
-      String "MetaBool"    -> MetaBool    <$> (v .: "c")
-      String "MetaString"  -> MetaString  <$> (v .: "c")
-      String "MetaInlines" -> MetaInlines <$> (v .: "c")
-      String "MetaBlocks"  -> MetaBlocks  <$> (v .: "c")
+      "MetaMap"     -> MetaMap     <$> (v .: "c")
+      "MetaList"    -> MetaList    <$> (v .: "c")
+      "MetaBool"    -> MetaBool    <$> (v .: "c")
+      "MetaString"  -> MetaString  <$> (v .: "c")
+      "MetaInlines" -> MetaInlines <$> (v .: "c")
+      "MetaBlocks"  -> MetaBlocks  <$> (v .: "c")
       _ -> mempty
   parseJSON _ = mempty
 instance ToJSON MetaValue where
@@ -358,11 +358,11 @@ instance ToJSON Meta where
 
 instance FromJSON CitationMode where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "AuthorInText"   -> return AuthorInText
-      String "SuppressAuthor" -> return SuppressAuthor
-      String "NormalCitation" -> return NormalCitation
+      "AuthorInText"   -> return AuthorInText
+      "SuppressAuthor" -> return SuppressAuthor
+      "NormalCitation" -> return NormalCitation
       _ -> mempty
   parseJSON _ = mempty
 instance ToJSON CitationMode where
@@ -404,10 +404,10 @@ instance ToJSON Citation where
 
 instance FromJSON QuoteType where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "SingleQuote" -> return SingleQuote
-      String "DoubleQuote" -> return DoubleQuote
+      "SingleQuote" -> return SingleQuote
+      "DoubleQuote" -> return DoubleQuote
       _                    -> mempty
   parseJSON _ = mempty      
 instance ToJSON QuoteType where
@@ -421,10 +421,10 @@ instance ToJSON QuoteType where
 
 instance FromJSON MathType where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "DisplayMath" -> return DisplayMath
-      String "InlineMath"  -> return InlineMath
+      "DisplayMath" -> return DisplayMath
+      "InlineMath"  -> return InlineMath
       _                    -> mempty
   parseJSON _ = mempty      
 instance ToJSON MathType where
@@ -437,15 +437,15 @@ instance ToJSON MathType where
   
 instance FromJSON ListNumberStyle where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "DefaultStyle" -> return DefaultStyle
-      String "Example"      -> return Example
-      String "Decimal"      -> return Decimal
-      String "LowerRoman"   -> return LowerRoman
-      String "UpperRoman"   -> return UpperRoman
-      String "LowerAlpha"   -> return LowerAlpha
-      String "UpperAlpha"   -> return UpperAlpha
+      "DefaultStyle" -> return DefaultStyle
+      "Example"      -> return Example
+      "Decimal"      -> return Decimal
+      "LowerRoman"   -> return LowerRoman
+      "UpperRoman"   -> return UpperRoman
+      "LowerAlpha"   -> return LowerAlpha
+      "UpperAlpha"   -> return UpperAlpha
       _                     -> mempty
   parseJSON _ = mempty      
 instance ToJSON ListNumberStyle where
@@ -463,12 +463,12 @@ instance ToJSON ListNumberStyle where
 
 instance FromJSON ListNumberDelim where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "DefaultDelim" -> return DefaultDelim
-      String "Period"       -> return Period
-      String "OneParen"     -> return OneParen
-      String "TwoParens"    -> return TwoParens
+      "DefaultDelim" -> return DefaultDelim
+      "Period"       -> return Period
+      "OneParen"     -> return OneParen
+      "TwoParens"    -> return TwoParens
       _                     -> mempty
   parseJSON _ = mempty      
 instance ToJSON ListNumberDelim where
@@ -483,12 +483,12 @@ instance ToJSON ListNumberDelim where
 
 instance FromJSON Alignment where
   parseJSON (Object v) = do
-    t <- v .: "t"
+    t <- v .: "t" :: Aeson.Parser Value
     case t of
-      String "AlignLeft"    -> return AlignLeft
-      String "AlignRight"   -> return AlignRight
-      String "AlignCenter"  -> return AlignCenter
-      String "AlignDefault" -> return AlignDefault
+      "AlignLeft"    -> return AlignLeft
+      "AlignRight"   -> return AlignRight
+      "AlignCenter"  -> return AlignCenter
+      "AlignDefault" -> return AlignDefault
       _                     -> mempty
   parseJSON _ = mempty      
 instance ToJSON Alignment where
@@ -501,8 +501,40 @@ instance ToJSON Alignment where
             AlignCenter  -> "AlignCenter"
             AlignDefault -> "AlignDefault"
 
-instance FromJSON Inline
-  where parseJSON = parseJSON'
+
+instance FromJSON Inline where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "Str"         -> Str <$> v .: "c"
+      "Emph"        -> Emph <$> v .: "c"
+      "Strong"      -> Strong <$> v .: "c"
+      "Strikeout"   -> Strikeout <$> v .: "c"
+      "Superscript" -> Superscript <$> v .: "c"
+      "Subscript"   -> Subscript <$> v .: "c"
+      "SmallCaps"   -> SmallCaps <$> v .: "c"
+      "Quoted"      -> do (qt, ils) <- v .: "c"
+                          return $ Quoted qt ils
+      "Cite"        -> do (cits, ils) <- v .: "c"
+                          return $ Cite cits ils
+      "Code"        -> do (attr, s) <- v .: "c"
+                          return $ Code attr s
+      "Space"       -> return Space
+      "SoftBreak"   -> return SoftBreak
+      "LineBreak"   -> return LineBreak
+      "Math"        -> do (mtype, s) <- v .: "c"
+                          return $ Math mtype s
+      "RawInline"   -> do (fmt, s) <- v .: "c"
+                          return $ RawInline fmt s
+      "Link"        -> do (attr, ils, tgt) <- v .: "c"
+                          return $ Link attr ils tgt
+      "Image"       -> do (attr, ils, tgt) <- v .: "c"
+                          return $ Image attr ils tgt
+      "Note"        -> Note <$> v .: "c"
+      "Span"        -> do (attr, ils) <- v .: "c"
+                          return $ Span attr ils
+      _ -> mempty
+  parseJSON _ = mempty
 
 instance ToJSON Inline where
   toJSON (Str s) =
@@ -589,7 +621,6 @@ instance ToJSON Inline where
                           , toJSON target
                           ]
            ]
-
   toJSON (Note blks) =
     object [ "t" .= String "Note"
            , "c" .= blks
@@ -601,8 +632,31 @@ instance ToJSON Inline where
                           ]
            ]
 
-instance FromJSON Block
-  where parseJSON = parseJSON'
+instance FromJSON Block where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "Plain"          -> Plain <$> v .: "c"
+      "Para"           -> Para  <$> v .: "c"
+      "CodeBlock"      -> do (attr, s) <- v .: "c"
+                             return $ CodeBlock attr s
+      "RawBlock"       -> do (fmt, s) <- v .: "c"
+                             return $ CodeBlock fmt s
+      "BlockQuote"     -> BlockQuote <$> v .: "c"
+      "OrderedList"    -> do (attr, items) <- v .: "c"
+                             return $ OrderedList attr items
+      "BulletList"     -> BulletList <$> v .: "c"
+      "DefinitionList" -> DefinitionList <$> v .: "c"
+      "Header"         -> do (n, attr, ils) <- v .: "c"
+                             return $ Header n attr ils
+      "HorizontalRule" -> return $ HorizontalRule
+      "Table"          -> do (cpt, align, wdths, hdr, rows) <- v .: "c"
+                             return $ Table cpt align wdths hdr rows
+      "Div"            -> do (attr, blks) <- v .: "c"
+                             return $ Div attr blks
+      "Null"           -> return $ Null
+      _                -> mempty
+  parseJSON _ = mempty
 instance ToJSON Block where
   toJSON (Plain ils) =
     object [ "t" .= String "Plain"
@@ -672,8 +726,11 @@ instance ToJSON Block where
            , "c" .= Aeson.emptyArray
            ]
 
-instance FromJSON Pandoc
-  where parseJSON = parseJSON'
+instance FromJSON Pandoc where
+  parseJSON (Object v) = do
+    (meta, blks) <- v .: "c"
+    return $ Pandoc meta blks
+  parseJSON _ = mempty
 instance ToJSON Pandoc where
   toJSON (Pandoc meta blks) =
     Array [ toJSON meta

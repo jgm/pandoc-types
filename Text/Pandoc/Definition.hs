@@ -702,10 +702,9 @@ instance ToJSON Block where
            ]
 
 instance FromJSON Pandoc where
-  parseJSON (Object v) = do
-    (meta, blks) <- v .: "c"
+  parseJSON json = do
+    (meta, blks) <- parseJSON json
     return $ Pandoc meta blks
-  parseJSON _ = mempty
 instance ToJSON Pandoc where
   toJSON (Pandoc meta blks) =
     Array [ toJSON meta

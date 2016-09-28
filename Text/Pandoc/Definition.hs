@@ -79,7 +79,7 @@ import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
 import Data.Aeson hiding (Null)
 import qualified Data.Aeson.Types as Aeson
-import Control.Monad (guard)
+import Control.Monad (guard, when)
 import qualified Data.Map as M
 import GHC.Generics (Generic, Rep (..))
 import Data.String
@@ -287,6 +287,9 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- ToJSON/FromJSON instances. We do this by hand instead of deriving
 -- from generics, so we can have more control over the format.
 
+pandocApiVersion :: (Int, Int, Int)
+pandocApiVersion = (1,0,0)
+
 instance FromJSON MetaValue where
   parseJSON (Object v) = do
     t <- v .: "t" :: Aeson.Parser Value
@@ -326,10 +329,9 @@ instance ToJSON MetaValue where
            ]
 
 instance FromJSON Meta where
-  parseJSON (Object v) = Meta <$> v .: "unMeta"
-  parseJSON _ = mempty
+  parseJSON json = Meta <$> parseJSON json
 instance ToJSON Meta where
-  toJSON meta = object [ "unMeta" .= unMeta meta ]
+  toJSON meta = toJSON $ unMeta meta
 
 instance FromJSON CitationMode where
   parseJSON (Object v) = do
@@ -702,14 +704,25 @@ instance ToJSON Block where
            ]
 
 instance FromJSON Pandoc where
-  parseJSON json = do
-    (meta, blks) <- parseJSON json
-    return $ Pandoc meta blks
+  parseJSON (Object v) = do
+    (n, _, _) <- v .: "pandoc-api-version" :: Aeson.Parser (Int, Int, Int)
+    let (n', _, _) = pandocApiVersion
+    when (n /= n') $ 
+      fail $ unlines [ "Incompatible api versions (encoded with version "
+                     , show n
+                     , ", but attempted to decode with "
+                     , show n'
+                     , ")"
+                     ]
+    Pandoc <$> v .: "meta"
+           <*> v .: "blocks"
+  parseJSON _ = mempty
 instance ToJSON Pandoc where
   toJSON (Pandoc meta blks) =
-    Array [ toJSON meta
-          , toJSON blks
-          ]
+    object [ "pandoc-api-version" .= pandocApiVersion
+           , "meta"               .= meta
+           , "blocks"             .= blks
+           ]
 
 -- Instances for deepseq
 #if MIN_VERSION_base(4,8,0)

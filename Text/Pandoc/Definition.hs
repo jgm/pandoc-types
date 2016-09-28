@@ -312,8 +312,18 @@ parseJSON' :: (Generic a, Aeson.GFromJSON (Rep a))
 #endif
 parseJSON' = Aeson.genericParseJSON jsonOpts
 
-instance FromJSON MetaValue
-  where parseJSON = parseJSON'
+instance FromJSON MetaValue where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "MetaMap"     -> MetaMap     <$> (v .: "c")
+      String "MetaList"    -> MetaList    <$> (v .: "c")
+      String "MetaBool"    -> MetaBool    <$> (v .: "c")
+      String "MetaString"  -> MetaString  <$> (v .: "c")
+      String "MetaInlines" -> MetaInlines <$> (v .: "c")
+      String "MetaBlocks"  -> MetaBlocks  <$> (v .: "c")
+      _ -> mempty
+  parseJSON _ = mempty
 instance ToJSON MetaValue where
   toJSON (MetaMap mp) =
     object [ "t" .= String "MetaMap"
@@ -340,13 +350,21 @@ instance ToJSON MetaValue where
            , "c" .= blks
            ]
 
-instance FromJSON Meta
-  where parseJSON = parseJSON'
+instance FromJSON Meta where
+  parseJSON (Object v) = Meta <$> v .: "unMeta"
+  parseJSON _ = mempty
 instance ToJSON Meta where
   toJSON meta = object [ "unMeta" .= unMeta meta ]
 
-instance FromJSON CitationMode
-  where parseJSON = parseJSON'
+instance FromJSON CitationMode where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "AuthorInText"   -> return AuthorInText
+      String "SuppressAuthor" -> return SuppressAuthor
+      String "NormalCitation" -> return NormalCitation
+      _ -> mempty
+  parseJSON _ = mempty
 instance ToJSON CitationMode where
   toJSON cmode =
     object [ "t" .= String s
@@ -358,8 +376,22 @@ instance ToJSON CitationMode where
             NormalCitation -> "NormalCitation"
 
 
-instance FromJSON Citation
-  where parseJSON = parseJSON'
+instance FromJSON Citation where
+  parseJSON (Object v) = do
+    citationId'      <- v .: "citationId"
+    citationPrefix'  <- v .: "citationPrefix"
+    citationSuffix'  <- v .: "citationSuffix"
+    citationMode'    <- v .: "citationMode"
+    citationNoteNum' <- v .: "citationNoteNum"
+    citationHash'    <- v .: "citationHash"
+    return Citation { citationId = citationId'
+                    , citationPrefix = citationPrefix'
+                    , citationSuffix = citationSuffix'
+                    , citationMode = citationMode'
+                    , citationNoteNum = citationNoteNum'
+                    , citationHash = citationHash'
+                    }
+  parseJSON _ = mempty
 instance ToJSON Citation where
   toJSON cit =
     object [ "citationId"      .= citationId cit
@@ -370,8 +402,14 @@ instance ToJSON Citation where
            , "citationHash"    .= citationHash cit
            ]
 
-instance FromJSON QuoteType
-  where parseJSON = parseJSON'
+instance FromJSON QuoteType where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "SingleQuote" -> return SingleQuote
+      String "DoubleQuote" -> return DoubleQuote
+      _                    -> mempty
+  parseJSON _ = mempty      
 instance ToJSON QuoteType where
   toJSON qtype = object [ "t" .= String s
                         , "c" .= Aeson.emptyArray
@@ -381,8 +419,14 @@ instance ToJSON QuoteType where
             DoubleQuote -> "DoubleQuote"
 
 
-instance FromJSON MathType
-  where parseJSON = parseJSON'
+instance FromJSON MathType where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "DisplayMath" -> return DisplayMath
+      String "InlineMath"  -> return InlineMath
+      _                    -> mempty
+  parseJSON _ = mempty      
 instance ToJSON MathType where
   toJSON mtype = object [ "t" .= String s
                         , "c" .= Aeson.emptyArray
@@ -391,8 +435,19 @@ instance ToJSON MathType where
             DisplayMath -> "DisplayMath"
             InlineMath  -> "InlineMath"
   
-instance FromJSON ListNumberStyle
-  where parseJSON = parseJSON'
+instance FromJSON ListNumberStyle where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "DefaultStyle" -> return DefaultStyle
+      String "Example"      -> return Example
+      String "Decimal"      -> return Decimal
+      String "LowerRoman"   -> return LowerRoman
+      String "UpperRoman"   -> return UpperRoman
+      String "LowerAlpha"   -> return LowerAlpha
+      String "UpperAlpha"   -> return UpperAlpha
+      _                     -> mempty
+  parseJSON _ = mempty      
 instance ToJSON ListNumberStyle where
   toJSON lsty = object [ "t" .= String s
                        , "c" .= Aeson.emptyArray
@@ -406,8 +461,16 @@ instance ToJSON ListNumberStyle where
             LowerAlpha   -> "LowerAlpha"
             UpperAlpha   -> "UpperAlpha"
 
-instance FromJSON ListNumberDelim
-  where parseJSON = parseJSON'
+instance FromJSON ListNumberDelim where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "DefaultDelim" -> return DefaultDelim
+      String "Period"       -> return Period
+      String "OneParen"     -> return OneParen
+      String "TwoParens"    -> return TwoParens
+      _                     -> mempty
+  parseJSON _ = mempty      
 instance ToJSON ListNumberDelim where
   toJSON delim = object [ "t" .= String s
                         , "c" .= Aeson.emptyArray
@@ -418,10 +481,25 @@ instance ToJSON ListNumberDelim where
             OneParen     -> "OneParen"
             TwoParens    -> "TwoParens"
 
-instance FromJSON Alignment
-  where parseJSON = parseJSON'
-instance ToJSON Alignment
-  where toJSON = toJSON'
+instance FromJSON Alignment where
+  parseJSON (Object v) = do
+    t <- v .: "t"
+    case t of
+      String "AlignLeft"    -> return AlignLeft
+      String "AlignRight"   -> return AlignRight
+      String "AlignCenter"  -> return AlignCenter
+      String "AlignDefault" -> return AlignDefault
+      _                     -> mempty
+  parseJSON _ = mempty      
+instance ToJSON Alignment where
+  toJSON delim = object [ "t" .= String s
+                        , "c" .= Aeson.emptyArray
+                        ]
+    where s = case delim of
+            AlignLeft    -> "AlignLeft"
+            AlignRight   -> "AlignRight"
+            AlignCenter  -> "AlignCenter"
+            AlignDefault -> "AlignDefault"
 
 instance FromJSON Inline
   where parseJSON = parseJSON'

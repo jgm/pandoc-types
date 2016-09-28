@@ -283,34 +283,9 @@ instance Ord Citation where
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
--- derive generic instances of FromJSON, ToJSON:
 
-jsonOpts :: Aeson.Options
-jsonOpts = Aeson.defaultOptions{
-                          Aeson.fieldLabelModifier = id
-                        , Aeson.constructorTagModifier = id
-                        , Aeson.allNullaryToStringTag = False
-                        , Aeson.omitNothingFields = False
-                        , Aeson.sumEncoding = Aeson.TaggedObject "t" "c"
-                        }
-
-#if MIN_VERSION_aeson(1,0,0)
-toJSON' :: (Generic a, Aeson.GToJSON Aeson.Zero (Rep a))
-        => a -> Aeson.Value
-#else
-toJSON' :: (Generic a, Aeson.GToJSON (Rep a))
-        => a -> Aeson.Value
-#endif
-toJSON' = Aeson.genericToJSON jsonOpts
-
-#if MIN_VERSION_aeson(1,0,0)
-parseJSON' :: (Generic a, Aeson.GFromJSON Aeson.Zero (Rep a))
-           => Aeson.Value -> Aeson.Parser a
-#else
-parseJSON' :: (Generic a, Aeson.GFromJSON (Rep a))
-           => Aeson.Value -> Aeson.Parser a
-#endif
-parseJSON' = Aeson.genericParseJSON jsonOpts
+-- ToJSON/FromJSON instances. We do this by hand instead of deriving
+-- from generics, so we can have more control over the format.
 
 instance FromJSON MetaValue where
   parseJSON (Object v) = do

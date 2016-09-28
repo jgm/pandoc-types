@@ -31,7 +31,7 @@ Bug-Reports:         https://github.com/jgm/pandoc-types/issues
 Copyright:           (c) 2006-2015 John MacFarlane
 Category:            Text
 Build-type:          Simple
-Cabal-version:       >=1.6
+Cabal-version:       >=1.8
 Tested-With:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2
 Extra-Source-Files:  changelog
 Source-repository    head

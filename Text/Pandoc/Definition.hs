@@ -1,4 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable, DeriveGeneric, FlexibleContexts, CPP #-}
+{-# LANGUAGE OverloadedStrings, OverloadedLists, DeriveDataTypeable,
+             DeriveGeneric, FlexibleContexts, GeneralizedNewtypeDeriving,
+             CPP
+#-}
 
 {-
 Copyright (c) 2006-2016, John MacFarlane
@@ -74,7 +77,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
-import Data.Aeson (FromJSON(..), ToJSON(..))
+import Data.Aeson
 import qualified Data.Aeson.Types as Aeson
 import Control.Monad (guard)
 import qualified Data.Map as M
@@ -196,7 +199,7 @@ type TableCell = [Block]
 
 -- | Formats for raw blocks
 newtype Format = Format String
-               deriving (Read, Show, Typeable, Data, Generic)
+               deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
 
 instance IsString Format where
   fromString f = Format $ map toLower f
@@ -321,24 +324,50 @@ instance ToJSON Meta
 
 instance FromJSON CitationMode
   where parseJSON = parseJSON'
-instance ToJSON CitationMode
-  where toJSON = toJSON'
+instance ToJSON CitationMode where
+  toJSON cmode =
+    object [ "t" .= String s
+           , "c" .= Aeson.emptyArray
+           ]
+    where s = case cmode of
+            AuthorInText   -> "AuthorInText"
+            SuppressAuthor -> "SuppressAuthor"
+            NormalCitation -> "NormalCitation"
+
 
 instance FromJSON Citation
   where parseJSON = parseJSON'
-instance ToJSON Citation
-  where toJSON = toJSON'
+instance ToJSON Citation where
+  toJSON cit =
+    object [ "citationId"      .= citationId cit
+           , "citationPrefix"  .= citationPrefix cit
+           , "citationSuffix"  .= citationSuffix cit
+           , "citationMode"    .= citationMode cit
+           , "citationNoteNum" .= citationNoteNum cit
+           , "citationHash"    .= citationHash cit
+           ]
 
 instance FromJSON QuoteType
   where parseJSON = parseJSON'
-instance ToJSON QuoteType
-  where toJSON = toJSON'
+instance ToJSON QuoteType where
+  toJSON qtype = object [ "t" .= String s
+                        , "c" .= Aeson.emptyArray
+                        ]
+    where s = case qtype of
+            SingleQuote -> "SingleQuote"
+            DoubleQuote -> "DoubleQuote"
+
 
 instance FromJSON MathType
   where parseJSON = parseJSON'
-instance ToJSON MathType
-  where toJSON = toJSON'
-
+instance ToJSON MathType where
+  toJSON mtype = object [ "t" .= String s
+                        , "c" .= Aeson.emptyArray
+                        ]
+    where s = case mtype of
+            DisplayMath -> "DisplayMath"
+            InlineMath  -> "InlineMath"
+  
 instance FromJSON ListNumberStyle
   where parseJSON = parseJSON'
 instance ToJSON ListNumberStyle
@@ -354,15 +383,105 @@ instance FromJSON Alignment
 instance ToJSON Alignment
   where toJSON = toJSON'
 
-instance FromJSON Format
-  where parseJSON = parseJSON'
-instance ToJSON Format
-  where toJSON = toJSON'
-
 instance FromJSON Inline
   where parseJSON = parseJSON'
-instance ToJSON Inline
-  where toJSON = toJSON'
+
+instance ToJSON Inline where
+  toJSON (Str s) =
+    object [ "t" .= String "Str"
+           , "c" .= s
+           ]
+  toJSON (Emph ils) =
+    object [ "t" .= String "Emph"
+           , "c" .= ils
+           ]
+  toJSON (Strong ils) =
+    object [ "t" .= String "Strong"
+           , "c" .= ils
+           ]
+  toJSON (Strikeout ils) =
+    object [ "t" .= String "Strikeout"
+           , "c" .= ils
+           ]
+  toJSON (Superscript ils) =
+    object [ "t" .= String "Superscript"
+           , "c" .= ils
+           ]
+  toJSON (Subscript ils) =
+    object [ "t" .= String "Subscript"
+           , "c" .= ils
+           ]
+  toJSON (SmallCaps ils) =
+    object [ "t" .= String "SmallCaps"
+           , "c" .= ils
+           ]
+  toJSON (Quoted qtype ils) =
+    object [ "t" .= String "Quoted"
+           , "c" .= Array [ toJSON qtype
+                          , toJSON ils
+                          ]
+           ]
+  toJSON (Cite cits ils) =
+    object [ "t" .= String "Cite"
+           , "c" .= Array [ toJSON cits
+                          , toJSON ils
+                          ]
+           ]
+  toJSON (Code attr s) =
+    object [ "t"  .= String "Code"
+           , "c"  .= Array [ toJSON attr
+                           , toJSON s
+                           ]
+           ]
+  toJSON Space =
+    object [ "t" .= String "Space"
+           , "c" .= Aeson.emptyArray
+           ]
+  toJSON SoftBreak =
+    object [ "t" .= String "SoftBreak"
+           , "c" .= Aeson.emptyArray
+           ]
+  toJSON LineBreak =
+    object [ "t" .= String "LineBreak"
+           , "c" .= Aeson.emptyArray
+           ]
+  toJSON (Math mtype s) =
+    object [ "t" .= String "Math"
+           , "c" .= Array [ toJSON mtype
+                          , toJSON s
+                          ]
+           ]
+  toJSON (RawInline fmt s) =
+    object [ "t" .= String "RawInline"
+           , "c" .= Array [ toJSON fmt
+                          , toJSON s
+                          ]
+           ]
+  toJSON (Link attr ils target) =
+    object [ "t" .= String "Link"
+           , "c" .= Array [ toJSON attr
+                          , toJSON ils
+                          , toJSON target
+                          ]
+           ]
+  toJSON (Image attr ils target) =
+    object [ "t" .= String "Image"
+           , "c" .= Array [ toJSON attr
+                          , toJSON ils
+                          , toJSON target
+                          ]
+           ]
+
+  toJSON (Note blks) =
+    object [ "t" .= String "Note"
+           , "c" .= blks
+           ]
+  toJSON (Span attr ils) =
+    object [ "t" .= String "Span"
+           , "c" .= Array [ toJSON attr
+                          , toJSON ils
+                          ]
+           ]
 
 instance FromJSON Block
   where parseJSON = parseJSON'

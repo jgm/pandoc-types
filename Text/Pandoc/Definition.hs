@@ -314,13 +314,36 @@ parseJSON' = Aeson.genericParseJSON jsonOpts
 
 instance FromJSON MetaValue
   where parseJSON = parseJSON'
-instance ToJSON MetaValue
-  where toJSON = toJSON'
+instance ToJSON MetaValue where
+  toJSON (MetaMap mp) =
+    object [ "t" .= String "MetaMap"
+           , "c" .= mp
+           ]
+  toJSON (MetaList lst) =
+    object [ "t" .= String "MetaList"
+           , "c" .= lst
+           ]
+  toJSON (MetaBool bool) =
+    object [ "t" .= String "MetaBool"
+           , "c" .= bool
+           ]
+  toJSON (MetaString s) =
+    object [ "t" .= String "MetaString"
+           , "c" .= s
+           ]
+  toJSON (MetaInlines ils) =
+    object [ "t" .= String "MetaInlines"
+           , "c" .= ils
+           ]
+  toJSON (MetaBlocks blks) =
+    object [ "t" .= String "MetaBlocks"
+           , "c" .= blks
+           ]
 
 instance FromJSON Meta
   where parseJSON = parseJSON'
-instance ToJSON Meta
-  where toJSON = toJSON'
+instance ToJSON Meta where
+  toJSON meta = object [ "unMeta" .= unMeta meta ]
 
 instance FromJSON CitationMode
   where parseJSON = parseJSON'
@@ -573,8 +596,11 @@ instance ToJSON Block where
 
 instance FromJSON Pandoc
   where parseJSON = parseJSON'
-instance ToJSON Pandoc
-  where toJSON = toJSON'
+instance ToJSON Pandoc where
+  toJSON (Pandoc meta blks) =
+    Array [ toJSON meta
+          , toJSON blks
+          ]
 
 -- Instances for deepseq
 #if MIN_VERSION_base(4,8,0)

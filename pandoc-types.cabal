@@ -44,14 +44,26 @@ Library
                      Text.Pandoc.Walk
                      Text.Pandoc.Builder
                      Text.Pandoc.JSON
+                     Text.Pandoc.Arbitrary
   Other-modules:     Paths_pandoc_types
   Build-depends:     base >= 4 && < 5,
                      containers >= 0.3,
                      syb >= 0.1 && < 0.7,
                      ghc-prim >= 0.2,
                      bytestring >= 0.9 && < 0.11,
-                     aeson >= 0.6.2 && < 1.1
+                     aeson >= 0.6.2 && < 1.1,
+                     QuickCheck >= 2
   if impl(ghc < 7.10)
     Build-depends:   deepseq-generics >= 0.1 && < 0.2
   else
     Build-depends:   deepseq >= 1.4.1 && < 1.5
+
+test-suite test-pandoc-types
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             test-pandoc-types.hs
+  build-depends:       base,
+                       pandoc-types,
+                       aeson >= 0.6.2 && < 1.1,
+                       QuickCheck >= 2
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N

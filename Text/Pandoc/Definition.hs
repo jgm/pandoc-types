@@ -421,7 +421,7 @@ instance FromJSON ListNumberStyle where
       "UpperRoman"   -> return UpperRoman
       "LowerAlpha"   -> return LowerAlpha
       "UpperAlpha"   -> return UpperAlpha
-      _                     -> mempty
+      _              -> mempty
   parseJSON _ = mempty      
 instance ToJSON ListNumberStyle where
   toJSON lsty = object [ "t" .= String s
@@ -616,7 +616,7 @@ instance FromJSON Block where
       "CodeBlock"      -> do (attr, s) <- v .: "c"
                              return $ CodeBlock attr s
       "RawBlock"       -> do (fmt, s) <- v .: "c"
-                             return $ CodeBlock fmt s
+                             return $ RawBlock fmt s
       "BlockQuote"     -> BlockQuote <$> v .: "c"
       "OrderedList"    -> do (attr, items) <- v .: "c"
                              return $ OrderedList attr items

@@ -77,7 +77,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
-import Data.Aeson
+import Data.Aeson hiding (Null)
 import qualified Data.Aeson.Types as Aeson
 import Control.Monad (guard)
 import qualified Data.Map as M
@@ -370,13 +370,30 @@ instance ToJSON MathType where
   
 instance FromJSON ListNumberStyle
   where parseJSON = parseJSON'
-instance ToJSON ListNumberStyle
-  where toJSON = toJSON'
+instance ToJSON ListNumberStyle where
+  toJSON lsty = object [ "t" .= String s
+                       , "c" .= Aeson.emptyArray
+                       ]
+    where s = case lsty of
+            DefaultStyle -> "DefaultStyle"
+            Example      -> "Example"
+            Decimal      -> "Decimal"
+            LowerRoman   -> "LowerRoman"
+            UpperRoman   -> "UpperRoman"
+            LowerAlpha   -> "LowerAlpha"
+            UpperAlpha   -> "UpperAlpha"
 
 instance FromJSON ListNumberDelim
   where parseJSON = parseJSON'
-instance ToJSON ListNumberDelim
-  where toJSON = toJSON'
+instance ToJSON ListNumberDelim where
+  toJSON delim = object [ "t" .= String s
+                        , "c" .= Aeson.emptyArray
+                        ]
+    where s = case delim of
+            DefaultDelim -> "DefaultDelim"
+            Period       -> "Period"
+            OneParen     -> "OneParen"
+            TwoParens    -> "TwoParens"
 
 instance FromJSON Alignment
   where parseJSON = parseJSON'
@@ -485,8 +502,74 @@ instance ToJSON Inline where
 
 instance FromJSON Block
   where parseJSON = parseJSON'
-instance ToJSON Block
-  where toJSON = toJSON'
+instance ToJSON Block where
+  toJSON (Plain ils) =
+    object [ "t" .= String "Plain"
+           , "c" .= ils
+           ]
+  toJSON (Para ils) =
+    object [ "t" .= String "Para"
+           , "c" .= ils
+           ]
+  toJSON (CodeBlock attr s) =
+    object [ "t" .= String "CodeBlock"
+           , "c" .= Array [ toJSON attr
+                          , toJSON s
+                          ]
+           ]
+  toJSON (RawBlock fmt s) =
+    object [ "t" .= String "RawBlock"
+           , "c" .= Array [ toJSON fmt
+                          , toJSON s
+                          ]
+           ]
+  toJSON (BlockQuote blks) =
+    object [ "t" .= String "BlockQuote"
+           , "c" .= blks
+           ]
+
+  toJSON (OrderedList listAttrs blksList) =
+    object [ "t" .= String "OrderedList"
+           , "c" .= Array [ toJSON listAttrs
+                          , toJSON blksList
+                          ]
+           ]
+  toJSON (BulletList blksList) =
+    object [ "t" .= String "BulletList"
+           , "c" .= blksList
+           ]
+  toJSON (DefinitionList defs) =
+    object [ "t" .= String "DefinitionList"
+           , "c" .= defs
+           ]
+  toJSON (Header n attr ils) =
+    object [ "t" .= String "Header"
+           , "c" .= Array [ toJSON n
+                          , toJSON attr
+                          , toJSON ils
+                          ]
+           ]
+  toJSON HorizontalRule =
+    object [ "t" .= String "HorizontalRule"
+           , "c" .= Aeson.emptyArray
+           ]
+  toJSON (Table caption aligns widths cells rows) =
+    object [ "t" .= String "Table"
+           , "c" .= Array [ toJSON caption
+                          , toJSON aligns
+                          , toJSON widths
+                          , toJSON cells
+                          , toJSON rows
+                          ]
+           ]
+  toJSON (Div attr blks) =
+    object [ "t" .= String "Div"
+           , "c" .= blks
+           ]
+  toJSON Null =
+    object [ "t" .= String "Null"
+           , "c" .= Aeson.emptyArray
+           ]
 
 instance FromJSON Pandoc
   where parseJSON = parseJSON'

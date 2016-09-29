@@ -287,9 +287,6 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- ToJSON/FromJSON instances. We do this by hand instead of deriving
 -- from generics, so we can have more control over the format.
 
-pandocApiVersion :: (Int, Int, Int)
-pandocApiVersion = (1,0,0)
-
 instance FromJSON MetaValue where
   parseJSON (Object v) = do
     t <- v .: "t" :: Aeson.Parser Value

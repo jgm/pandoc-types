@@ -683,9 +683,9 @@ instance ToJSON Block where
 
 instance FromJSON Pandoc where
   parseJSON (Object v) = do
-    mbJVersion <- v .:? "pandoc-api-version" :: Aeson.Parser (Maybe Version)
+    mbJVersion <- v .:? "pandoc-api-version" :: Aeson.Parser (Maybe [Int])
     case mbJVersion of
-      Just jVersion  | x : y : _ <- versionBranch jVersion
+      Just jVersion  | x : y : _ <- jVersion
                      , x' : y' : _ <- versionBranch pandocTypesVersion
                      , x == x'
                      , y == y' -> Pandoc <$> v .: "meta" <*> v .: "blocks"
@@ -701,7 +701,7 @@ instance FromJSON Pandoc where
   parseJSON _ = mempty
 instance ToJSON Pandoc where
   toJSON (Pandoc meta blks) =
-    object [ "pandoc-api-version" .= pandocTypesVersion
+    object [ "pandoc-api-version" .= versionBranch pandocTypesVersion
            , "meta"               .= meta
            , "blocks"             .= blks
            ]

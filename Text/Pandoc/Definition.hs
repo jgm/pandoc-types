@@ -687,11 +687,11 @@ instance FromJSON Pandoc where
                      , x == x'
                      , y == y' -> Pandoc <$> v .: "meta" <*> v .: "blocks"
                      | otherwise ->
-                         fail $ unlines [ "Incompatible API versions: "
+                         fail $ mconcat [ "Incompatible API versions: "
                                         , "encoded with "
                                         , show jVersion
                                         , " but attempted to decode with "
-                                        , show pandocTypesVersion
+                                        , show $ versionBranch pandocTypesVersion
                                         , "."
                                         ]
       _ -> fail "JSON missing pandoc-api-version."

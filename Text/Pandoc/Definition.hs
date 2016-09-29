@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, OverloadedLists, DeriveDataTypeable,
              DeriveGeneric, FlexibleContexts, GeneralizedNewtypeDeriving,
-             CPP
+             PatternGuards, CPP
 #-}
 
 {-
@@ -91,7 +91,7 @@ import Control.DeepSeq
 import Control.DeepSeq.Generics
 #endif
 import Paths_pandoc_types (version)
-import Data.Version (Version)
+import Data.Version (Version, versionBranch)
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -683,21 +683,25 @@ instance ToJSON Block where
 
 instance FromJSON Pandoc where
   parseJSON (Object v) = do
-    (n, _, _) <- v .: "pandoc-api-version" :: Aeson.Parser (Int, Int, Int)
-    let (n', _, _) = pandocApiVersion
-    when (n /= n') $ 
-      fail $ unlines [ "Incompatible api versions (encoded with version "
-                     , show n
-                     , ", but attempted to decode with "
-                     , show n'
-                     , ")"
-                     ]
-    Pandoc <$> v .: "meta"
-           <*> v .: "blocks"
+    mbJVersion <- v .:? "pandoc-api-version" :: Aeson.Parser (Maybe Version)
+    case mbJVersion of
+      Just jVersion  | x : y : _ <- versionBranch jVersion
+                     , x' : y' : _ <- versionBranch pandocTypesVersion
+                     , x == x'
+                     , y == y' -> Pandoc <$> v .: "meta" <*> v .: "blocks"
+                     | otherwise ->
+                         fail $ unlines [ "Incompatible API versions: "
+                                        , "encoded with "
+                                        , show jVersion
+                                        , " but attempted to decode with "
+                                        , show pandocTypesVersion
+                                        , "."
+                                        ]
+      _ -> fail "JSON missing pandoc-api-version."
   parseJSON _ = mempty
 instance ToJSON Pandoc where
   toJSON (Pandoc meta blks) =
-    object [ "pandoc-api-version" .= pandocApiVersion
+    object [ "pandoc-api-version" .= pandocTypesVersion
            , "meta"               .= meta
            , "blocks"             .= blks
            ]

@@ -344,9 +344,7 @@ instance FromJSON CitationMode where
   parseJSON _ = mempty
 instance ToJSON CitationMode where
   toJSON cmode =
-    object [ "t" .= String s
-           , "c" .= Aeson.emptyArray
-           ]
+    object [ "t" .= String s ]
     where s = case cmode of
             AuthorInText   -> "AuthorInText"
             SuppressAuthor -> "SuppressAuthor"
@@ -388,9 +386,7 @@ instance FromJSON QuoteType where
       _                    -> mempty
   parseJSON _ = mempty      
 instance ToJSON QuoteType where
-  toJSON qtype = object [ "t" .= String s
-                        , "c" .= Aeson.emptyArray
-                        ]
+  toJSON qtype = object [ "t" .= String s ]
     where s = case qtype of
             SingleQuote -> "SingleQuote"
             DoubleQuote -> "DoubleQuote"
@@ -405,9 +401,7 @@ instance FromJSON MathType where
       _                    -> mempty
   parseJSON _ = mempty      
 instance ToJSON MathType where
-  toJSON mtype = object [ "t" .= String s
-                        , "c" .= Aeson.emptyArray
-                        ]
+  toJSON mtype = object [ "t" .= String s ]
     where s = case mtype of
             DisplayMath -> "DisplayMath"
             InlineMath  -> "InlineMath"
@@ -426,9 +420,7 @@ instance FromJSON ListNumberStyle where
       _              -> mempty
   parseJSON _ = mempty      
 instance ToJSON ListNumberStyle where
-  toJSON lsty = object [ "t" .= String s
-                       , "c" .= Aeson.emptyArray
-                       ]
+  toJSON lsty = object [ "t" .= String s ]
     where s = case lsty of
             DefaultStyle -> "DefaultStyle"
             Example      -> "Example"
@@ -449,9 +441,7 @@ instance FromJSON ListNumberDelim where
       _                     -> mempty
   parseJSON _ = mempty      
 instance ToJSON ListNumberDelim where
-  toJSON delim = object [ "t" .= String s
-                        , "c" .= Aeson.emptyArray
-                        ]
+  toJSON delim = object [ "t" .= String s ]
     where s = case delim of
             DefaultDelim -> "DefaultDelim"
             Period       -> "Period"
@@ -469,9 +459,7 @@ instance FromJSON Alignment where
       _                     -> mempty
   parseJSON _ = mempty      
 instance ToJSON Alignment where
-  toJSON delim = object [ "t" .= String s
-                        , "c" .= Aeson.emptyArray
-                        ]
+  toJSON delim = object [ "t" .= String s ]
     where s = case delim of
             AlignLeft    -> "AlignLeft"
             AlignRight   -> "AlignRight"
@@ -561,17 +549,11 @@ instance ToJSON Inline where
                            ]
            ]
   toJSON Space =
-    object [ "t" .= String "Space"
-           , "c" .= Aeson.emptyArray
-           ]
+    object [ "t" .= String "Space" ]
   toJSON SoftBreak =
-    object [ "t" .= String "SoftBreak"
-           , "c" .= Aeson.emptyArray
-           ]
+    object [ "t" .= String "SoftBreak" ]
   toJSON LineBreak =
-    object [ "t" .= String "LineBreak"
-           , "c" .= Aeson.emptyArray
-           ]
+    object [ "t" .= String "LineBreak" ]
   toJSON (Math mtype s) =
     object [ "t" .= String "Math"
            , "c" .= Array [ toJSON mtype
@@ -682,9 +664,7 @@ instance ToJSON Block where
                           ]
            ]
   toJSON HorizontalRule =
-    object [ "t" .= String "HorizontalRule"
-           , "c" .= Aeson.emptyArray
-           ]
+    object [ "t" .= String "HorizontalRule" ]
   toJSON (Table caption aligns widths cells rows) =
     object [ "t" .= String "Table"
            , "c" .= Array [ toJSON caption
@@ -699,9 +679,7 @@ instance ToJSON Block where
            , "c" .= blks
            ]
   toJSON Null =
-    object [ "t" .= String "Null"
-           , "c" .= Aeson.emptyArray
-           ]
+    object [ "t" .= String "Null" ]
 
 instance FromJSON Pandoc where
   parseJSON (Object v) = do

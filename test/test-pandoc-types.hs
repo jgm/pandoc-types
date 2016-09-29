@@ -9,6 +9,6 @@ prop_roundtrip doc = case decode $ encode doc :: (Maybe Pandoc) of
   _         -> False
 
 main :: IO ()
-main = quickCheckWith stdArgs { maxSuccess = 500 }  prop_roundtrip
+main = quickCheckWith stdArgs { maxSuccess = 100 }  prop_roundtrip
 
 

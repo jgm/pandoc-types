@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings, OverloadedLists, DeriveDataTypeable,
-             DeriveGeneric, FlexibleContexts, GeneralizedNewtypeDeriving,
-             PatternGuards, CPP
-#-}
+DeriveGeneric, FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards,
+CPP #-}
 
 {-
 Copyright (c) 2006-2016, John MacFarlane

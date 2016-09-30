@@ -87,6 +87,7 @@ import Data.Monoid
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else
+import Control.Applicative ((<$>), (<*>))
 import Control.DeepSeq.Generics
 #endif
 import Paths_pandoc_types (version)

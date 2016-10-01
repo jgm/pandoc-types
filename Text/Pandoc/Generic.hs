@@ -119,7 +119,6 @@ linked to in a document:
 module Text.Pandoc.Generic where
 
 import Data.Generics
-import Data.Monoid
 
 -- | Applies a transformation on @a@s to matching elements in a @b@,
 -- moving from the bottom of the structure up.

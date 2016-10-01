@@ -311,7 +311,7 @@ instance ToJSON MetaValue where
   toJSON (MetaBlocks blks) = tagged "MetaBlocks" blks
 
 instance FromJSON Meta where
-  parseJSON json = Meta <$> parseJSON json
+  parseJSON j = Meta <$> parseJSON j
 instance ToJSON Meta where
   toJSON meta = toJSON $ unMeta meta
 

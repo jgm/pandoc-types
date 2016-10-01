@@ -77,12 +77,10 @@ import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
 import Data.Aeson hiding (Null)
 import qualified Data.Aeson.Types as Aeson
-import Control.Monad (guard, when)
 import qualified Data.Map as M
-import GHC.Generics (Generic, Rep (..))
+import GHC.Generics (Generic)
 import Data.String
 import Data.Char (toLower)
-import Data.Monoid
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else

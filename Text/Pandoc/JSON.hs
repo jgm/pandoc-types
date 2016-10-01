@@ -77,7 +77,6 @@ import Text.Pandoc.Walk
 import Text.Pandoc.Generic
 import Data.Maybe (listToMaybe)
 import Data.Data
-import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Aeson
 import System.Environment (getArgs)

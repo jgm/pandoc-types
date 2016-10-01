@@ -1,5 +1,5 @@
 Name:                pandoc-types
-Version:             1.16.1.1
+Version:             1.17
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent

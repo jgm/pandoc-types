@@ -541,7 +541,7 @@ instance ToJSON Block where
   toJSON HorizontalRule = taggedNoContent "HorizontalRule"
   toJSON (Table caption aligns widths cells rows) =
     tagged "Table" (caption, aligns, widths, cells, rows)
-  toJSON (Div attr blks) = tagged "Div" blks
+  toJSON (Div attr blks) = tagged "Div" (attr, blks)
   toJSON Null = taggedNoContent "Null"
 
 instance FromJSON Pandoc where

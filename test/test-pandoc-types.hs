@@ -1,6 +1,6 @@
 import Text.Pandoc.Definition
-import Text.Pandoc.Arbitrary
 import Test.QuickCheck
+import Text.Pandoc.Arbitrary ()
 import Data.Aeson
 
 prop_roundtrip :: Pandoc -> Bool

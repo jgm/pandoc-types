@@ -166,16 +166,13 @@ where
 import Text.Pandoc.Definition
 import Data.String
 import Data.Monoid
-import Data.Maybe (fromMaybe)
 import qualified Data.Map as M
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
-import Data.List (groupBy, intersperse)
+import Data.List (groupBy)
 import Data.Data
-import Data.Typeable
-import Data.Traversable
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
 

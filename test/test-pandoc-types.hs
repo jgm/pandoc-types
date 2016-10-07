@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
 
 import Text.Pandoc.Definition
-import Text.Pandoc.Builder
-import Test.QuickCheck
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 import Text.Pandoc.Arbitrary ()
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
@@ -22,7 +20,7 @@ testEncode :: ToJSON a => (a, ByteString) -> Assertion
 testEncode (doc, j) = assertEqual "Encoding error" (encode doc) j
 
 testDecode' :: FromJSON a => (a, ByteString) -> Maybe a
-testDecode' (doc, j) = decode j
+testDecode' (_, j) = decode j
 
 testDecode :: (Show a, Eq a, FromJSON a) => (a, ByteString) -> Assertion
 testDecode (doc, j) =
@@ -34,9 +32,9 @@ testEncodeDecode :: (Show a, Eq a, ToJSON a, FromJSON a)
                  => String
                  -> (a, ByteString)
                  -> Test
-testEncodeDecode s pair = testGroup s [ testCase "Encoding" $ testEncode pair
-                                      , testCase "Decoding" $ testDecode pair
-                                      ]
+testEncodeDecode msg pair = testGroup msg [ testCase "Encoding" $ testEncode pair
+                                          , testCase "Decoding" $ testDecode pair
+                                          ]
 
 t_metamap :: (MetaValue, ByteString)
 t_metamap = ( MetaMap $
@@ -290,7 +288,8 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
 t_null :: (Block, ByteString)
 t_null = (Null, [s|{"t":"Null"}|])
           
-          
+
+tests :: [Test]         
 tests =
   [ testGroup "JSON"
     [ testGroup "encoding/decoding properties"
@@ -326,7 +325,7 @@ tests =
         , testEncodeDecode "Strikeout" t_strikeout
         , testEncodeDecode "Superscript" t_superscript
         , testEncodeDecode "Subscript" t_subscript
-        , testEncodeDecode "SmallCaps" t_subscript
+        , testEncodeDecode "SmallCaps" t_smallcaps
         , testEncodeDecode "Quoted" t_quoted
         , testEncodeDecode "Cite" t_cite
         , testEncodeDecode "Code" t_code
@@ -343,7 +342,7 @@ tests =
         [ testEncodeDecode "Plain" t_plain
         , testEncodeDecode "Para" t_para
         , testEncodeDecode "CodeBlock" t_codeblock
-        , testEncodeDecode "RawBlock" t_codeblock
+        , testEncodeDecode "RawBlock" t_rawblock
         , testEncodeDecode "BlockQuote" t_blockquote
         , testEncodeDecode "OrderedList" t_orderedlist
         , testEncodeDecode "BulletList" t_bulletlist

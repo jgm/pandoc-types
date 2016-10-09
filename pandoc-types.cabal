@@ -65,5 +65,12 @@ test-suite test-pandoc-types
   build-depends:       base,
                        pandoc-types,
                        aeson >= 0.6.2 && < 1.1,
-                       QuickCheck >= 2
+                       containers >= 0.3,
+                       bytestring >= 0.9 && < 0.11,
+                       test-framework >= 0.3 && < 0.9,
+                       test-framework-hunit >= 0.2 && < 0.4,
+                       test-framework-quickcheck2 >= 0.2.9 && < 0.4,
+                       QuickCheck >= 2.4 && < 2.10,
+                       HUnit >= 1.2 && < 1.4,
+                       string-qq == 0.0.2
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N

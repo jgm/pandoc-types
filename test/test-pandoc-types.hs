@@ -92,7 +92,7 @@ t_displaymath = ( DisplayMath, [s|{"t":"DisplayMath"}|])
 t_inlinemath :: (MathType, ByteString)
 t_inlinemath = ( InlineMath, [s|{"t":"InlineMath"}|])
 
-                    
+
 t_str :: (Inline, ByteString)
 t_str = ( Str "Hello"
         , [s|{"t":"Str","c":"Hello"}|]
@@ -103,27 +103,27 @@ t_emph = ( Emph [Str "Hello"]
          , [s|{"t":"Emph","c":[{"t":"Str","c":"Hello"}]}|]
          )
 
-t_strong :: (Inline, ByteString)         
+t_strong :: (Inline, ByteString)
 t_strong = ( Strong [Str "Hello"]
            , [s|{"t":"Strong","c":[{"t":"Str","c":"Hello"}]}|]
            )
 
-t_strikeout :: (Inline, ByteString)         
+t_strikeout :: (Inline, ByteString)
 t_strikeout = ( Strikeout [Str "Hello"]
               , [s|{"t":"Strikeout","c":[{"t":"Str","c":"Hello"}]}|]
               )
 
-t_superscript :: (Inline, ByteString)         
+t_superscript :: (Inline, ByteString)
 t_superscript = ( Superscript [Str "Hello"]
                 , [s|{"t":"Superscript","c":[{"t":"Str","c":"Hello"}]}|]
                 )
 
-t_subscript :: (Inline, ByteString)         
+t_subscript :: (Inline, ByteString)
 t_subscript = ( Subscript [Str "Hello"]
               , [s|{"t":"Subscript","c":[{"t":"Str","c":"Hello"}]}|]
               )
 
-t_smallcaps :: (Inline, ByteString)         
+t_smallcaps :: (Inline, ByteString)
 t_smallcaps = ( SmallCaps [Str "Hello"]
               , [s|{"t":"SmallCaps","c":[{"t":"Str","c":"Hello"}]}|]
               )
@@ -200,6 +200,11 @@ t_para :: (Block, ByteString)
 t_para = ( Para [Str "Hello"]
           , [s|{"t":"Para","c":[{"t":"Str","c":"Hello"}]}|]
           )
+
+t_lineblock :: (Block, ByteString)
+t_lineblock = ( LineBlock [[Str "Hello"], [Str "Moin"]]
+              , [s|{"t":"LineBlock","c":[[{"t":"Str","c":"Hello"}],[{"t":"Str","c":"Moin"}]]}|]
+              )
 
 t_codeblock :: (Block, ByteString)
 t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar"
@@ -287,9 +292,9 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
 
 t_null :: (Block, ByteString)
 t_null = (Null, [s|{"t":"Null"}|])
-          
 
-tests :: [Test]         
+
+tests :: [Test]
 tests =
   [ testGroup "JSON"
     [ testGroup "encoding/decoding properties"
@@ -341,6 +346,7 @@ tests =
       , testGroup "Block"
         [ testEncodeDecode "Plain" t_plain
         , testEncodeDecode "Para" t_para
+        , testEncodeDecode "LineBlock" t_lineblock
         , testEncodeDecode "CodeBlock" t_codeblock
         , testEncodeDecode "RawBlock" t_rawblock
         , testEncodeDecode "BlockQuote" t_blockquote
@@ -359,5 +365,3 @@ tests =
 
 main :: IO ()
 main = defaultMain tests
-
-

@@ -183,6 +183,7 @@ instance Walkable Inline Inline where
 instance Walkable Inline Block where
   walk f (Para xs)                = Para $ walk f xs
   walk f (Plain xs)               = Plain $ walk f xs
+  walk f (LineBlock xs)           = LineBlock $ walk f xs
   walk _ (CodeBlock attr s)       = CodeBlock attr s
   walk _ (RawBlock t s)           = RawBlock t s
   walk f (BlockQuote bs)          = BlockQuote $ walk f bs
@@ -197,6 +198,7 @@ instance Walkable Inline Block where
 
   walkM f (Para xs)                = Para <$> walkM f xs
   walkM f (Plain xs)               = Plain <$> walkM f xs
+  walkM f (LineBlock xs)           = LineBlock <$> walkM f xs
   walkM _ (CodeBlock attr s)       = return $ CodeBlock attr s
   walkM _ (RawBlock t s)           = return $ RawBlock t s
   walkM f (BlockQuote bs)          = BlockQuote <$> walkM f bs
@@ -215,6 +217,7 @@ instance Walkable Inline Block where
 
   query f (Para xs)                = query f xs
   query f (Plain xs)               = query f xs
+  query f (LineBlock xs)           = query f xs
   query _ (CodeBlock _ _)          = mempty
   query _ (RawBlock _ _)           = mempty
   query f (BlockQuote bs)          = query f bs
@@ -230,6 +233,7 @@ instance Walkable Inline Block where
 instance Walkable Block Block where
   walk f (Para xs)                = f $ Para $ walk f xs
   walk f (Plain xs)               = f $ Plain $ walk f xs
+  walk f (LineBlock xs)           = f $ LineBlock $ walk f xs
   walk f (CodeBlock attr s)       = f $ CodeBlock attr s
   walk f (RawBlock t s)           = f $ RawBlock t s
   walk f (BlockQuote bs)          = f $ BlockQuote $ walk f bs
@@ -245,6 +249,7 @@ instance Walkable Block Block where
 
   walkM f (Para xs)                = Para <$> walkM f xs >>= f
   walkM f (Plain xs)               = Plain <$> walkM f xs >>= f
+  walkM f (LineBlock xs)           = LineBlock <$> walkM f xs >>= f
   walkM f (CodeBlock attr s)       = f $ CodeBlock attr s
   walkM f (RawBlock t s)           = f $ RawBlock t s
   walkM f (BlockQuote bs)          = BlockQuote <$> walkM f bs >>= f
@@ -262,6 +267,7 @@ instance Walkable Block Block where
 
   query f (Para xs)                = f (Para xs) <> query f xs
   query f (Plain xs)               = f (Plain xs) <> query f xs
+  query f (LineBlock xs)           = f (LineBlock xs) <> query f xs
   query f (CodeBlock attr s)       = f $ CodeBlock attr s
   query f (RawBlock t s)           = f $ RawBlock t s
   query f (BlockQuote bs)          = f (BlockQuote bs) <> query f bs

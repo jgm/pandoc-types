@@ -211,6 +211,7 @@ instance Ord Format where
 data Block
     = Plain [Inline]        -- ^ Plain text, not a paragraph
     | Para [Inline]         -- ^ Paragraph
+    | LineBlock [[Inline]]  -- ^ Multiple non-breaking lines
     | CodeBlock Attr String -- ^ Code block (literal) with attributes
     | RawBlock Format String -- ^ Raw block
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
@@ -365,7 +366,7 @@ instance FromJSON QuoteType where
       "SingleQuote" -> return SingleQuote
       "DoubleQuote" -> return DoubleQuote
       _                    -> mempty
-  parseJSON _ = mempty      
+  parseJSON _ = mempty
 instance ToJSON QuoteType where
   toJSON qtype = taggedNoContent s
     where s = case qtype of
@@ -380,13 +381,13 @@ instance FromJSON MathType where
       "DisplayMath" -> return DisplayMath
       "InlineMath"  -> return InlineMath
       _                    -> mempty
-  parseJSON _ = mempty      
+  parseJSON _ = mempty
 instance ToJSON MathType where
   toJSON mtype = taggedNoContent s
     where s = case mtype of
             DisplayMath -> "DisplayMath"
             InlineMath  -> "InlineMath"
-  
+
 instance FromJSON ListNumberStyle where
   parseJSON (Object v) = do
     t <- v .: "t" :: Aeson.Parser Value
@@ -399,7 +400,7 @@ instance FromJSON ListNumberStyle where
       "LowerAlpha"   -> return LowerAlpha
       "UpperAlpha"   -> return UpperAlpha
       _              -> mempty
-  parseJSON _ = mempty      
+  parseJSON _ = mempty
 instance ToJSON ListNumberStyle where
   toJSON lsty = taggedNoContent s
     where s = case lsty of
@@ -420,7 +421,7 @@ instance FromJSON ListNumberDelim where
       "OneParen"     -> return OneParen
       "TwoParens"    -> return TwoParens
       _                     -> mempty
-  parseJSON _ = mempty      
+  parseJSON _ = mempty
 instance ToJSON ListNumberDelim where
   toJSON delim = taggedNoContent s
     where s = case delim of
@@ -438,7 +439,7 @@ instance FromJSON Alignment where
       "AlignCenter"  -> return AlignCenter
       "AlignDefault" -> return AlignDefault
       _                     -> mempty
-  parseJSON _ = mempty      
+  parseJSON _ = mempty
 instance ToJSON Alignment where
   toJSON delim = taggedNoContent s
     where s = case delim of
@@ -509,6 +510,7 @@ instance FromJSON Block where
     case t of
       "Plain"          -> Plain <$> v .: "c"
       "Para"           -> Para  <$> v .: "c"
+      "LineBlock"      -> LineBlock <$> v .: "c"
       "CodeBlock"      -> do (attr, s) <- v .: "c"
                              return $ CodeBlock attr s
       "RawBlock"       -> do (fmt, s) <- v .: "c"
@@ -531,6 +533,7 @@ instance FromJSON Block where
 instance ToJSON Block where
   toJSON (Plain ils) = tagged "Plain" ils
   toJSON (Para ils) = tagged "Para" ils
+  toJSON (LineBlock lns) = tagged "LineBlock" lns
   toJSON (CodeBlock attr s) = tagged "CodeBlock" (attr, s)
   toJSON (RawBlock fmt s) = tagged "RawBlock" (fmt, s)
   toJSON (BlockQuote blks) = tagged "BlockQuote" blks

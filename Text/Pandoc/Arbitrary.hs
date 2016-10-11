@@ -3,8 +3,8 @@
 -- provides Arbitrary instance for Pandoc types
 module Text.Pandoc.Arbitrary ()
 where
-import Test.QuickCheck 
-import Control.Monad (liftM, liftM2)
+import Test.QuickCheck
+import Control.Monad (forM, liftM, liftM2)
 import Text.Pandoc.Definition
 import Text.Pandoc.Builder
 
@@ -75,6 +75,11 @@ arbBlock :: Int -> Gen Block
 arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
                          , (15, liftM Para $ arbInlines (n-1))
                          , (5,  liftM2 CodeBlock arbAttr realString)
+                         , (3,  liftM LineBlock $
+                                  liftM2 (:)
+                                         (arbInlines $ (n - 1) `mod` 3)
+                                         (forM [1..((n - 1) `div` 3)]
+                                               (const $ arbInlines 3)))
                          , (2,  elements [ RawBlock (Format "html")
                                             "<div>\n*&amp;*\n</div>"
                                          , RawBlock (Format "latex")
@@ -188,4 +193,3 @@ instance Arbitrary ListNumberDelim where
                    2 -> return OneParen
                    3 -> return TwoParens
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
-

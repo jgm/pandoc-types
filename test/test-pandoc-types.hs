@@ -38,8 +38,8 @@ testEncodeDecode msg pair = testGroup msg [ testCase "Encoding" $ testEncode pai
 
 t_metamap :: (MetaValue, ByteString)
 t_metamap = ( MetaMap $
-              M.fromList [("foo", MetaBool True), ("bar", MetaString "baz")]
-            , [s|{"t":"MetaMap","c":{"foo":{"t":"MetaBool","c":true},"bar":{"t":"MetaString","c":"baz"}}}|]
+              M.fromList [("foo", MetaBool True)]
+            , [s|{"t":"MetaMap","c":{"foo":{"t":"MetaBool","c":true}}}|]
             )
 
 t_metalist :: (MetaValue, ByteString)

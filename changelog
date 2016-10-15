@@ -1,3 +1,35 @@
+[1.17]
+
+  * Remimplement json encoding of inlines manually (Jesse Rosenthal).
+    This is the first step to doing manual encoding and decoding of pandoc
+    JSON. This will replace the current generic deriving, which can be a
+    moving target.
+  * Move Arbitrary instances for types from pandoc (Jesse Rosenthal).
+  * Remove empty arrays for leaf elements (Jesse Rosenthal).
+    Elements with no children (Space, SoftBreak, LineBreak, HorizontalRule,
+    Null) previously had an empty array for their "c" value. We remove that
+    here.  This is a breaking change for the JSON format.
+  * New toplevel JSON format with api-version (Jesse Rosenthal). The version
+    number is the pandoc-types version.  The toplevel format was previously:
+
+        [{"unMeta": META}, [BLOCKS]]
+
+    It is now:
+
+        {
+         "pandoc-api-version" : [MAJ, MIN, REV],
+         "meta" : META,
+         "blocks": BLOCKS
+        }
+
+    Decoding fails if the major and minor version numbers don't match.
+  * Add simple quickcheck tests to verify that roundtrip works properly
+    (Jesse Rosenthal).
+  * Add a LineBlock block element (Albert Krewinkel).
+  * Add explicit unit tests for encoding and decoding (Jesse Rosenthal).
+  * Fixed warnings in Walk, Builder.
+  * Test with travis and appveyor.
+
 [1.16.1.1]
 
   * Allow aeson 1.0.*.

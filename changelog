@@ -1,3 +1,7 @@
+[1.17.0.3]
+
+  * More ghc 7.8 compatibility imports.
+
 [1.17.0.2]
 
   * Added a necessary import from Data.Monoid (for ghc 7.8).

@@ -170,6 +170,7 @@ import Data.Monoid
 import qualified Data.Map as M
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
+import Data.Traversable (Traversable)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.List (groupBy)

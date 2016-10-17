@@ -93,6 +93,10 @@ import qualified Data.Traversable as T
 import Data.Traversable (Traversable)
 import qualified Data.Foldable as F
 import Data.Foldable (Foldable)
+#if MIN_VERSION_base(4,8,0)
+#else
+import Data.Monoid
+#endif
 
 class Walkable a b where
   -- | @walk f x@ walks the structure @x@ (bottom up) and replaces every

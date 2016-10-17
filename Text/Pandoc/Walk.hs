@@ -103,7 +103,7 @@ class Walkable a b where
   -- occurrence of an @a@ with the result of applying @f@ to it.
   walk  :: (a -> a) -> b -> b
   -- | A monadic version of 'walk'.
-  walkM :: (Monad m) => (a -> m a) -> b -> m b
+  walkM :: (Monad m, Functor m) => (a -> m a) -> b -> m b
   -- | @query f x@ walks the structure @x@ (bottom up) and applies @f@
   -- to every @a@, appending the results.
   query :: Monoid c => (a -> c) -> b -> c

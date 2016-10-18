@@ -1,3 +1,10 @@
+[1.17.0.4]
+
+  * Re-add Functor constraint to walkM, needed for ghc 7.8.
+  * Turn off redundant-constraints warning for Walk (for ghc 8.0.1+).
+  * Added necessary Data.Traversable import.
+  * Allow HUnit 1.5.
+
 [1.17.0.3]
 
   * More ghc 7.8 compatibility imports.

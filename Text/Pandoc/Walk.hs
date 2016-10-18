@@ -1,6 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, ScopedTypeVariables, CPP #-}
-#if MIN_VERSION_base(4,8,0)
+#if MIN_VERSION_base(4,9,0)
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
+#endif
+#if MIN_VERSION_base(4,8,0)
 #define OVERLAPS {-# OVERLAPPING #-}
 #else
 {-# LANGUAGE OverlappingInstances #-}

@@ -37,8 +37,18 @@ matrix:
     addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
 
   - env: BUILD=stack ARGS="--resolver lts-7"
-    compiler: ": #stack 7.10.3 osx"
+    compiler: ": #stack 8.0.1"
+    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
+
+  # Nightly builds are allowed to fail
+  - env: BUILD=stack ARGS="--resolver nightly"
+    compiler: ": #stack nightly"
+    addons: {apt: {packages: [libgmp-dev]}}
+
+  - env: BUILD=stack ARGS="--resolver lts-7"
+    compiler: ": #stack 8.0.1 osx"
     os: osx
+
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly osx"
     os: osx
@@ -72,7 +82,7 @@ install:
 - |
   case "$BUILD" in
     stack)
-      stack --no-terminal --install-ghc $ARGS test --flag 'aeson:fast' --only-dependencies
+      stack --no-terminal --install-ghc $ARGS test --flag 'aeson:fast' --only-dependencies --fast
       ;;
     cabal)
       cabal --version
@@ -85,10 +95,10 @@ script:
 - |
   case "$BUILD" in
     stack)
-    stack --no-terminal $ARGS test --haddock --no-haddock-deps --ghc-options="-Wall -fno-warn-unused-do-bind -Werror"
+    stack --no-terminal $ARGS test --haddock --no-haddock-deps --ghc-options="-O0 -Wall -fno-warn-unused-do-bind -Werror" --flag 'aeson:fast'
       ;;
     cabal)
-      cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Werror"
+      cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Wall -fno-warn-unused-do-bind -Werror" -ffast
       cabal build
       cabal check
       cabal test

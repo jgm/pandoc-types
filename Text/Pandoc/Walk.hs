@@ -137,6 +137,7 @@ instance Walkable Inline Inline where
   walk f (Code attr s)    = f $ Code attr s
   walk f Space            = f Space
   walk f SoftBreak        = f SoftBreak
+  walk f PageBreak        = f PageBreak
   walk f LineBreak        = f LineBreak
   walk f (Math mt s)      = f (Math mt s)
   walk f (RawInline t s)  = f $ RawInline t s
@@ -159,6 +160,7 @@ instance Walkable Inline Inline where
   walkM f (Code attr s)   = f $ Code attr s
   walkM f Space           = f Space
   walkM f SoftBreak       = f SoftBreak
+  walkM f PageBreak       = f PageBreak
   walkM f LineBreak       = f LineBreak
   walkM f (Math mt s)     = f (Math mt s)
   walkM f (RawInline t s) = f $ RawInline t s
@@ -179,6 +181,7 @@ instance Walkable Inline Inline where
   query f (Code attr s)   = f (Code attr s)
   query f Space           = f Space
   query f SoftBreak       = f SoftBreak
+  query f PageBreak       = f PageBreak
   query f LineBreak       = f LineBreak
   query f (Math mt s)     = f (Math mt s)
   query f (RawInline t s) = f (RawInline t s)
@@ -301,6 +304,7 @@ instance Walkable Block Inline where
   walk _ (Code attr s)   = Code attr s
   walk _ Space           = Space
   walk _ SoftBreak       = SoftBreak
+  walk _ PageBreak       = PageBreak
   walk _ LineBreak       = LineBreak
   walk _ (Math mt s)     = Math mt s
   walk _ (RawInline t s) = RawInline t s
@@ -323,6 +327,7 @@ instance Walkable Block Inline where
   walkM _ (Code attr s)   = return $ Code attr s
   walkM _ Space           = return $ Space
   walkM _ SoftBreak       = return $ SoftBreak
+  walkM _ PageBreak       = return $ PageBreak
   walkM _ LineBreak       = return $ LineBreak
   walkM _ (Math mt s)     = return $ Math mt s
   walkM _ (RawInline t s) = return $ RawInline t s
@@ -343,6 +348,7 @@ instance Walkable Block Inline where
   query _ (Code _ _)      = mempty
   query _ Space           = mempty
   query _ SoftBreak       = mempty
+  query _ PageBreak       = mempty
   query _ LineBreak       = mempty
   query _ (Math _ _)      = mempty
   query _ (RawInline _ _) = mempty

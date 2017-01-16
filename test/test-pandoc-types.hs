@@ -16,8 +16,6 @@ import Data.String.QQ
 import Data.ByteString.Lazy (ByteString)
 #if MIN_VERSION_base(4,8,0)
 import Data.Monoid ((<>))
-#else
-import Data.Monoid
 #endif
 
 

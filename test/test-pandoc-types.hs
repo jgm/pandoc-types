@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes, FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, QuasiQuotes, FlexibleContexts, CPP #-}
 
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
@@ -14,6 +14,12 @@ import Test.Framework.Providers.HUnit (testCase)
 import qualified Data.Map as M
 import Data.String.QQ
 import Data.ByteString.Lazy (ByteString)
+#if MIN_VERSION_base(4,8,0)
+import Data.Monoid ((<>))
+#else
+import Data.Monoid
+#endif
+
 
 p_walk :: (Typeable a, Walkable a Pandoc)
        => (a -> a) -> Pandoc -> Bool

@@ -91,12 +91,12 @@ module Text.Pandoc.Walk (Walkable(..))
 where
 import Control.Applicative ((<$>))
 import Text.Pandoc.Definition
-import Text.Pandoc.Builder ((<>))
 import qualified Data.Traversable as T
 import Data.Traversable (Traversable)
 import qualified Data.Foldable as F
 import Data.Foldable (Foldable)
 #if MIN_VERSION_base(4,8,0)
+import Data.Monoid ((<>))
 #else
 import Data.Monoid
 #endif

@@ -1,8 +1,12 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings, QuasiQuotes, FlexibleContexts #-}
 
 import Text.Pandoc.Definition
+import Text.Pandoc.Walk
+import Text.Pandoc.Arbitrary()
+import Data.Generics
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 import Text.Pandoc.Arbitrary ()
+import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2 (testProperty)
@@ -10,6 +14,33 @@ import Test.Framework.Providers.HUnit (testCase)
 import qualified Data.Map as M
 import Data.String.QQ
 import Data.ByteString.Lazy (ByteString)
+
+p_walk :: (Typeable a, Walkable a Pandoc)
+       => (a -> a) -> Pandoc -> Bool
+p_walk f d = everywhere (mkT f) d == walk f d
+
+p_query :: (Eq a, Typeable a1, Monoid a, Walkable a1 Pandoc)
+        => (a1 -> a) -> Pandoc -> Bool
+p_query f d = everything mappend (mempty `mkQ` f) d == query f d
+
+inlineTrans :: Inline -> Inline
+inlineTrans (Str xs) = Str $ map toUpper xs
+inlineTrans (Emph xs) = Strong xs
+inlineTrans x = x
+
+blockTrans :: Block -> Block
+blockTrans (Plain xs) = Para xs
+blockTrans (BlockQuote xs) = Div ("",["special"],[]) xs
+blockTrans x = x
+
+inlineQuery :: Inline -> String
+inlineQuery (Str xs) = xs
+inlineQuery _ = ""
+
+blockQuery :: Block -> [Int]
+blockQuery (Header lev _ _) = [lev]
+blockQuery _ = []
+
 
 prop_roundtrip :: Pandoc -> Bool
 prop_roundtrip doc = case decode $ encode doc :: (Maybe Pandoc) of
@@ -296,7 +327,13 @@ t_null = (Null, [s|{"t":"Null"}|])
 
 tests :: [Test]
 tests =
-  [ testGroup "JSON"
+  [ testGroup "Walk"
+    [ testProperty "p_walk inlineTrans" (p_walk inlineTrans)
+    , testProperty "p_walk blockTrans" (p_walk blockTrans)
+    , testProperty "p_query inlineQuery" (p_query inlineQuery)
+    , testProperty "p_query blockQuery" (p_query blockQuery)
+    ]
+  , testGroup "JSON"
     [ testGroup "encoding/decoding properties"
       [ testProperty "round-trip" prop_roundtrip
       ]

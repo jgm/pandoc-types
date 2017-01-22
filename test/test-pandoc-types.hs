@@ -198,9 +198,6 @@ t_softbreak = ( SoftBreak, [s|{"t":"SoftBreak"}|] )
 t_linebreak :: (Inline, ByteString)
 t_linebreak = ( LineBreak, [s|{"t":"LineBreak"}|] )
 
-t_pagebreak :: (Inline, ByteString)
-t_pagebreak = ( PageBreak, [s|{"t":"PageBreak"}|] )
-
 t_rawinline :: (Inline, ByteString)
 t_rawinline = ( RawInline (Format "tex") "\\foo{bar}"
               , [s|{"t":"RawInline","c":["tex","\\foo{bar}"]}|]
@@ -382,7 +379,6 @@ tests =
         , testEncodeDecode "Space" t_space
         , testEncodeDecode "SoftBreak" t_softbreak
         , testEncodeDecode "LineBreak" t_linebreak
-        , testEncodeDecode "PageBreak" t_pagebreak
         , testEncodeDecode "RawInline" t_rawinline
         , testEncodeDecode "Link" t_link
         , testEncodeDecode "Image" t_image

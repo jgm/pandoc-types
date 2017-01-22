@@ -259,7 +259,6 @@ data Inline
     | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
-    | PageBreak             -- ^ Force new page
     | Math MathType String  -- ^ TeX math (literal)
     | RawInline Format String -- ^ Raw inline
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
@@ -471,7 +470,6 @@ instance FromJSON Inline where
       "Space"       -> return Space
       "SoftBreak"   -> return SoftBreak
       "LineBreak"   -> return LineBreak
-      "PageBreak"   -> return PageBreak
       "Math"        -> do (mtype, s) <- v .: "c"
                           return $ Math mtype s
       "RawInline"   -> do (fmt, s) <- v .: "c"
@@ -500,7 +498,6 @@ instance ToJSON Inline where
   toJSON Space = taggedNoContent "Space"
   toJSON SoftBreak = taggedNoContent "SoftBreak"
   toJSON LineBreak = taggedNoContent "LineBreak"
-  toJSON PageBreak = taggedNoContent "PageBreak"
   toJSON (Math mtype s) = tagged "Math" (mtype, s)
   toJSON (RawInline fmt s) = tagged "RawInline" (fmt, s)
   toJSON (Link attr ils target) = tagged "Link" (attr, ils, target)

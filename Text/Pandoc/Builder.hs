@@ -134,7 +134,6 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , space
                            , softbreak
                            , linebreak
-                           , pageBreak
                            , math
                            , displayMath
                            , rawInline
@@ -234,12 +233,6 @@ instance Monoid Inlines where
                           (SoftBreak, LineBreak) -> xs' |> LineBreak
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
-                          (PageBreak, Space) -> xs' |> PageBreak
-                          (PageBreak, LineBreak) -> xs' |> PageBreak
-                          (PageBreak, SoftBreak) -> xs' |> PageBreak
-                          (Space, PageBreak) -> xs' |> PageBreak
-                          (LineBreak, PageBreak) -> xs' |> PageBreak
-                          (SoftBreak, PageBreak) -> xs' |> PageBreak
                           _                  -> xs' |> x |> y
 
 instance IsString Inlines where
@@ -382,9 +375,6 @@ softbreak = singleton SoftBreak
 
 linebreak :: Inlines
 linebreak = singleton LineBreak
-
-pageBreak :: Inlines
-pageBreak = singleton PageBreak
 
 -- | Inline math
 math :: String -> Inlines

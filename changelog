@@ -1,3 +1,11 @@
+[1.19]
+
+  * Reverted PageBreak addition, pending further discussion.
+
+[1.18]
+
+  * Added PageBreak Inline element (Hubert Plociniczak).
+
 [1.17.0.5]
 
   * Allow aeson 1.1.

@@ -107,10 +107,12 @@ arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
                             x1 <- arbInlines (n-1)
                             x2 <- vector cs
                             x3 <- vectorOf cs $ elements [0, 0.25]
-                            x4 <- vectorOf cs $ listOf $ arbBlock (n-1)
-                            x5 <- vectorOf rs $ vectorOf cs
+                            x4 <- vectorOf cs $ pure (1, 1)
+                            x5 <- vectorOf rs $ vectorOf cs $ pure (1, 1)
+                            x6 <- vectorOf cs $ listOf $ arbBlock (n-1)
+                            x7 <- vectorOf rs $ vectorOf cs
                                   $ listOf $ arbBlock (n-1)
-                            return (Table x1 x2 x3 x4 x5))
+                            return (Table x1 x2 x3 x4 x5 x6 x7))
                    ]
 
 instance Arbitrary Pandoc where

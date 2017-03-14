@@ -199,7 +199,7 @@ instance Walkable Inline Block where
   walk f (DefinitionList xs)      = DefinitionList $ walk f xs
   walk f (Header lev attr xs)     = Header lev attr $ walk f xs
   walk _ HorizontalRule           = HorizontalRule
-  walk f (Table capt as ws hs rs) = Table (walk f capt) as ws (walk f hs) (walk f rs)
+  walk f (Table capt as ws hspec rspec hs rs) = Table (walk f capt) as ws hspec rspec (walk f hs) (walk f rs)
   walk f (Div attr bs)            = Div attr (walk f bs)
   walk _ Null                     = Null
 
@@ -214,11 +214,11 @@ instance Walkable Inline Block where
   walkM f (DefinitionList xs)      = DefinitionList <$> walkM f xs
   walkM f (Header lev attr xs)     = Header lev attr <$> walkM f xs
   walkM _ HorizontalRule           = return HorizontalRule
-  walkM f (Table capt as ws hs rs) = do
+  walkM f (Table capt as ws hspec rspec hs rs) = do
                                      capt' <- walkM f capt
                                      hs' <- walkM f hs
                                      rs' <- walkM f rs
-                                     return $ Table capt' as ws hs' rs'
+                                     return $ Table capt' as ws hspec rspec hs' rs'
   walkM f (Div attr bs)            = Div attr <$> (walkM f bs)
   walkM _ Null                     = return Null
 
@@ -233,7 +233,7 @@ instance Walkable Inline Block where
   query f (DefinitionList xs)      = query f xs
   query f (Header _ _ xs)          = query f xs
   query _ HorizontalRule           = mempty
-  query f (Table capt _ _ hs rs)   = query f capt <> query f hs <> query f rs
+  query f (Table capt _ _ _ _ hs rs)   = query f capt <> query f hs <> query f rs
   query f (Div _ bs)               = query f bs
   query _ Null                     = mempty
 
@@ -249,7 +249,7 @@ instance Walkable Block Block where
   walk f (DefinitionList xs)      = f $ DefinitionList $ walk f xs
   walk f (Header lev attr xs)     = f $ Header lev attr $ walk f xs
   walk f HorizontalRule           = f $ HorizontalRule
-  walk f (Table capt as ws hs rs) = f $ Table (walk f capt) as ws (walk f hs)
+  walk f (Table capt as ws hspec rspec hs rs) = f $ Table (walk f capt) as ws hspec rspec (walk f hs)
                                                      (walk f rs)
   walk f (Div attr bs)            = f $ Div attr (walk f bs)
   walk _ Null                     = Null
@@ -265,10 +265,10 @@ instance Walkable Block Block where
   walkM f (DefinitionList xs)      = DefinitionList <$> walkM f xs >>= f
   walkM f (Header lev attr xs)     = Header lev attr <$> walkM f xs >>= f
   walkM f HorizontalRule           = f $ HorizontalRule
-  walkM f (Table capt as ws hs rs) = do capt' <- walkM f capt
-                                        hs' <- walkM f hs
-                                        rs' <- walkM f rs
-                                        f $ Table capt' as ws hs' rs'
+  walkM f (Table capt as ws hspec rspec hs rs) = do capt' <- walkM f capt
+                                                    hs' <- walkM f hs
+                                                    rs' <- walkM f rs
+                                                    f $ Table capt' as ws hspec rspec hs' rs'
   walkM f (Div attr bs)            = Div attr <$> walkM f bs >>= f
   walkM f Null                     = f Null
 
@@ -283,7 +283,7 @@ instance Walkable Block Block where
   query f (DefinitionList xs)      = f (DefinitionList xs) <> query f xs
   query f (Header lev attr xs)     = f (Header lev attr xs) <> query f xs
   query f HorizontalRule           = f $ HorizontalRule
-  query f (Table capt as ws hs rs) = f (Table capt as ws hs rs) <>
+  query f (Table capt as ws hspec rspec hs rs) = f (Table capt as ws hspec rspec hs rs) <>
                                        query f capt <> query f hs <> query f rs
   query f (Div attr bs)            = f (Div attr bs) <> query f bs
   query f Null                     = f Null

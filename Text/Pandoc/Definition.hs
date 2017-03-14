@@ -64,6 +64,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , Format(..)
                               , Attr
                               , nullAttr
+                              , CellSpec
                               , TableCell
                               , QuoteType(..)
                               , Target
@@ -195,6 +196,9 @@ nullAttr = ("",[],[])
 -- | Table cells are list of Blocks
 type TableCell = [Block]
 
+-- | Cell specs are a colspan and a rowspan
+type CellSpec = (Int, Int)
+
 -- | Formats for raw blocks
 newtype Format = Format String
                deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
@@ -226,7 +230,7 @@ data Block
                             -- definitions (each a list of blocks)
     | Header Int Attr [Inline] -- ^ Header - level (integer) and text (inlines)
     | HorizontalRule        -- ^ Horizontal rule
-    | Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]  -- ^ Table,
+    | Table [Inline] [Alignment] [Double] [CellSpec] [[CellSpec]] [TableCell] [[TableCell]]  -- ^ Table,
                             -- with caption, column alignments (required),
                             -- relative column widths (0 = default),
                             -- column headers (each a list of blocks), and
@@ -524,8 +528,8 @@ instance FromJSON Block where
       "Header"         -> do (n, attr, ils) <- v .: "c"
                              return $ Header n attr ils
       "HorizontalRule" -> return $ HorizontalRule
-      "Table"          -> do (cpt, align, wdths, hdr, rows) <- v .: "c"
-                             return $ Table cpt align wdths hdr rows
+      "Table"          -> do (cpt, align, wdths, hspec, rspec, hdr, rows) <- v .: "c"
+                             return $ Table cpt align wdths hspec rspec hdr rows
       "Div"            -> do (attr, blks) <- v .: "c"
                              return $ Div attr blks
       "Null"           -> return $ Null
@@ -543,8 +547,8 @@ instance ToJSON Block where
   toJSON (DefinitionList defs) = tagged "DefinitionList" defs
   toJSON (Header n attr ils) = tagged "Header" (n, attr, ils)
   toJSON HorizontalRule = taggedNoContent "HorizontalRule"
-  toJSON (Table caption aligns widths cells rows) =
-    tagged "Table" (caption, aligns, widths, cells, rows)
+  toJSON (Table caption aligns widths hspec rspec cells rows) =
+    tagged "Table" (caption, aligns, widths, hspec, rspec, cells, rows)
   toJSON (Div attr blks) = tagged "Div" (attr, blks)
   toJSON Null = taggedNoContent "Null"
 

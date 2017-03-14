@@ -159,6 +159,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , header
                            , headerWith
                            , horizontalRule
+                           , fullTable
                            , table
                            , simpleTable
                            , divWith
@@ -471,15 +472,26 @@ headerWith attr level = singleton . Header level attr . toList
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule
 
+fullTable :: Inlines               -- ^ Caption
+          -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
+          -> [CellSpec]           -- ^ Header CellSpecs
+          -> [[CellSpec]]         -- ^ Rows Specs
+          -> [Blocks]              -- ^ Headers
+          -> [[Blocks]]            -- ^ Rows
+          -> Blocks
+fullTable caption alignment headerspecs rowspecs headers rows = singleton $
+  Table (toList caption) aligns widths
+      headerspecs rowspecs (map toList headers) (map (map toList) rows)
+   where (aligns, widths) = unzip alignment
+
+
 table :: Inlines               -- ^ Caption
       -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
       -> [Blocks]              -- ^ Headers
       -> [[Blocks]]            -- ^ Rows
       -> Blocks
-table caption cellspecs headers rows = singleton $
-  Table (toList caption) aligns widths
-      (map toList headers) (map (map toList) rows)
-   where (aligns, widths) = unzip cellspecs
+table caption alignment headers rows = fullTable caption alignment (mapConst cellspecs headers) (map (mapConst cellspecs) rows) headers rows
+  where cellspecs = (1, 1)
 
 -- | A simple table without a caption.
 simpleTable :: [Blocks]   -- ^ Headers

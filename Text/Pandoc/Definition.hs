@@ -225,6 +225,7 @@ data Block
                             -- term (a list of inlines) and one or more
                             -- definitions (each a list of blocks)
     | Header Int Attr [Inline] -- ^ Header - level (integer) and text (inlines)
+    | NewPage               -- ^ Explicit pagebreak 
     | HorizontalRule        -- ^ Horizontal rule
     | Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]  -- ^ Table,
                             -- with caption, column alignments (required),

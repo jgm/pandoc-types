@@ -177,6 +177,7 @@ import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
+import Data.Functor ((<$))
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -485,12 +486,8 @@ table caption cellspecs headers rows = singleton $
 simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
-simpleTable headers = table mempty (mapConst defaults headers) headers
+simpleTable headers = table mempty (defaults <$ headers) headers
   where defaults = (AlignDefault, 0)
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList
-
-mapConst :: Functor f => b -> f a -> f b
-mapConst = fmap . const
-

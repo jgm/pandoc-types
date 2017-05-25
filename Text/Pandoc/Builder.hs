@@ -478,15 +478,25 @@ table :: Inlines               -- ^ Caption
       -> Blocks
 table caption cellspecs headers rows = singleton $
   Table (toList caption) aligns widths
-      (map toList headers) (map (map toList) rows)
+      (map toList headers') (map (map toList) rows)
    where (aligns, widths) = unzip cellspecs
+         numcols  = case (headers:rows) of
+                         [] -> 0
+                         xs -> maximum (map length xs)
+         headers' = if null headers
+                       then replicate numcols mempty
+                       else headers
 
 -- | A simple table without a caption.
 simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
-simpleTable headers = table mempty (mapConst defaults headers) headers
+simpleTable headers rows =
+  table mempty (replicate numcols defaults) headers rows
   where defaults = (AlignDefault, 0)
+        numcols  = case (headers:rows) of
+                        [] -> 0
+                        xs -> maximum (map length xs)
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList

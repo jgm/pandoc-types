@@ -500,7 +500,3 @@ simpleTable headers rows =
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList
-
-mapConst :: Functor f => b -> f a -> f b
-mapConst = fmap . const
-

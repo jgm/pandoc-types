@@ -161,6 +161,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , horizontalRule
                            , table
                            , simpleTable
+                           , figureWith
                            , divWith
                            )
 where
@@ -497,6 +498,16 @@ simpleTable headers rows =
         numcols  = case (headers:rows) of
                         [] -> 0
                         xs -> maximum (map length xs)
+
+-- | A figure with a caption.
+figureWith :: Attr    -- ^ Attributse
+           -> Inlines -- ^ Short caption
+           -> Blocks  -- ^ Full caption
+           -> Blocks  -- ^ Contents
+           -> Blocks
+figureWith attr shortCaption caption contents =
+  singleton (Figure attr (Caption (toList shortCaption) (toList caption))
+               (toList contents))
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList

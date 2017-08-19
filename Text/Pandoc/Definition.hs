@@ -62,6 +62,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
                               , Format(..)
+                              , Caption(..)
                               , Attr
                               , nullAttr
                               , TableCell
@@ -231,12 +232,18 @@ data Block
                             -- relative column widths (0 = default),
                             -- column headers (each a list of blocks), and
                             -- rows (each a list of lists of blocks)
+    | Figure Attr Caption [Block] -- ^ Figure with contents and caption
     | Div Attr [Block]      -- ^ Generic block container with attributes
     | Null                  -- ^ Nothing
     deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+-- | Caption with short variant for lists of tables, figures, etc.
+data Caption = Caption [Inline] [Block]
+     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
 -- | Type of quotation marks to use in Quoted inline.
-data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+data QuoteType = SingleQuote | DoubleQuote
+     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Link target (URL, title).
 type Target = (String, String)
@@ -586,6 +593,7 @@ instance NFData CitationMode
 instance NFData QuoteType
 instance NFData ListNumberDelim
 instance NFData ListNumberStyle
+instance NFData Caption
 instance NFData Block
 instance NFData Pandoc
 #else
@@ -600,6 +608,7 @@ instance NFData CitationMode where rnf = genericRnf
 instance NFData QuoteType where rnf = genericRnf
 instance NFData ListNumberDelim where rnf = genericRnf
 instance NFData ListNumberStyle where rnf = genericRnf
+instance NFData Caption where rnf = genericRnf
 instance NFData Block where rnf = genericRnf
 instance NFData Pandoc where rnf = genericRnf
 #endif

@@ -1,10 +1,12 @@
-[1.19]
+[1.17.1]
 
-  * Reverted PageBreak addition, pending further discussion.
-
-[1.18]
-
-  * Added PageBreak Inline element (Hubert Plociniczak).
+  * Better consistency in simpleTable and table (jgm/pandoc#3648).
+    If `headers` is empty, we populate it with empty cells, using the rows
+    to determine number of columns.  We also ensure that there are numcols
+    alignments and column widths.
+  * Make sure Div and Span occur in Arbitrary instances.
+  * Bump dependency upper bounds.
+  * Removed unused mapConst.
 
 [1.17.0.5]
 

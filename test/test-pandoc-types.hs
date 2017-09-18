@@ -1,11 +1,10 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes, FlexibleContexts, CPP #-}
 
+import Text.Pandoc.Arbitrary ()
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
-import Text.Pandoc.Arbitrary()
 import Data.Generics
 import Test.HUnit (Assertion, assertEqual, assertFailure)
-import Text.Pandoc.Arbitrary ()
 import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework

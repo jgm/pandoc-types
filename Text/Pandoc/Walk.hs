@@ -89,7 +89,7 @@ linked to in a document:
 
 module Text.Pandoc.Walk (Walkable(..))
 where
-import Control.Applicative ((<$>))
+import Control.Applicative (Applicative, (<$>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
@@ -108,7 +108,7 @@ class Walkable a b where
   walk  :: (a -> a) -> b -> b
   walk f = runIdentity . walkM (return . f)
   -- | A monadic version of 'walk'.
-  walkM :: (Monad m, Functor m) => (a -> m a) -> b -> m b
+  walkM :: (Monad m, Applicative m, Functor m) => (a -> m a) -> b -> m b
   -- | @query f x@ walks the structure @x@ (bottom up) and applies @f@
   -- to every @a@, appending the results.
   query :: Monoid c => (a -> c) -> b -> c

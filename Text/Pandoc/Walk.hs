@@ -89,7 +89,8 @@ linked to in a document:
 
 module Text.Pandoc.Walk (Walkable(..))
 where
-import Control.Applicative (Applicative, (<$>))
+import Control.Applicative (Applicative (pure), (<$>), (<*>))
+import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
@@ -170,6 +171,52 @@ instance Walkable Inline Inline where
   query f (Note bs)       = f (Note bs) <> query f bs
   query f (Span attr xs)  = f (Span attr xs) <> query f xs
 
+instance OVERLAPS
+         Walkable [Inline] [Inline] where
+  walkM f = T.traverse walkInlineM >=> f
+   where
+    walkInlineM (Str xs)         = return (Str xs)
+    walkInlineM (Emph xs)        = Emph <$> walkM f xs
+    walkInlineM (Strong xs)      = Strong <$> walkM f xs
+    walkInlineM (Strikeout xs)   = Strikeout <$> walkM f xs
+    walkInlineM (Subscript xs)   = Subscript <$> walkM f xs
+    walkInlineM (Superscript xs) = Superscript <$> walkM f xs
+    walkInlineM (SmallCaps xs)   = SmallCaps <$> walkM f xs
+    walkInlineM (Quoted qt xs)   = Quoted qt <$> walkM f xs
+    walkInlineM (Link atr xs t)  = Link atr <$> walkM f xs <*> pure t
+    walkInlineM (Image atr xs t) = Image atr <$> walkM f xs <*> pure t
+    walkInlineM (Note bs)        = Note <$> walkM f bs
+    walkInlineM (Span attr xs)   = Span attr <$> walkM f xs
+    walkInlineM (Cite cs xs)     = Cite <$> walkM f cs <*> walkM f xs
+    walkInlineM LineBreak        = return LineBreak
+    walkInlineM SoftBreak        = return SoftBreak
+    walkInlineM Space            = return Space
+    walkInlineM x@Code {}        = return x
+    walkInlineM x@Math {}        = return x
+    walkInlineM x@RawInline {}   = return x
+
+  query f inlns = f inlns <> mconcat (map queryInline inlns)
+   where
+    queryInline (Str _)         = mempty
+    queryInline (Emph xs)       = query f xs
+    queryInline (Strong xs)     = query f xs
+    queryInline (Strikeout xs)  = query f xs
+    queryInline (Subscript xs)  = query f xs
+    queryInline (Superscript xs)= query f xs
+    queryInline (SmallCaps xs)  = query f xs
+    queryInline (Quoted _ xs)   = query f xs
+    queryInline (Cite cs xs)    = query f cs <> query f xs
+    queryInline (Code _ _)      = mempty
+    queryInline Space           = mempty
+    queryInline SoftBreak       = mempty
+    queryInline LineBreak       = mempty
+    queryInline (Math _ _)      = mempty
+    queryInline (RawInline _ _) = mempty
+    queryInline (Link _ xs _)   = query f xs
+    queryInline (Image _ xs _)  = query f xs
+    queryInline (Note bs)       = query f bs
+    queryInline (Span _ xs)     = query f xs
+
 instance Walkable Inline Block where
   walkM f (Para xs)                = Para <$> walkM f xs
   walkM f (Plain xs)               = Plain <$> walkM f xs
@@ -195,6 +242,36 @@ instance Walkable Inline Block where
   query f (LineBlock xs)           = query f xs
   query _ (CodeBlock _ _)          = mempty
   query _ (RawBlock _ _)           = mempty
+  query f (BlockQuote bs)          = query f bs
+  query f (OrderedList _ cs)       = query f cs
+  query f (BulletList cs)          = query f cs
+  query f (DefinitionList xs)      = query f xs
+  query f (Header _ _ xs)          = query f xs
+  query _ HorizontalRule           = mempty
+  query f (Table capt _ _ hs rs)   = query f capt <> query f hs <> query f rs
+  query f (Div _ bs)               = query f bs
+  query _ Null                     = mempty
+
+instance Walkable [Inline] Block where
+  walkM f (Para xs)                = Para <$> walkM f xs
+  walkM f (Plain xs)               = Plain <$> walkM f xs
+  walkM f (LineBlock xs)           = LineBlock <$> mapM (walkM f) xs
+  walkM f (BlockQuote bs)          = BlockQuote <$> walkM f bs
+  walkM f (OrderedList a cs)       = OrderedList a <$> walkM f cs
+  walkM f (BulletList cs)          = BulletList <$> walkM f cs
+  walkM f (DefinitionList xs)      = DefinitionList <$> walkM f xs
+  walkM f (Header lev attr xs)     = Header lev attr <$> walkM f xs
+  walkM f (Table capt as ws hs rs) = Table <$> walkM f capt <*> pure as
+                                           <*> pure ws <*> walkM f hs
+                                           <*> walkM f rs
+  walkM f (Div attr bs)            = Div attr <$> walkM f bs
+  walkM _ x                        = return x
+
+  query f (Para xs)                = query f xs
+  query f (Plain xs)               = query f xs
+  query f (LineBlock xs)           = query f xs
+  query _ CodeBlock {}             = mempty
+  query _ RawBlock {}              = mempty
   query f (BlockQuote bs)          = query f bs
   query f (OrderedList _ cs)       = query f cs
   query f (BulletList cs)          = query f cs
@@ -297,6 +374,13 @@ instance Walkable Inline Pandoc where
                              return $ Pandoc m' bs'
   query f (Pandoc m bs) = query f m <> query f bs
 
+instance Walkable [Inline] Pandoc where
+  walk f (Pandoc m bs)  = Pandoc (walk f m) (walk f bs)
+  walkM f (Pandoc m bs) = do m' <- walkM f m
+                             bs' <- walkM f bs
+                             return $ Pandoc m' bs'
+  query f (Pandoc m bs) = query f m <> query f bs
+
 instance Walkable Pandoc Pandoc where
   walk f = f
   walkM f = f
@@ -312,12 +396,32 @@ instance Walkable Inline Meta where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
+instance Walkable [Inline] Meta where
+  walk f (Meta metamap) = Meta $ walk f metamap
+  walkM f (Meta metamap) = Meta <$> walkM f metamap
+  query f (Meta metamap) = query f metamap
+
 instance Walkable Block Meta where
   walk f (Meta metamap)  = Meta $ walk f metamap
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
 instance Walkable Inline MetaValue where
+  walkM f (MetaList xs)    = MetaList <$> walkM f xs
+  walkM _ (MetaBool b)     = return $ MetaBool b
+  walkM _ (MetaString s)   = return $ MetaString s
+  walkM f (MetaInlines xs) = MetaInlines <$> walkM f xs
+  walkM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
+  walkM f (MetaMap m)      = MetaMap <$> walkM f m
+
+  query f (MetaList xs)    = query f xs
+  query _ (MetaBool _)     = mempty
+  query _ (MetaString _)   = mempty
+  query f (MetaInlines xs) = query f xs
+  query f (MetaBlocks bs)  = query f bs
+  query f (MetaMap m)      = query f m
+
+instance Walkable [Inline] MetaValue where
   walkM f (MetaList xs)    = MetaList <$> walkM f xs
   walkM _ (MetaBool b)     = return $ MetaBool b
   walkM _ (MetaString s)   = return $ MetaString s
@@ -356,6 +460,17 @@ instance Walkable Inline Citation where
        return $ Citation id' pref' suff' mode notenum hash
   query f (Citation _ pref suff _ _ _) =
     query f pref <> query f suff
+
+instance Walkable [Inline] Citation where
+  walk f (Citation id' pref suff mode notenum hash) =
+    Citation id' (walk f pref) (walk f suff) mode notenum hash
+  walkM f (Citation id' pref suff mode notenum hash) =
+    do pref' <- walkM f pref
+       suff' <- walkM f suff
+       return $ Citation id' pref' suff' mode notenum hash
+  query f (Citation _ pref suff _ _ _) =
+    query f pref <> query f suff
+
 
 instance Walkable Block Citation where
   walk f (Citation id' pref suff mode notenum hash) =

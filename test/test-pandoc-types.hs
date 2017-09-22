@@ -59,6 +59,12 @@ blockTrans (Plain xs) = Para xs
 blockTrans (BlockQuote xs) = Div ("",["special"],[]) xs
 blockTrans x = x
 
+blocksTrans :: [Block] -> [Block]
+blocksTrans [CodeBlock {}] = []
+blocksTrans [BlockQuote xs] = xs
+blocksTrans [Div _ xs] = xs
+blocksTrans xs = xs
+
 inlineQuery :: Inline -> String
 inlineQuery (Str xs) = xs
 inlineQuery _ = ""
@@ -69,6 +75,9 @@ inlinesQuery = Monoid.Sum . length
 blockQuery :: Block -> [Int]
 blockQuery (Header lev _ _) = [lev]
 blockQuery _ = []
+
+blocksQuery :: [Block] -> Monoid.Sum Int
+blocksQuery = Monoid.Sum . length
 
 
 prop_roundtrip :: Pandoc -> Bool
@@ -363,6 +372,8 @@ tests =
     , testProperty "p_query blockQuery" (p_query blockQuery)
     , testProperty "p_walkList inlinesTrans"  (p_walkList inlinesTrans)
     , testProperty "p_queryList inlinesQuery" (p_queryList inlinesQuery)
+    , testProperty "p_walkList blocksTrans"  (p_walkList blocksTrans)
+    , testProperty "p_queryList blocksQuery" (p_queryList blocksQuery)
     ]
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"

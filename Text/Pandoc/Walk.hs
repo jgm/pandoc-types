@@ -239,7 +239,7 @@ instance Walkable [Block] Citation where
   query = queryCitation
 
 walkInlineM :: (Walkable a Citation, Walkable a [Block],
-                Walkable a [Inline], Monad m)
+                Walkable a [Inline], Monad m, Applicative m, Functor m)
             => (a -> m a) -> Inline -> m Inline
 walkInlineM _ (Str xs)         = return (Str xs)
 walkInlineM f (Emph xs)        = Emph <$> walkM f xs
@@ -261,7 +261,8 @@ walkInlineM _ x@Code {}        = return x
 walkInlineM _ x@Math {}        = return x
 walkInlineM _ x@RawInline {}   = return x
 
-walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m)
+walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m,
+                Applicative m, Functor m)
            => (a -> m a) -> Block -> m Block
 walkBlockM f (Para xs)                = Para <$> walkM f xs
 walkBlockM f (Plain xs)               = Plain <$> walkM f xs
@@ -342,7 +343,7 @@ queryMetaValue f (MetaInlines xs) = query f xs
 queryMetaValue f (MetaBlocks bs)  = query f bs
 queryMetaValue f (MetaMap m)      = query f m
 
-walkCitationM :: (Walkable a [Inline], Monad m)
+walkCitationM :: (Walkable a [Inline], Monad m, Applicative m, Functor m)
               => (a -> m a) -> Citation -> m Citation
 walkCitationM f (Citation id' pref suff mode notenum hash) =
     do pref' <- walkM f pref
@@ -353,7 +354,8 @@ queryCitation :: (Walkable a [Inline], Monoid c)
               => (a -> c) -> Citation -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
 
-walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m)
+walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m,
+                  Applicative m, Functor m)
             => (a -> m a) -> Pandoc -> m Pandoc
 walkPandocM f (Pandoc m bs) = do m' <- walkM f m
                                  bs' <- walkM f bs

@@ -94,6 +94,7 @@ linked to in a document:
 module Text.Pandoc.Walk (Walkable(..))
 where
 import Control.Applicative (Applicative (pure), (<$>), (<*>))
+import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
@@ -137,13 +138,8 @@ instance Walkable Inline Inline where
 
 instance OVERLAPS
          Walkable [Inline] [Inline] where
-  walkM f [] = f []
-  walkM f (x:xs) = do
-    y  <- walkInlineM f x
-    ys <- walkM f xs
-    f (y:ys)
-  query f [] = f []
-  query f (x:xs) = f (x:xs) <> queryInline f x <> query f xs
+  walkM f = T.traverse (walkInlineM f) >=> f
+  query f inlns = f inlns <> mconcat (map (queryInline f) inlns)
 
 instance Walkable Inline Block where
   walkM f x = walkBlockM f x
@@ -159,13 +155,8 @@ instance Walkable Block Block where
 
 instance OVERLAPS
          Walkable [Block] [Block] where
-  walkM f [] = f []
-  walkM f (x:xs) = do
-    y  <- walkBlockM f x
-    ys <- walkM f xs
-    f (y:ys)
-  query f [] = f []
-  query f (x:xs) = f (x:xs) <> queryBlock f x <> query f xs
+  walkM f = T.traverse (walkBlockM f) >=> f
+  query f blks = f blks <> mconcat (map (queryBlock f) blks)
 
 instance Walkable Block Inline where
   walkM f x = walkInlineM f x

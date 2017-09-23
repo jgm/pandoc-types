@@ -283,7 +283,7 @@ walkBlockM f (Table capt as ws hs rs) = do capt' <- walkM f capt
                                            return $ Table capt' as ws hs' rs'
 
 walkMetaValueM :: (Walkable a MetaValue, Walkable a [Block],
-                  Walkable a [Inline], Monad f)
+                  Walkable a [Inline], Monad f, Applicative f, Functor f)
                => (a -> f a) -> MetaValue -> f MetaValue
 walkMetaValueM f (MetaList xs)    = MetaList <$> walkM f xs
 walkMetaValueM _ (MetaBool b)     = return $ MetaBool b

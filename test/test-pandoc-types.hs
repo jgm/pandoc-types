@@ -4,7 +4,6 @@ import Text.Pandoc.Arbitrary ()
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
 import Data.Generics
-import Data.List (tails)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
@@ -25,19 +24,9 @@ p_walk :: (Typeable a, Walkable a Pandoc)
        => (a -> a) -> Pandoc -> Bool
 p_walk f d = everywhere (mkT f) d == walk f d
 
-p_walkList :: (Typeable a, Walkable [a] Pandoc)
-       => ([a] -> [a]) -> Pandoc -> Bool
-p_walkList f d = everywhere (mkT f) d == walk (foldr g []) d
-  where g x ys = f (x:ys)
-
 p_query :: (Eq a, Typeable a1, Monoid a, Walkable a1 Pandoc)
         => (a1 -> a) -> Pandoc -> Bool
 p_query f d = everything mappend (mempty `mkQ` f) d == query f d
-
-p_queryList :: (Eq a, Typeable a1, Monoid a, Walkable [a1] Pandoc)
-            => ([a1] -> a) -> Pandoc -> Bool
-p_queryList f d = everything mappend (mempty `mkQ` f) d ==
-                  query (mconcat . map f . tails) d
 
 inlineTrans :: Inline -> Inline
 inlineTrans (Str xs) = Str $ map toUpper xs
@@ -370,10 +359,10 @@ tests =
     , testProperty "p_walk blockTrans" (p_walk blockTrans)
     , testProperty "p_query inlineQuery" (p_query inlineQuery)
     , testProperty "p_query blockQuery" (p_query blockQuery)
-    , testProperty "p_walkList inlinesTrans"  (p_walkList inlinesTrans)
-    , testProperty "p_queryList inlinesQuery" (p_queryList inlinesQuery)
-    , testProperty "p_walkList blocksTrans"  (p_walkList blocksTrans)
-    , testProperty "p_queryList blocksQuery" (p_queryList blocksQuery)
+    , testProperty "p_walk inlinesTrans"  (p_walk inlinesTrans)
+    , testProperty "p_query inlinesQuery" (p_query inlinesQuery)
+    , testProperty "p_walk blocksTrans"  (p_walk blocksTrans)
+    , testProperty "p_query blocksQuery" (p_query blocksQuery)
     ]
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"

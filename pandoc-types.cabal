@@ -86,4 +86,3 @@ benchmark benchmark-pandoc-types
                    base >= 4.2 && < 5,
                    criterion >= 1.0 && < 1.3
   ghc-options:   -rtsopts -Wall -fno-warn-unused-do-bind -O2
-  default-language: Haskell98

@@ -1,3 +1,27 @@
+[1.17.2]
+
+  * Provide default implementation for walk (Albert Krewinkel).
+    The implementations for `walk` and `walkM` are very similar, so a
+    default method is provided which implements the former in terms of the
+    latter. This change should not affect performance, as the `Identity`
+    functor, which is used in the default definition, is a newtype that
+    should be eliminated at compile time.  (This requires a dependency
+    on transformers for ghc 7.8.x.)
+  * Force optimizations when compiling Walk module (Albert Krewinkel).
+  * Add `Applicative m` to the context of walkM (Albert Krewinkel).
+    The acceptance of AMP makes this a natural change.
+  * Add `Walkable [Block]` and `Walkable [Inline]` instances (Albert
+    Krewinkel).
+  * Factored out duplicate code in Walk.
+  * Added benchmark.
+  * Text.Pandoc.JSON: Use `walk` instead of `bottomUp` in the
+    `ToJSONFilter` instance for `a -> [a]`.  Note that behavior will be
+    slightly different, since bottomUp's treatment of a function `[a] -> [a]`
+    is to apply it to each sublist of a list, while walk applies it only to
+    maximal sublists.  Usually the latter behavior is what is wanted, and the
+    former can be simulated when needed.  But there may be existing filters
+    that need to be rewritten in light of the new behavior.
+
 [1.17.1]
 
   * Better consistency in simpleTable and table (jgm/pandoc#3648).

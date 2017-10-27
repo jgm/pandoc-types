@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
     DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving,
-    DeriveGeneric, DeriveTraversable #-}
+    DeriveGeneric, DeriveTraversable, FlexibleContexts, OverloadedStrings,
+    UndecidableInstances #-}
 {-
 Copyright (C) 2010-2016 John MacFarlane
 
@@ -104,7 +105,9 @@ And of course, you can use Haskell to define your own builders:
 module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , Many(..)
                            , Inlines
+                           , Inlines'
                            , Blocks
+                           , Blocks'
                            , (<>)
                            , singleton
                            , toList
@@ -166,7 +169,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Data.String
-import Data.Monoid
+import Data.String.Conversions
 import qualified Data.Map as M
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
@@ -206,12 +209,15 @@ fromList = Many . Seq.fromList
 isNull :: Many a -> Bool
 isNull = Seq.null . unMany
 
-type Inlines = Many Inline
-type Blocks  = Many Block
+type Inlines = Inlines' String
+type Blocks  = Blocks' String
 
-deriving instance Monoid Blocks
+type Inlines' string = Many (Inline' string)
+type Blocks' string  = Many (Block' string)
 
-instance Monoid Inlines where
+deriving instance Monoid string => Monoid (Blocks' string)
+
+instance Monoid string => Monoid (Inlines' string) where
   mempty = Many mempty
   (Many xs) `mappend` (Many ys) =
     case (viewr xs, viewl ys) of
@@ -235,20 +241,21 @@ instance Monoid Inlines where
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
 
-instance IsString Inlines where
+instance ConvertibleStrings String string => IsString (Inlines' string) where
    fromString = text
 
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
-trimInlines :: Inlines -> Inlines
+trimInlines :: (ConvertibleStrings string String, ConvertibleStrings String string)  -- TODO: go via LT, not String
+            => Inlines' string -> Inlines' string
 #if MIN_VERSION_containers(0,4,0)
-trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
-                            Seq.dropWhileR isSp $ ils
+trimInlines (Many ils) = Many $ undefined {- fmap cs -} $ Seq.dropWhileL isSp $
+                            Seq.dropWhileR isSp $ undefined {- fmap cs -} $ ils
 #else
 -- for GHC 6.12, we need to workaround a bug in dropWhileR
 -- see http://hackage.haskell.org/trac/ghc/ticket/4157
-trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
+trimInlines (Many ils) = Many $ undefined {- fmap cs -} $ Seq.dropWhileL isSp
                             Seq.reverse $ Seq.dropWhileL isSp $
-                            Seq.reverse ils
+                            Seq.reverse $ undefined {- fmap cs ils -}
 #endif
   where isSp Space = True
         isSp SoftBreak = True
@@ -256,59 +263,60 @@ trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
 
 -- Document builders
 
-doc :: Blocks -> Pandoc
+doc :: Ord string => Blocks' string -> Pandoc' string
 doc = Pandoc nullMeta . toList
 
-class ToMetaValue a where
-  toMetaValue :: a -> MetaValue
+class ToMetaValue a string where
+  toMetaValue :: a -> MetaValue' string
 
-instance ToMetaValue MetaValue where
+instance ToMetaValue (MetaValue' string) string where
   toMetaValue = id
 
-instance ToMetaValue Blocks where
+instance ToMetaValue (Blocks' string) string where
   toMetaValue = MetaBlocks . toList
 
-instance ToMetaValue Inlines where
+instance ToMetaValue (Inlines' string) string where
   toMetaValue = MetaInlines . toList
 
-instance ToMetaValue Bool where
+instance ToMetaValue Bool string where
   toMetaValue = MetaBool
 
-instance ToMetaValue a => ToMetaValue [a] where
+instance ToMetaValue a string => ToMetaValue [a] string where
   toMetaValue = MetaList . map toMetaValue
 
-instance ToMetaValue a => ToMetaValue (M.Map String a) where
+instance ToMetaValue a string => ToMetaValue (M.Map string a) string where
   toMetaValue = MetaMap . M.map toMetaValue
 
-class HasMeta a where
-  setMeta :: ToMetaValue b => String -> b -> a -> a
-  deleteMeta :: String -> a -> a
+class HasMeta a string where
+  setMeta :: ToMetaValue b string => string -> b -> a string -> a string
+  deleteMeta :: string -> a string -> a string
 
-instance HasMeta Meta where
+instance Ord string => HasMeta Meta' string where
   setMeta key val (Meta ms) = Meta $ M.insert key (toMetaValue val) ms
   deleteMeta key (Meta ms) = Meta $ M.delete key ms
 
-instance HasMeta Pandoc where
+instance Ord string => HasMeta Pandoc' string where
   setMeta key val (Pandoc (Meta ms) bs) =
     Pandoc (Meta $ M.insert key (toMetaValue val) ms) bs
   deleteMeta key (Pandoc (Meta ms) bs) =
     Pandoc (Meta $ M.delete key ms) bs
 
-setTitle :: Inlines -> Pandoc -> Pandoc
+setTitle :: (IsString string, Ord string) => Inlines' string -> Pandoc' string -> Pandoc' string
 setTitle = setMeta "title"
 
-setAuthors :: [Inlines] -> Pandoc -> Pandoc
+setAuthors :: (IsString string, Ord string) => [Inlines' string] -> Pandoc' string -> Pandoc' string
 setAuthors = setMeta "author"
 
-setDate :: Inlines -> Pandoc -> Pandoc
+setDate :: (IsString string, Ord string) => Inlines' string -> Pandoc' string -> Pandoc' string
 setDate = setMeta "date"
 
 -- Inline list builders
 
 -- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's
 -- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
-text :: String -> Inlines
-text = fromList . map conv . breakBySpaces
+-- TODO: implement this in LT.
+text :: (ConvertibleStrings string String, ConvertibleStrings String string') => string -> Inlines' string'
+text = fromList . map conv . breakBySpaces . cs
   where breakBySpaces = groupBy sameCategory
         sameCategory x y = (is_space x && is_space y) ||
                            (not $ is_space x || is_space y)
@@ -316,7 +324,7 @@ text = fromList . map conv . breakBySpaces
            if any is_newline xs
               then SoftBreak
               else Space
-        conv xs = Str xs
+        conv xs = Str $ cs xs
         is_space ' '    = True
         is_space '\r'   = True
         is_space '\n'   = True
@@ -326,156 +334,160 @@ text = fromList . map conv . breakBySpaces
         is_newline '\n' = True
         is_newline _    = False
 
-str :: String -> Inlines
+str :: string -> Inlines' string
 str = singleton . Str
 
-emph :: Inlines -> Inlines
+emph :: Inlines' string -> Inlines' string
 emph = singleton . Emph . toList
 
-strong :: Inlines -> Inlines
+strong :: Inlines' string -> Inlines' string
 strong = singleton . Strong . toList
 
-strikeout :: Inlines -> Inlines
+strikeout :: Inlines' string -> Inlines' string
 strikeout = singleton . Strikeout . toList
 
-superscript :: Inlines -> Inlines
+superscript :: Inlines' string -> Inlines' string
 superscript = singleton . Superscript . toList
 
-subscript :: Inlines -> Inlines
+subscript :: Inlines' string -> Inlines' string
 subscript = singleton . Subscript . toList
 
-smallcaps :: Inlines -> Inlines
+smallcaps :: Inlines' string -> Inlines' string
 smallcaps = singleton . SmallCaps . toList
 
-singleQuoted :: Inlines -> Inlines
+singleQuoted :: Inlines' string -> Inlines' string
 singleQuoted = quoted SingleQuote
 
-doubleQuoted :: Inlines -> Inlines
+doubleQuoted :: Inlines' string -> Inlines' string
 doubleQuoted = quoted DoubleQuote
 
-quoted :: QuoteType -> Inlines -> Inlines
+quoted :: QuoteType -> Inlines' string -> Inlines' string
 quoted qt = singleton . Quoted qt . toList
 
-cite :: [Citation] -> Inlines -> Inlines
+cite :: [Citation' string] -> Inlines' string -> Inlines' string
 cite cts = singleton . Cite cts . toList
 
 -- | Inline code with attributes.
-codeWith :: Attr -> String -> Inlines
+codeWith :: Attr' string -> string -> Inlines' string
 codeWith attrs = singleton . Code attrs
 
 -- | Plain inline code.
-code :: String -> Inlines
+code :: IsString string => string -> Inlines' string
 code = codeWith nullAttr
 
-space :: Inlines
+space :: Inlines' string
 space = singleton Space
 
-softbreak :: Inlines
+softbreak :: Inlines' string
 softbreak = singleton SoftBreak
 
-linebreak :: Inlines
+linebreak :: Inlines' string
 linebreak = singleton LineBreak
 
 -- | Inline math
-math :: String -> Inlines
+math :: string -> Inlines' string
 math = singleton . Math InlineMath
 
 -- | Display math
-displayMath :: String -> Inlines
+displayMath :: string -> Inlines' string
 displayMath = singleton . Math DisplayMath
 
-rawInline :: String -> String -> Inlines
+rawInline :: String -> string -> Inlines' string
 rawInline format = singleton . RawInline (Format format)
 
-link :: String  -- ^ URL
-     -> String  -- ^ Title
-     -> Inlines -- ^ Label
-     -> Inlines
+link :: IsString string
+     => string  -- ^ URL
+     -> string  -- ^ Title
+     -> Inlines' string -- ^ Label
+     -> Inlines' string
 link = linkWith nullAttr
 
-linkWith :: Attr    -- ^ Attributes
-         -> String  -- ^ URL
-         -> String  -- ^ Title
-         -> Inlines -- ^ Label
-         -> Inlines
+linkWith :: Attr' string    -- ^ Attributes
+         -> string  -- ^ URL
+         -> string  -- ^ Title
+         -> Inlines' string -- ^ Label
+         -> Inlines' string
 linkWith attr url title x = singleton $ Link attr (toList x) (url, title)
 
-image :: String  -- ^ URL
-      -> String  -- ^ Title
-      -> Inlines -- ^ Alt text
-      -> Inlines
+image :: IsString string
+      => string  -- ^ URL
+      -> string  -- ^ Title
+      -> Inlines' string -- ^ Alt text
+      -> Inlines' string
 image = imageWith nullAttr
 
-imageWith :: Attr -- ^ Attributes
-          -> String  -- ^ URL
-          -> String  -- ^ Title
-          -> Inlines -- ^ Alt text
-          -> Inlines
+imageWith :: Attr' string -- ^ Attributes
+          -> string  -- ^ URL
+          -> string  -- ^ Title
+          -> Inlines' string -- ^ Alt text
+          -> Inlines' string
 imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
 
-note :: Blocks -> Inlines
+note :: Blocks' string -> Inlines' string
 note = singleton . Note . toList
 
-spanWith :: Attr -> Inlines -> Inlines
+spanWith :: Attr' string -> Inlines' string -> Inlines' string
 spanWith attr = singleton . Span attr . toList
 
 -- Block list builders
 
-para :: Inlines -> Blocks
+para :: Inlines' string -> Blocks' string
 para = singleton . Para . toList
 
-plain :: Inlines -> Blocks
+plain :: Monoid string => Inlines' string -> Blocks' string
 plain ils = if isNull ils
                then mempty
                else singleton . Plain . toList $ ils
 
-lineBlock :: [Inlines] -> Blocks
+lineBlock :: [Inlines' string] -> Blocks' string
 lineBlock = singleton . LineBlock . map toList
 
 -- | A code block with attributes.
-codeBlockWith :: Attr -> String -> Blocks
+codeBlockWith :: Attr' string -> string -> Blocks' string
 codeBlockWith attrs = singleton . CodeBlock attrs
 
 -- | A plain code block.
-codeBlock :: String -> Blocks
+codeBlock :: IsString string => string -> Blocks' string
 codeBlock = codeBlockWith nullAttr
 
-rawBlock :: String -> String -> Blocks
+rawBlock :: String -> string' -> Blocks' string'
 rawBlock format = singleton . RawBlock (Format format)
 
-blockQuote :: Blocks -> Blocks
+blockQuote :: Blocks' string -> Blocks' string
 blockQuote = singleton . BlockQuote . toList
 
 -- | Ordered list with attributes.
-orderedListWith :: ListAttributes -> [Blocks] -> Blocks
+orderedListWith :: ListAttributes -> [Blocks' string] -> Blocks' string
 orderedListWith attrs = singleton . OrderedList attrs .  map toList
 
 -- | Ordered list with default attributes.
-orderedList :: [Blocks] -> Blocks
+orderedList :: [Blocks' string] -> Blocks' string
 orderedList = orderedListWith (1, DefaultStyle, DefaultDelim)
 
-bulletList :: [Blocks] -> Blocks
+bulletList :: [Blocks' string] -> Blocks' string
 bulletList = singleton . BulletList . map toList
 
-definitionList :: [(Inlines, [Blocks])] -> Blocks
+definitionList :: [(Inlines' string, [Blocks' string])] -> Blocks' string
 definitionList = singleton . DefinitionList .  map (toList *** map toList)
 
-header :: Int  -- ^ Level
-       -> Inlines
-       -> Blocks
+header :: IsString string
+       => Int  -- ^ Level
+       -> Inlines' string
+       -> Blocks' string
 header = headerWith nullAttr
 
-headerWith :: Attr -> Int -> Inlines -> Blocks
+headerWith :: Attr' string -> Int -> Inlines' string -> Blocks' string
 headerWith attr level = singleton . Header level attr . toList
 
-horizontalRule :: Blocks
+horizontalRule :: Blocks' string
 horizontalRule = singleton HorizontalRule
 
-table :: Inlines               -- ^ Caption
+table :: Monoid string
+      => Inlines' string       -- ^ Caption
       -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
-      -> [Blocks]              -- ^ Headers
-      -> [[Blocks]]            -- ^ Rows
-      -> Blocks
+      -> [Blocks' string]      -- ^ Headers
+      -> [[Blocks' string]]    -- ^ Rows
+      -> Blocks' string
 table caption cellspecs headers rows = singleton $
   Table (toList caption) aligns widths
       (map toList headers') (map (map toList) rows)
@@ -488,9 +500,10 @@ table caption cellspecs headers rows = singleton $
                        else headers
 
 -- | A simple table without a caption.
-simpleTable :: [Blocks]   -- ^ Headers
-            -> [[Blocks]] -- ^ Rows
-            -> Blocks
+simpleTable :: Monoid string
+            => [Blocks' string]   -- ^ Headers
+            -> [[Blocks' string]] -- ^ Rows
+            -> Blocks' string
 simpleTable headers rows =
   table mempty (replicate numcols defaults) headers rows
   where defaults = (AlignDefault, 0)
@@ -498,5 +511,5 @@ simpleTable headers rows =
                         [] -> 0
                         xs -> maximum (map length xs)
 
-divWith :: Attr -> Blocks -> Blocks
+divWith :: Attr' string -> Blocks' string -> Blocks' string
 divWith attr = singleton . Div attr . toList

@@ -1,4 +1,13 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE CPP, GADTs, ScopedTypeVariables, FlexibleInstances,
+             FlexibleContexts, UndecidableInstances #-}
+#if MIN_VERSION_base(4,8,0)
+#define OVERLAPS {-# OVERLAPPING #-}
+#define OVERLAPPABLE_ {-# OVERLAPPABLE #-}
+#else
+{-# LANGUAGE OverlappingInstances #-}
+#define OVERLAPS
+#define OVERLAPPABLE_
+#endif
 {-
 Copyright (c) 2013-2016, John MacFarlane
 
@@ -101,24 +110,24 @@ import System.Environment (getArgs)
 class ToJSONFilter a where
   toJSONFilter :: a -> IO ()
 
-instance (Walkable a Pandoc) => ToJSONFilter (a -> a) where
+instance (Walkable a (Pandoc' String)) => ToJSONFilter (a -> a) where
   toJSONFilter f = BL.getContents >>=
-    BL.putStr . encode . (walk f :: Pandoc -> Pandoc) . either error id .
+    BL.putStr . encode . (walk f :: (Pandoc' String) -> (Pandoc' String)) . either error id .
     eitherDecode'
 
-instance (Walkable a Pandoc) => ToJSONFilter (a -> IO a) where
+instance (Walkable a (Pandoc' String)) => ToJSONFilter (a -> IO a) where
   toJSONFilter f = BL.getContents >>=
-     (walkM f :: Pandoc -> IO Pandoc) . either error id . eitherDecode' >>=
-     BL.putStr . encode
+     (walkM f :: (Pandoc' String) -> IO (Pandoc' String)) . either error id . eitherDecode'
+     >>= BL.putStr . encode
 
-instance (Walkable [a] Pandoc) => ToJSONFilter (a -> [a]) where
+instance (Walkable [a] (Pandoc' String)) => ToJSONFilter (a -> [a]) where
   toJSONFilter f = BL.getContents >>=
-    BL.putStr . encode . (walk (concatMap f) :: Pandoc -> Pandoc) .
+    BL.putStr . encode . (walk (concatMap f) :: (Pandoc' String) -> (Pandoc' String)) .
     either error id . eitherDecode'
 
-instance (Walkable [a] Pandoc) => ToJSONFilter (a -> IO [a]) where
+instance (Walkable [a] (Pandoc' String)) => ToJSONFilter (a -> IO [a]) where
   toJSONFilter f = BL.getContents >>=
-     (walkM (fmap concat . mapM f) :: Pandoc -> IO Pandoc) .
+     (walkM (fmap concat . mapM f) :: (Pandoc' String) -> IO (Pandoc' String)) .
      either error id . eitherDecode' >>=
      BL.putStr . encode
 

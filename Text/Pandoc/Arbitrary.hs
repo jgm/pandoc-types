@@ -1,48 +1,52 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables,
+             UndecidableInstances, OverloadedStrings #-}
 -- provides Arbitrary instance for Pandoc types
 module Text.Pandoc.Arbitrary ()
 where
+import Data.String
 import Test.QuickCheck
 import Control.Monad (forM, liftM, liftM2)
 import Text.Pandoc.Definition
 import Text.Pandoc.Builder
 
-realString :: Gen String
-realString = resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
+realString :: IsString string => Gen string
+realString = fmap fromString $ resize 8 $ listOf
+                               $ frequency [ (9, elements [' '..'\127'])
                                            , (1, elements ['\128'..'\9999']) ]
 
-arbAttr :: Gen Attr
+arbAttr :: IsString string => Gen (Attr' string)
 arbAttr = do
   id' <- elements ["","loc"]
   classes <- elements [[],["haskell"],["c","numberLines"]]
   keyvals <- elements [[],[("start","22")],[("a","11"),("b_2","a b c")]]
-  return (id',classes,keyvals)
+  return $ Attr (id',classes,keyvals)
 
-instance Arbitrary Inlines where
-  arbitrary = liftM (fromList :: [Inline] -> Inlines) arbitrary
+instance IsString string => Arbitrary (Inlines' string) where
+  arbitrary = liftM (fromList :: [Inline' string] -> Inlines' string) arbitrary
 
-instance Arbitrary Blocks where
-  arbitrary = liftM (fromList :: [Block] -> Blocks) arbitrary
+instance IsString string => Arbitrary (Blocks' string) where
+  arbitrary = liftM (fromList :: [Block' string] -> Blocks' string) arbitrary
 
-instance Arbitrary Inline where
+instance IsString string => Arbitrary (Inline' string) where
   arbitrary = resize 3 $ arbInline 2
 
-arbInlines :: Int -> Gen [Inline]
+arbInlines :: IsString string => Int -> Gen [Inline' string]
 arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
   where startsWithSpace (Space:_) = True
         startsWithSpace        _  = False
 
 -- restrict to 3 levels of nesting max; otherwise we get
 -- bogged down in indefinitely large structures
-arbInline :: Int -> Gen Inline
+arbInline :: forall string. IsString string => Int -> Gen (Inline' string)
 arbInline n = frequency $ [ (60, liftM Str realString)
                           , (60, return Space)
                           , (10, liftM2 Code arbAttr realString)
                           , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
                                           , RawInline (Format "latex") "\\my{command}" ])
                           ] ++ [ x | x <- nesters, n > 1]
-   where nesters = [ (10,  liftM Emph $ arbInlines (n-1))
+   where nesters :: [(Int, Gen (Inline' string))]
+         nesters = [ (10,  liftM Emph $ arbInlines (n-1))
                    , (10,  liftM Strong $ arbInlines (n-1))
                    , (10,  liftM Strikeout $ arbInlines (n-1))
                    , (10,  liftM Superscript $ arbInlines (n-1))
@@ -71,10 +75,10 @@ arbInline n = frequency $ [ (60, liftM Str realString)
                    , (2,  liftM Note $ resize 3 $ listOf1 $ arbBlock (n-1))
                    ]
 
-instance Arbitrary Block where
+instance IsString string => Arbitrary (Block' string) where
   arbitrary = resize 3 $ arbBlock 2
 
-arbBlock :: Int -> Gen Block
+arbBlock :: IsString string => Int -> Gen (Block' string)
 arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
                          , (15, liftM Para $ arbInlines (n-1))
                          , (5,  liftM2 CodeBlock arbAttr realString)
@@ -119,7 +123,7 @@ arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
                             return (Table x1 x2 x3 x4 x5))
                    ]
 
-instance Arbitrary Pandoc where
+instance (Ord string, IsString string) => Arbitrary (Pandoc' string) where
         arbitrary = resize 8 $ liftM2 Pandoc arbitrary arbitrary
 
 instance Arbitrary CitationMode where
@@ -131,9 +135,9 @@ instance Arbitrary CitationMode where
                    2 -> return NormalCitation
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
 
-instance Arbitrary Citation where
+instance IsString string => Arbitrary (Citation' string) where
         arbitrary
-          = do x1 <- listOf $ elements $ ['a'..'z'] ++ ['0'..'9'] ++ ['_']
+          = do x1 <- fmap fromString $ listOf $ elements $ ['a'..'z'] ++ ['0'..'9'] ++ ['_']
                x2 <- arbInlines 1
                x3 <- arbInlines 1
                x4 <- arbitrary
@@ -157,11 +161,11 @@ instance Arbitrary QuoteType where
                    1 -> return DoubleQuote
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
 
-instance Arbitrary Meta where
+instance (Ord string, IsString string) => Arbitrary (Meta' string) where
         arbitrary
-          = do (x1 :: Inlines) <- arbitrary
-               (x2 :: [Inlines]) <- liftM (filter (not . isNull)) arbitrary
-               (x3 :: Inlines) <- arbitrary
+          = do (x1 :: Inlines' string) <- arbitrary
+               (x2 :: [Inlines' string]) <- liftM (filter (not . isNull)) arbitrary
+               (x3 :: Inlines' string) <- arbitrary
                return $ setMeta "title" x1
                       $ setMeta "author" x2
                       $ setMeta "date" x3

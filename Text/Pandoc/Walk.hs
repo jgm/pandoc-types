@@ -8,9 +8,11 @@
 #endif
 #if MIN_VERSION_base(4,8,0)
 #define OVERLAPS {-# OVERLAPPING #-}
+#define OVERLAPPABLE_ {-# OVERLAPPABLE #-}
 #else
 {-# LANGUAGE OverlappingInstances #-}
 #define OVERLAPS
+#define OVERLAPPABLE_
 #endif
 {-
 Copyright (c) 2013-2017, John MacFarlane
@@ -56,7 +58,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Functions for manipulating 'Pandoc' documents or extracting
 information from them by walking the 'Pandoc' structure (or
-intermediate structures like '[Block]' or '[Inline]'.
+intermediate structures like '[Block' string]' or '[Inline]'.
 These are faster (by a factor of four or five) than the generic
 functions defined in @Text.Pandoc.Generic@.
 
@@ -67,7 +69,7 @@ headers in a document with regular paragraphs in ALL CAPS:
 > import Text.Pandoc.Walk
 > import Data.Char (toUpper)
 >
-> modHeader :: Block -> Block
+> modHeader :: (Block' string) -> (Block' string)
 > modHeader (Header n _ xs) | n >= 3 = Para $ walk allCaps xs
 > modHeader x = x
 >
@@ -119,128 +121,156 @@ class Walkable a b where
   query :: Monoid c => (a -> c) -> b -> c
   {-# MINIMAL walkM, query #-}
 
-instance (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
+instance OVERLAPPABLE_
+         (Foldable t, Traversable t, Walkable a b)
+         => Walkable a (t b) where
   walk f  = T.fmapDefault (walk f)
   walkM f = T.mapM (walkM f)
   query f = F.foldMap (query f)
 
 instance OVERLAPS
-        (Walkable a b, Walkable a c) => Walkable a (b,c) where
+        (Walkable a b, Walkable a c) => Walkable a (b, c) where
   walk f (x,y)  = (walk f x, walk f y)
   walkM f (x,y) = do x' <- walkM f x
                      y' <- walkM f y
                      return (x',y')
   query f (x,y) = mappend (query f x) (query f y)
 
-instance Walkable Inline Inline where
+instance OVERLAPS
+         Walkable (Inline' string) (Inline' string) where
   walkM f x = walkInlineM f x >>= f
   query f x = f x <> queryInline f x
 
 instance OVERLAPS
-         Walkable [Inline] [Inline] where
+         Walkable [Inline' string] [Inline' string] where
   walkM f = T.traverse (walkInlineM f) >=> f
   query f inlns = f inlns <> mconcat (map (queryInline f) inlns)
 
-instance Walkable Inline Block where
+instance OVERLAPS
+         Walkable (Inline' string) (Block' string) where
   walkM f x = walkBlockM f x
   query f x = queryBlock f x
 
-instance Walkable [Inline] Block where
+instance OVERLAPS
+         Walkable [Inline' string] (Block' string) where
   walkM f x = walkBlockM f x
   query f x = queryBlock f x
 
-instance Walkable Block Block where
+instance OVERLAPS
+         Walkable (Block' string) (Block' string) where
   walkM f x = walkBlockM f x >>= f
   query f x = f x <> queryBlock f x
 
 instance OVERLAPS
-         Walkable [Block] [Block] where
+         Walkable [Block' string] [Block' string] where
   walkM f = T.traverse (walkBlockM f) >=> f
   query f blks = f blks <> mconcat (map (queryBlock f) blks)
 
-instance Walkable Block Inline where
+instance OVERLAPS
+         Walkable (Block' string) (Inline' string) where
   walkM f x = walkInlineM f x
   query f x = queryInline f x
 
-instance Walkable [Block] Inline where
+instance OVERLAPS
+         Walkable [Block' string] (Inline' string) where
   walkM f x = walkInlineM f x
   query f x = queryInline f x
 
-instance Walkable Block Pandoc where
+instance OVERLAPS
+         Walkable (Block' string) (Pandoc' string) where
   walkM = walkPandocM
   query = queryPandoc
 
-instance Walkable [Block] Pandoc where
+instance OVERLAPS
+         Walkable [Block' string] (Pandoc' string) where
   walkM = walkPandocM
   query = queryPandoc
 
-instance Walkable Inline Pandoc where
+instance OVERLAPS
+         Walkable (Inline' string) (Pandoc' string) where
   walkM = walkPandocM
   query = queryPandoc
 
-instance Walkable [Inline] Pandoc where
+instance OVERLAPS
+         Walkable [Inline' string] (Pandoc' string) where
   walkM = walkPandocM
   query = queryPandoc
 
-instance Walkable Pandoc Pandoc where
+instance OVERLAPS
+         Walkable (Pandoc' string) (Pandoc' string) where
   walkM f = f
   query f = f
 
-instance Walkable Meta Meta where
+instance OVERLAPS
+         Walkable (Meta' string) (Meta' string) where
   walkM f = f
   query f = f
 
-instance Walkable Inline Meta where
+instance OVERLAPS
+         Walkable (Inline' string) (Meta' string) where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
-instance Walkable [Inline] Meta where
+instance OVERLAPS
+         Walkable [Inline' string] (Meta' string) where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
-instance Walkable Block Meta where
+instance OVERLAPS
+         Walkable (Block' string) (Meta' string) where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
-instance Walkable [Block] Meta where
+instance OVERLAPS
+         Walkable [Block' string] (Meta' string) where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
-instance Walkable Inline MetaValue where
+instance OVERLAPS
+         Walkable (Inline' string) (MetaValue' string) where
   walkM = walkMetaValueM
   query = queryMetaValue
 
-instance Walkable [Inline] MetaValue where
+instance OVERLAPS
+         Walkable [Inline' string] (MetaValue' string) where
   walkM = walkMetaValueM
   query = queryMetaValue
 
-instance Walkable Block MetaValue where
+instance OVERLAPS
+         Walkable (Block' string) (MetaValue' string) where
   walkM = walkMetaValueM
   query = queryMetaValue
 
-instance Walkable [Block] MetaValue where
+instance OVERLAPS
+         Walkable [Block' string] (MetaValue' string) where
   walkM = walkMetaValueM
   query = queryMetaValue
 
-instance Walkable Inline Citation where
+instance OVERLAPS
+         Walkable (Inline' string) (Citation' string) where
   walkM = walkCitationM
   query = queryCitation
 
-instance Walkable [Inline] Citation where
+instance OVERLAPS
+         Walkable [Inline' string] (Citation' string) where
   walkM = walkCitationM
   query = queryCitation
 
-instance Walkable Block Citation where
+instance OVERLAPS
+         Walkable (Block' string) (Citation' string) where
   walkM = walkCitationM
   query = queryCitation
 
-instance Walkable [Block] Citation where
+instance OVERLAPS
+         Walkable [Block' string] (Citation' string) where
   walkM = walkCitationM
   query = queryCitation
 
-walkInlineM :: (Walkable a Citation, Walkable a [Block],
-                Walkable a [Inline], Monad m, Applicative m, Functor m)
-            => (a -> m a) -> Inline -> m Inline
+walkInlineM :: (Walkable a (Citation' string),
+                Walkable a [Block' string],
+                Walkable a [Inline' string],
+                Monad m, Applicative m, Functor m)
+            => (a -> m a) -> (Inline' string) -> m (Inline' string)
 walkInlineM _ (Str xs)         = return (Str xs)
 walkInlineM f (Emph xs)        = Emph <$> walkM f xs
 walkInlineM f (Strong xs)      = Strong <$> walkM f xs
@@ -261,9 +291,10 @@ walkInlineM _ x@Code {}        = return x
 walkInlineM _ x@Math {}        = return x
 walkInlineM _ x@RawInline {}   = return x
 
-walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m,
-                Applicative m, Functor m)
-           => (a -> m a) -> Block -> m Block
+walkBlockM :: (Walkable a [Block' string],
+               Walkable a [Inline' string],
+               Monad m, Applicative m, Functor m)
+           => (a -> m a) -> Block' string -> m (Block' string)
 walkBlockM f (Para xs)                = Para <$> walkM f xs
 walkBlockM f (Plain xs)               = Plain <$> walkM f xs
 walkBlockM f (LineBlock xs)           = LineBlock <$> walkM f xs
@@ -282,9 +313,9 @@ walkBlockM f (Table capt as ws hs rs) = do capt' <- walkM f capt
                                            rs' <- walkM f rs
                                            return $ Table capt' as ws hs' rs'
 
-walkMetaValueM :: (Walkable a MetaValue, Walkable a [Block],
-                  Walkable a [Inline], Monad f, Applicative f, Functor f)
-               => (a -> f a) -> MetaValue -> f MetaValue
+walkMetaValueM :: (Walkable a (MetaValue' string), Walkable a [Block' string],
+                  Walkable a [Inline' string], Monad f, Applicative f, Functor f)
+               => (a -> f a) -> MetaValue' string -> f (MetaValue' string)
 walkMetaValueM f (MetaList xs)    = MetaList <$> walkM f xs
 walkMetaValueM _ (MetaBool b)     = return $ MetaBool b
 walkMetaValueM _ (MetaString s)   = return $ MetaString s
@@ -292,9 +323,9 @@ walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
 walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
 walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
 
-queryInline :: (Walkable a Citation, Walkable a [Block],
-                Walkable a [Inline], Monoid c)
-            => (a -> c) -> Inline -> c
+queryInline :: (Walkable a (Citation' string), Walkable a [Block' string],
+                Walkable a [Inline' string], Monoid c)
+            => (a -> c) -> (Inline' string) -> c
 queryInline _ (Str _)         = mempty
 queryInline f (Emph xs)       = query f xs
 queryInline f (Strong xs)     = query f xs
@@ -315,9 +346,9 @@ queryInline f (Image _ xs _)  = query f xs
 queryInline f (Note bs)       = query f bs
 queryInline f (Span _ xs)     = query f xs
 
-queryBlock :: (Walkable a Citation, Walkable a [Block],
-                Walkable a [Inline], Monoid c)
-           => (a -> c) -> Block -> c
+queryBlock :: (Walkable a (Citation' string), Walkable a [Block' string],
+                Walkable a [Inline' string], Monoid c)
+           => (a -> c) -> Block' string -> c
 queryBlock f (Para xs)                = query f xs
 queryBlock f (Plain xs)               = query f xs
 queryBlock f (LineBlock xs)           = query f xs
@@ -333,9 +364,9 @@ queryBlock f (Table capt _ _ hs rs)   = query f capt <> query f hs <> query f rs
 queryBlock f (Div _ bs)               = query f bs
 queryBlock _ Null                     = mempty
 
-queryMetaValue :: (Walkable a MetaValue, Walkable a [Block],
-                   Walkable a [Inline], Monoid c)
-               => (a -> c) -> MetaValue -> c
+queryMetaValue :: (Walkable a (MetaValue' string), Walkable a [Block' string],
+                   Walkable a [Inline' string], Monoid c)
+               => (a -> c) -> MetaValue' string -> c
 queryMetaValue f (MetaList xs)    = query f xs
 queryMetaValue _ (MetaBool _)     = mempty
 queryMetaValue _ (MetaString _)   = mempty
@@ -343,24 +374,24 @@ queryMetaValue f (MetaInlines xs) = query f xs
 queryMetaValue f (MetaBlocks bs)  = query f bs
 queryMetaValue f (MetaMap m)      = query f m
 
-walkCitationM :: (Walkable a [Inline], Monad m, Applicative m, Functor m)
-              => (a -> m a) -> Citation -> m Citation
+walkCitationM :: (Walkable a [Inline' string], Monad m, Applicative m, Functor m)
+              => (a -> m a) -> Citation' string -> m (Citation' string)
 walkCitationM f (Citation id' pref suff mode notenum hash) =
     do pref' <- walkM f pref
        suff' <- walkM f suff
        return $ Citation id' pref' suff' mode notenum hash
 
-queryCitation :: (Walkable a [Inline], Monoid c)
-              => (a -> c) -> Citation -> c
+queryCitation :: (Walkable a [Inline' string], Monoid c)
+              => (a -> c) -> Citation' string -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
 
-walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m,
+walkPandocM :: (Walkable a (Meta' string), Walkable a [Block' string], Monad m,
                   Applicative m, Functor m)
-            => (a -> m a) -> Pandoc -> m Pandoc
+            => (a -> m a) -> Pandoc' string -> m (Pandoc' string)
 walkPandocM f (Pandoc m bs) = do m' <- walkM f m
                                  bs' <- walkM f bs
                                  return $ Pandoc m' bs'
 
-queryPandoc :: (Walkable a Meta, Walkable a [Block], Monoid c)
-             => (a -> c) -> Pandoc -> c
+queryPandoc :: (Walkable a (Meta' string), Walkable a [Block' string], Monoid c)
+             => (a -> c) -> Pandoc' string -> c
 queryPandoc f (Pandoc m bs) = query f m <> query f bs

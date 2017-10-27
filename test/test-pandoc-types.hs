@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings, QuasiQuotes, FlexibleContexts, CPP #-}
 
 import Text.Pandoc.Arbitrary ()
-import Text.Pandoc.Definition
+import Text.Pandoc.Definition hiding (Pandoc, Meta, MetaValue, Inline, Block, Citation)
+import Text.Pandoc.Definition (Citation'(..))
 import Text.Pandoc.Walk
 import Data.Generics
 import Data.List (tails)
+import Data.String.Conversions
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
@@ -19,6 +21,16 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Monoid
 #endif
 import qualified Data.Monoid as Monoid
+
+
+type TestStringType = String
+
+-- redefining these so we can easily replace 'String' with another type just for testing.
+type Pandoc = Pandoc' TestStringType
+type MetaValue = MetaValue' TestStringType
+type Inline = Inline' TestStringType
+type Block = Block' TestStringType
+type Citation = Citation' TestStringType
 
 
 p_walk :: (Typeable a, Walkable a Pandoc)
@@ -40,7 +52,7 @@ p_queryList f d = everything mappend (mempty `mkQ` f) d ==
                   query (mconcat . map f . tails) d
 
 inlineTrans :: Inline -> Inline
-inlineTrans (Str xs) = Str $ map toUpper xs
+inlineTrans (Str xs) = Str . cs $ map toUpper (cs xs :: String)
 inlineTrans (Emph xs) = Strong xs
 inlineTrans x = x
 
@@ -56,7 +68,7 @@ inlinesTrans ys = ys
 
 blockTrans :: Block -> Block
 blockTrans (Plain xs) = Para xs
-blockTrans (BlockQuote xs) = Div ("",["special"],[]) xs
+blockTrans (BlockQuote xs) = Div (Attr ("",["special"],[])) xs
 blockTrans x = x
 
 blocksTrans :: [Block] -> [Block]
@@ -66,7 +78,7 @@ blocksTrans [Div _ xs] = xs
 blocksTrans xs = xs
 
 inlineQuery :: Inline -> String
-inlineQuery (Str xs) = xs
+inlineQuery (Str xs) = cs xs
 inlineQuery _ = ""
 
 inlinesQuery :: [Inline] -> Monoid.Sum Int
@@ -218,7 +230,7 @@ t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
              )
 
 t_code :: (Inline, ByteString)
-t_code = ( Code ("", [], [("language", "haskell")]) "foo bar"
+t_code = ( Code (Attr ("", [], [("language", "haskell")])) "foo bar"
          , [s|{"t":"Code","c":[["",[],[["language","haskell"]]],"foo bar"]}|]
          )
 
@@ -237,14 +249,14 @@ t_rawinline = ( RawInline (Format "tex") "\\foo{bar}"
               )
 
 t_link :: (Inline, ByteString)
-t_link = ( Link ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+t_link = ( Link (Attr ("id",["kls"],[("k1", "v1"), ("k2", "v2")]))
            [ Str "a", Space, Str "famous", Space, Str "site"]
            ("https://www.google.com","google")
          , [s|{"t":"Link","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"site"}],["https://www.google.com","google"]]}|]
          )
 
 t_image :: (Inline, ByteString)
-t_image = ( Image ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+t_image = ( Image (Attr ("id",["kls"],[("k1", "v1"), ("k2", "v2")]))
            [ Str "a", Space, Str "famous", Space, Str "image"]
            ("my_img.png","image")
          , [s|{"t":"Image","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"image"}],["my_img.png","image"]]}|]
@@ -256,7 +268,7 @@ t_note = ( Note [Para [Str "Hello"]]
          )
 
 t_span :: (Inline, ByteString)
-t_span = ( Span ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+t_span = ( Span (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) [Str "Hello"]
          , [s|{"t":"Span","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Hello"}]]}|]
          )
 
@@ -276,7 +288,7 @@ t_lineblock = ( LineBlock [[Str "Hello"], [Str "Moin"]]
               )
 
 t_codeblock :: (Block, ByteString)
-t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar"
+t_codeblock = ( CodeBlock (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) "Foo Bar"
               , [s|{"t":"CodeBlock","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],"Foo Bar"]}|]
               )
 
@@ -314,7 +326,7 @@ t_definitionlist = (DefinitionList
                     )
 
 t_header :: (Block, ByteString)
-t_header = ( Header 2 ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Head"]
+t_header = ( Header 2 (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) [Str "Head"]
            , [s|{"t":"Header","c":[2,["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Head"}]]}|]
            )
 
@@ -355,7 +367,7 @@ t_table = (  Table
               )
 
 t_div :: (Block, ByteString)
-t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
+t_div = ( Div (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) [Para [Str "Hello"]]
          , [s|{"t":"Div","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
          )
 

@@ -1,9 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Criterion.Main (bench, defaultMain, nf)
-import Text.Pandoc.Definition (Pandoc, Inline (Str))
+import Data.String.Conversions
 import Text.Pandoc.Walk (walk)
-import Text.Pandoc.Builder
+import Text.Pandoc.Builder hiding (Pandoc, Meta, MetaValue, Inline, Block, Citation)
+
+type TestStringType = String
+
+-- redefining these so we can easily replace 'String' with another type just for testing.
+type Pandoc = Pandoc' TestStringType
+type Inline = Inline' TestStringType
+
 
 main :: IO ()
 main = do
@@ -14,16 +21,16 @@ main = do
     ]
 
 prependZeroWidthSpace :: Inline -> Inline
-prependZeroWidthSpace (Str s) = Str ('\8203' : s)
+prependZeroWidthSpace (Str s) = Str ("\8203" <> s)
 prependZeroWidthSpace x = x
 
 prependZeroWidthSpace' :: Inline -> [Inline]
-prependZeroWidthSpace' (Str s) = [Str ('\8203' : s)]
+prependZeroWidthSpace' (Str s) = [Str ("\8203" <> s)]
 prependZeroWidthSpace' x = [x]
 
 prependZeroWidthSpace'' :: [Inline] -> [Inline]
 prependZeroWidthSpace'' (Str s : xs) =
-  (Str ('\8203' : s) : prependZeroWidthSpace'' xs)
+  (Str ("\8203" <> s) : prependZeroWidthSpace'' xs)
 prependZeroWidthSpace'' (x : xs) =
   x : prependZeroWidthSpace'' xs
 prependZeroWidthSpace'' [] = []

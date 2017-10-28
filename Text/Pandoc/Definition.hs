@@ -226,13 +226,15 @@ type TableCell' string = [Block' string]
 
 -- | Formats for raw blocks
 --
--- TODO: changing this type to use ST or LT internally is a breaking change, and using a polymorphic
--- type like with the others is a bit tricky, since we need to suddenly write lots of instances
--- manually that could formerly be derived.  try it and follow the type errors!
+-- TODO: changing this type to use ST or LT internally is a breaking change, and
+-- using a polymorphic type like with the others is a bit tricky, since we need
+-- to suddenly write lots of instances manually that could formerly be derived.
+-- try it and follow the type errors!
 --
--- TODO: introduce @mkFormat = Format . map toLower . cs :: ConvertibleStrings string String =>
--- string -> Format@ and make 'Format' abstract (do not export constructor), then we don't have to
--- worry about Eq, Ord distinguishing upper and lower case.
+-- TODO: introduce @mkFormat = Format . map toLower . cs :: ConvertibleStrings
+-- string String => string -> Format@ and make 'Format' abstract (do not export
+-- constructor), then we don't have to worry about Eq, Ord distinguishing upper
+-- and lower case.
 newtype Format = Format String
                deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
 

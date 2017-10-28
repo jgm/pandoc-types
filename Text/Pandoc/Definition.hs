@@ -69,7 +69,7 @@ module Text.Pandoc.Definition ( Pandoc
                               , ListNumberDelim(..)
                               , Format(..)
                               , Attr
-                              , Attr'(..)
+                              , Attr'
                               , nullAttr
                               , TableCell
                               , TableCell'
@@ -207,17 +207,11 @@ data ListNumberDelim = DefaultDelim
 type Attr = Attr' String
 
 -- | Attributes: identifier, classes, key-value pairs
-newtype Attr' string = Attr (string, [string], [(string, string)])
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
-
-instance FromJSON string => FromJSON (Attr' string) where
-  parseJSON v = Attr <$> parseJSON v
-
-instance ToJSON string => ToJSON (Attr' string) where
-  toJSON (Attr d) = toJSON d
+-- TODO: make this a newtype
+type Attr' string = (string, [string], [(string, string)])
 
 nullAttr :: IsString string => Attr' string
-nullAttr = Attr ("",[],[])
+nullAttr = ("",[],[])
 
 type TableCell = TableCell' String
 
@@ -645,7 +639,6 @@ instance NFData string => NFData (Meta' string)
 instance NFData string => NFData (Citation' string)
 instance NFData Alignment
 instance NFData string => NFData (Inline' string)
-instance NFData string => NFData (Attr' string)
 instance NFData MathType
 instance NFData Format
 instance NFData CitationMode

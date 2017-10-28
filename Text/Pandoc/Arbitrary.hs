@@ -20,7 +20,7 @@ arbAttr = do
   id' <- elements ["","loc"]
   classes <- elements [[],["haskell"],["c","numberLines"]]
   keyvals <- elements [[],[("start","22")],[("a","11"),("b_2","a b c")]]
-  return $ Attr (id',classes,keyvals)
+  return (id',classes,keyvals)
 
 instance IsString string => Arbitrary (Inlines' string) where
   arbitrary = liftM (fromList :: [Inline' string] -> Inlines' string) arbitrary

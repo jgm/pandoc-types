@@ -68,7 +68,7 @@ inlinesTrans ys = ys
 
 blockTrans :: Block -> Block
 blockTrans (Plain xs) = Para xs
-blockTrans (BlockQuote xs) = Div (Attr ("",["special"],[])) xs
+blockTrans (BlockQuote xs) = Div ("",["special"],[]) xs
 blockTrans x = x
 
 blocksTrans :: [Block] -> [Block]
@@ -230,7 +230,7 @@ t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
              )
 
 t_code :: (Inline, ByteString)
-t_code = ( Code (Attr ("", [], [("language", "haskell")])) "foo bar"
+t_code = ( Code ("", [], [("language", "haskell")]) "foo bar"
          , [s|{"t":"Code","c":[["",[],[["language","haskell"]]],"foo bar"]}|]
          )
 
@@ -249,14 +249,14 @@ t_rawinline = ( RawInline (Format "tex") "\\foo{bar}"
               )
 
 t_link :: (Inline, ByteString)
-t_link = ( Link (Attr ("id",["kls"],[("k1", "v1"), ("k2", "v2")]))
+t_link = ( Link ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
            [ Str "a", Space, Str "famous", Space, Str "site"]
            ("https://www.google.com","google")
          , [s|{"t":"Link","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"site"}],["https://www.google.com","google"]]}|]
          )
 
 t_image :: (Inline, ByteString)
-t_image = ( Image (Attr ("id",["kls"],[("k1", "v1"), ("k2", "v2")]))
+t_image = ( Image ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
            [ Str "a", Space, Str "famous", Space, Str "image"]
            ("my_img.png","image")
          , [s|{"t":"Image","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"image"}],["my_img.png","image"]]}|]
@@ -268,7 +268,7 @@ t_note = ( Note [Para [Str "Hello"]]
          )
 
 t_span :: (Inline, ByteString)
-t_span = ( Span (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) [Str "Hello"]
+t_span = ( Span ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
          , [s|{"t":"Span","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Hello"}]]}|]
          )
 
@@ -288,7 +288,7 @@ t_lineblock = ( LineBlock [[Str "Hello"], [Str "Moin"]]
               )
 
 t_codeblock :: (Block, ByteString)
-t_codeblock = ( CodeBlock (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) "Foo Bar"
+t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar"
               , [s|{"t":"CodeBlock","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],"Foo Bar"]}|]
               )
 
@@ -326,7 +326,7 @@ t_definitionlist = (DefinitionList
                     )
 
 t_header :: (Block, ByteString)
-t_header = ( Header 2 (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) [Str "Head"]
+t_header = ( Header 2 ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Head"]
            , [s|{"t":"Header","c":[2,["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Head"}]]}|]
            )
 
@@ -367,7 +367,7 @@ t_table = (  Table
               )
 
 t_div :: (Block, ByteString)
-t_div = ( Div (Attr ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])) [Para [Str "Hello"]]
+t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
          , [s|{"t":"Div","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
          )
 

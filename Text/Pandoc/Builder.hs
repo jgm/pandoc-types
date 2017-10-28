@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
     DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving,
     DeriveGeneric, DeriveTraversable, FlexibleContexts, OverloadedStrings,
-    UndecidableInstances #-}
+    UndecidableInstances, ScopedTypeVariables #-}
 {-
 Copyright (C) 2010-2016 John MacFarlane
 
@@ -171,15 +171,17 @@ import Text.Pandoc.Definition
 import Data.String
 import Data.String.Conversions
 import qualified Data.Map as M
+import qualified Data.Text.Lazy as LT
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
 import Data.Traversable (Traversable)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
-import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
+
+type PandocString = LT
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -241,7 +243,7 @@ instance Monoid string => Monoid (Inlines' string) where
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
 
-instance ConvertibleStrings String string => IsString (Inlines' string) where
+instance ConvertibleStrings PandocString string => IsString (Inlines' string) where
    fromString = text
 
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
@@ -313,14 +315,20 @@ setDate = setMeta "date"
 
 -- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's
 -- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
--- TODO: implement this in LT.
-text :: (ConvertibleStrings string String, ConvertibleStrings String string') => string -> Inlines' string'
+text :: forall string string'.
+        (ConvertibleStrings string PandocString, ConvertibleStrings PandocString string')
+     => string -> Inlines' string'
 text = fromList . map conv . breakBySpaces . cs
-  where breakBySpaces = groupBy sameCategory
+  where breakBySpaces :: LT -> [LT]
+        breakBySpaces = LT.groupBy sameCategory
+
+        sameCategory :: Char -> Char -> Bool
         sameCategory x y = (is_space x && is_space y) ||
                            (not $ is_space x || is_space y)
-        conv xs | all is_space xs =
-           if any is_newline xs
+
+        conv :: PandocString -> Inline' string'
+        conv xs | LT.all is_space xs =
+           if LT.any is_newline xs
               then SoftBreak
               else Space
         conv xs = Str $ cs xs

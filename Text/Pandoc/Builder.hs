@@ -245,17 +245,16 @@ instance ConvertibleStrings String string => IsString (Inlines' string) where
    fromString = text
 
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
-trimInlines :: (ConvertibleStrings string String, ConvertibleStrings String string)  -- TODO: go via LT, not String
-            => Inlines' string -> Inlines' string
+trimInlines :: Inlines' string -> Inlines' string
 #if MIN_VERSION_containers(0,4,0)
-trimInlines (Many ils) = Many $ undefined {- fmap cs -} $ Seq.dropWhileL isSp $
-                            Seq.dropWhileR isSp $ undefined {- fmap cs -} $ ils
+trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
+                            Seq.dropWhileR isSp $ ils
 #else
 -- for GHC 6.12, we need to workaround a bug in dropWhileR
 -- see http://hackage.haskell.org/trac/ghc/ticket/4157
-trimInlines (Many ils) = Many $ undefined {- fmap cs -} $ Seq.dropWhileL isSp
+trimInlines (Many ils) = Many $ Seq.dropWhileL isSp
                             Seq.reverse $ Seq.dropWhileL isSp $
-                            Seq.reverse $ undefined {- fmap cs ils -}
+                            Seq.reverse $ ils
 #endif
   where isSp Space = True
         isSp SoftBreak = True

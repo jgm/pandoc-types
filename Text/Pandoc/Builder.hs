@@ -142,6 +142,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , image
                            , imageWith
                            , note
+                           , endNote
                            , spanWith
                            , trimInlines
                            -- * Block list builders
@@ -420,7 +421,10 @@ imageWith :: Attr -- ^ Attributes
 imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
 
 note :: Blocks -> Inlines
-note = singleton . Note . toList
+note = singleton . Note Footnote . toList
+
+endNote :: Blocks -> Inlines
+endNote = singleton . Note Endnote . toList
 
 spanWith :: Attr -> Inlines -> Inlines
 spanWith attr = singleton . Span attr . toList

@@ -251,9 +251,15 @@ t_image = ( Image ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
          , [s|{"t":"Image","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"image"}],["my_img.png","image"]]}|]
          )
 
+t_footnote :: (NoteType, ByteString)
+t_footnote = ( Footnote, [s|{"t":"Footnote"}|] )
+
+t_endnote :: (NoteType, ByteString)
+t_endnote = ( Endnote, [s|{"t":"Endnote"}|] )
+
 t_note :: (Inline, ByteString)
-t_note = ( Note [Para [Str "Hello"]]
-         , [s|{"t":"Note","c":[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]}|]
+t_note = ( Note Footnote [Para [Str "Hello"]]
+         , [s|{"t":"Note","c":[{"t":"Footnote"},[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
          )
 
 t_span :: (Inline, ByteString)
@@ -421,6 +427,10 @@ tests =
       , testGroup "MathType"
         [ testEncodeDecode "DisplayMath" t_displaymath
         , testEncodeDecode "InlineMath" t_inlinemath
+        ]
+      , testGroup "NoteType"
+        [ testEncodeDecode "Footnote" t_footnote
+        , testEncodeDecode "Endnote" t_endnote
         ]
       , testGroup "Inline"
         [ testEncodeDecode "Str" t_str

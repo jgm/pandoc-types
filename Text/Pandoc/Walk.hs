@@ -141,17 +141,25 @@ instance OVERLAPS
   walkM f = T.traverse (walkInlineM f) >=> f
   query f inlns = f inlns <> mconcat (map (queryInline f) inlns)
 
+instance Walkable [Inline] Inline where
+  walkM f = walkInlineM f
+  query f = queryInline f
+
 instance Walkable Inline Block where
-  walkM f x = walkBlockM f x
-  query f x = queryBlock f x
+  walkM f = walkBlockM f
+  query f = queryBlock f
 
 instance Walkable [Inline] Block where
-  walkM f x = walkBlockM f x
-  query f x = queryBlock f x
+  walkM f = walkBlockM f
+  query f = queryBlock f
 
 instance Walkable Block Block where
   walkM f x = walkBlockM f x >>= f
   query f x = f x <> queryBlock f x
+
+instance Walkable [Block] Block where
+  walkM f = walkBlockM f
+  query f = queryBlock f
 
 instance OVERLAPS
          Walkable [Block] [Block] where
@@ -159,12 +167,12 @@ instance OVERLAPS
   query f blks = f blks <> mconcat (map (queryBlock f) blks)
 
 instance Walkable Block Inline where
-  walkM f x = walkInlineM f x
-  query f x = queryInline f x
+  walkM f = walkInlineM f
+  query f = queryInline f
 
 instance Walkable [Block] Inline where
-  walkM f x = walkInlineM f x
-  query f x = queryInline f x
+  walkM f = walkInlineM f
+  query f = queryInline f
 
 instance Walkable Block Pandoc where
   walkM = walkPandocM

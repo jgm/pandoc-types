@@ -81,6 +81,7 @@ import qualified Data.Map as M
 import GHC.Generics (Generic)
 import Data.String
 import Data.Char (toLower)
+import Data.Semigroup
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else
@@ -94,6 +95,7 @@ import Data.Version (Version, versionBranch)
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+instance Semigroup Pandoc where (<>) = mappend
 instance Monoid Pandoc where
   mempty = Pandoc mempty mempty
   (Pandoc m1 bs1) `mappend` (Pandoc m2 bs2) =
@@ -103,6 +105,7 @@ instance Monoid Pandoc where
 newtype Meta = Meta { unMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
+instance Semigroup Meta where (<>) = mappend
 instance Monoid Meta where
   mempty = Meta (M.empty)
   (Meta m1) `mappend` (Meta m2) = Meta (M.union m1 m2)

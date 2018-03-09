@@ -166,7 +166,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Data.String
-import Data.Monoid
+import Data.Semigroup
 import qualified Data.Map as M
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
@@ -178,16 +178,6 @@ import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
 
-#if MIN_VERSION_base(4,5,0)
--- (<>) is defined in Data.Monoid
-#else
-infixr 6 <>
-
--- | An infix synonym for 'mappend'.
-(<>) :: Monoid m => m -> m -> m
-(<>) = mappend
-{-# INLINE (<>) #-}
-#endif
 
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
@@ -210,7 +200,9 @@ type Inlines = Many Inline
 type Blocks  = Many Block
 
 deriving instance Monoid Blocks
+instance Semigroup Blocks where (<>) = mappend
 
+instance Semigroup Inlines where (<>) = mappend
 instance Monoid Inlines where
   mempty = Many mempty
   (Many xs) `mappend` (Many ys) =

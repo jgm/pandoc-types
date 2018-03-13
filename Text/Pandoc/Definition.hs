@@ -91,7 +91,7 @@ import Control.DeepSeq.Generics
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
 #if MIN_VERSION_base(4,9,0)
-import Data.Semigroup (Semigroup)
+import Data.Semigroup
 #endif
 
 data Pandoc = Pandoc Meta [Block]

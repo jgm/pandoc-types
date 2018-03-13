@@ -166,7 +166,6 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Data.String
-import Data.Monoid
 import qualified Data.Map as M
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
@@ -177,6 +176,10 @@ import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
+import Data.Monoid
+#if MIN_VERSION_base(4,9,0)
+import Data.Semigroup (Semigroup)
+#endif
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -209,8 +212,38 @@ isNull = Seq.null . unMany
 type Inlines = Many Inline
 type Blocks  = Many Block
 
+#if MIN_VERSION_base(4,9,0)
+deriving instance Semigroup Blocks
+#endif
 deriving instance Monoid Blocks
 
+#if MIN_VERSION_base(4,9,0)
+instance Semigroup Inlines where
+  (Many xs) <> (Many ys) =
+    case (viewr xs, viewl ys) of
+      (EmptyR, _) -> Many ys
+      (_, EmptyL) -> Many xs
+      (xs' :> x, y :< ys') -> Many (meld <> ys')
+        where meld = case (x, y) of
+                          (Space, Space)     -> xs' |> Space
+                          (Space, SoftBreak) -> xs' |> SoftBreak
+                          (SoftBreak, Space) -> xs' |> SoftBreak
+                          (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
+                          (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
+                          (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
+                          (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
+                          (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
+                          (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
+                          (Space, LineBreak) -> xs' |> LineBreak
+                          (LineBreak, Space) -> xs' |> LineBreak
+                          (SoftBreak, LineBreak) -> xs' |> LineBreak
+                          (LineBreak, SoftBreak) -> xs' |> LineBreak
+                          (SoftBreak, SoftBreak) -> xs' |> SoftBreak
+                          _                  -> xs' |> x |> y
+instance Monoid Inlines where
+  mempty = Many mempty
+  mappend = (<>)
+#else
 instance Monoid Inlines where
   mempty = Many mempty
   (Many xs) `mappend` (Many ys) =
@@ -234,6 +267,7 @@ instance Monoid Inlines where
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
+#endif
 
 instance IsString Inlines where
    fromString = text

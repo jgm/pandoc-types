@@ -41,7 +41,7 @@ matrix:
 
   - env: BUILD=stack ARGS="--resolver lts-10"
     compiler: ": #stack 8.2.2"
-    addons: {apt: {packages: [ghc-8.2.2, sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ghc-8.2.2], sources: [hvr-ghc]}}
 
   allow_failures:
   - env: BUILD=cabal GHCVER=head  CABALVER=head

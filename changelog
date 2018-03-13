@@ -1,3 +1,9 @@
+[1.17.4]
+
+  * Add Semigroup instances for Pandoc, Meta, Inlines, Blocks
+    (if base >= 4.9).  This is needed for the library to compile
+    with ghc 8.4.
+
 [1.17.3.1]
 
   * Bumped upper bounds for criterion and QuickCheck.

@@ -1,3 +1,12 @@
+[1.17.4.2]
+
+  * Fix compiler warnings.
+
+[1.17.4.1]
+
+  * Import Semigroups when needed rather than using CPP.
+  * Bump criterion upper bound.
+
 [1.17.4]
 
   * Add Semigroup instances for Pandoc, Meta, Inlines, Blocks

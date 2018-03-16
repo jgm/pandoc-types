@@ -54,6 +54,8 @@ Library
                      aeson >= 0.6.2 && < 1.4,
                      transformers >= 0.2 && < 0.6,
                      QuickCheck >= 2
+  if !impl(ghc >= 8.0)
+    Build-depends:   semigroups == 0.18.*
   if impl(ghc < 7.10)
     Build-depends:   deepseq-generics >= 0.1 && < 0.2
   else

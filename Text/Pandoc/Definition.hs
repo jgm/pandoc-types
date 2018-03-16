@@ -90,32 +90,22 @@ import Control.DeepSeq.Generics
 #endif
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
-#if MIN_VERSION_base(4,9,0)
 import Data.Semigroup
-#endif
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
-#if MIN_VERSION_base(4,9,0)
 instance Semigroup Pandoc where
   (Pandoc m1 bs1) <> (Pandoc m2 bs2) =
     Pandoc (m1 <> m2) (bs1 <> bs2)
 instance Monoid Pandoc where
   mempty = Pandoc mempty mempty
   mappend = (<>)
-#else
-instance Monoid Pandoc where
-  mempty = Pandoc mempty mempty
-  (Pandoc m1 bs1) `mappend` (Pandoc m2 bs2) =
-    Pandoc (m1 `mappend` m2) (bs1 `mappend` bs2)
-#endif
 
 -- | Metadata for the document:  title, authors, date.
 newtype Meta = Meta { unMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
-#if MIN_VERSION_base(4,9,0)
 instance Semigroup Meta where
   (Meta m1) <> (Meta m2) = Meta (M.union m1 m2)
   -- note: M.union is left-biased, so if there are fields in both m1
@@ -123,11 +113,6 @@ instance Semigroup Meta where
 instance Monoid Meta where
   mempty = Meta (M.empty)
   mappend = (<>)
-#else
-instance Monoid Meta where
-  mempty = Meta (M.empty)
-  (Meta m1) `mappend` (Meta m2) = Meta (M.union m1 m2)
-#endif
 
 data MetaValue = MetaMap (M.Map String MetaValue)
                | MetaList [MetaValue]

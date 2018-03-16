@@ -213,12 +213,9 @@ isNull = Seq.null . unMany
 type Inlines = Many Inline
 type Blocks  = Many Block
 
-#if MIN_VERSION_base(4,9,0)
 deriving instance Semigroup Blocks
-#endif
 deriving instance Monoid Blocks
 
-#if MIN_VERSION_base(4,9,0)
 instance Semigroup Inlines where
   (Many xs) <> (Many ys) =
     case (viewr xs, viewl ys) of
@@ -244,31 +241,6 @@ instance Semigroup Inlines where
 instance Monoid Inlines where
   mempty = Many mempty
   mappend = (<>)
-#else
-instance Monoid Inlines where
-  mempty = Many mempty
-  (Many xs) `mappend` (Many ys) =
-    case (viewr xs, viewl ys) of
-      (EmptyR, _) -> Many ys
-      (_, EmptyL) -> Many xs
-      (xs' :> x, y :< ys') -> Many (meld `mappend` ys')
-        where meld = case (x, y) of
-                          (Space, Space)     -> xs' |> Space
-                          (Space, SoftBreak) -> xs' |> SoftBreak
-                          (SoftBreak, Space) -> xs' |> SoftBreak
-                          (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
-                          (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
-                          (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
-                          (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
-                          (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
-                          (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
-                          (Space, LineBreak) -> xs' |> LineBreak
-                          (LineBreak, Space) -> xs' |> LineBreak
-                          (SoftBreak, LineBreak) -> xs' |> LineBreak
-                          (LineBreak, SoftBreak) -> xs' |> LineBreak
-                          (SoftBreak, SoftBreak) -> xs' |> SoftBreak
-                          _                  -> xs' |> x |> y
-#endif
 
 instance IsString Inlines where
    fromString = text

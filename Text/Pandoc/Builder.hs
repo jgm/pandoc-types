@@ -176,11 +176,7 @@ import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
-#if MIN_VERSION_base(4,9,0)
 import Data.Semigroup
-#else
-import Data.Monoid
-#endif
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid

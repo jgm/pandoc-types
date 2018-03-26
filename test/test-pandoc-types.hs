@@ -362,6 +362,15 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
 t_null :: (Block, ByteString)
 t_null = (Null, [s|{"t":"Null"}|])
 
+testBlocksInAList :: Test
+testBlocksInAList = testCase "blocks in a list" $ assertEqual "" expe actu
+  where actu = walk blocksTrans $ BulletList [[BlockQuote [], BlockQuote []]]
+        expe = BulletList [[]]
+
+testBlocksInATable :: Test
+testBlocksInATable = testCase "blocks in a table" $ assertEqual "" expe actu
+  where actu = walk blocksTrans $ Table [] [] [] [] [[[BlockQuote [], BlockQuote []]]]
+        expe = Table [] [] [] [] [[]]
 
 tests :: [Test]
 tests =
@@ -375,6 +384,10 @@ tests =
     , testProperty "p_walkList blocksTrans"  (p_walkList blocksTrans)
     , testProperty "p_queryList blocksQuery" (p_queryList blocksQuery)
     ]
+  , testGroup "Specific cases for walk"
+    [ testBlocksInATable
+    , testBlocksInAList
+     ]
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"
       [ testProperty "round-trip" prop_roundtrip

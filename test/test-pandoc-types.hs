@@ -367,6 +367,11 @@ testBlocksInAList = testCase "blocks in a list" $ assertEqual "" expe actu
   where actu = walk blocksTrans $ BulletList [[BlockQuote [], BlockQuote []]]
         expe = BulletList [[]]
 
+testBlocksInAListEverywhere :: Test
+testBlocksInAListEverywhere = testCase "blocks in a list with everywhere" $ assertEqual "" expe actu
+  where actu = everywhere (mkT blocksTrans) $ BulletList [[BlockQuote [], BlockQuote []]]
+        expe = BulletList [[]]
+
 testBlocksInATable :: Test
 testBlocksInATable = testCase "blocks in a table" $ assertEqual "" expe actu
   where actu = walk blocksTrans $ Table [] [] [] [] [[[BlockQuote [], BlockQuote []]]]
@@ -387,6 +392,7 @@ tests =
   , testGroup "Specific cases for walk"
     [ testBlocksInATable
     , testBlocksInAList
+    , testBlocksInAListEverywhere
      ]
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"

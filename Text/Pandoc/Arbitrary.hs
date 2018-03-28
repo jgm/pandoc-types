@@ -30,14 +30,18 @@ instance Arbitrary Inline where
 
 arbInlines :: Int -> Gen [Inline]
 arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
-  where startsWithSpace (Space:_) = True
-        startsWithSpace        _  = False
+  where startsWithSpace (Space:_)     = True
+        startsWithSpace (SoftBreak:_) = True
+        -- Note: no LineBreak, similarly to Text.Pandoc.Builder (trimInlines)
+        startsWithSpace _             = False
 
 -- restrict to 3 levels of nesting max; otherwise we get
 -- bogged down in indefinitely large structures
 arbInline :: Int -> Gen Inline
 arbInline n = frequency $ [ (60, Str <$> realString)
-                          , (60, pure Space)
+                          , (40, pure Space)
+                          , (10, pure SoftBreak)
+                          , (10, pure LineBreak)
                           , (10, Code <$> arbAttr <*> realString)
                           , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
                                           , RawInline (Format "latex") "\\my{command}" ])

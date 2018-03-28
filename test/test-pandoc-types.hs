@@ -5,7 +5,7 @@ import Text.Pandoc.Definition
 import Text.Pandoc.Walk
 import Data.Generics
 import Data.List (tails)
-import Test.HUnit (Assertion, assertEqual, assertFailure)
+import Test.HUnit (Assertion, assertEqual, assertFailure, assertBool)
 import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
@@ -362,6 +362,16 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
 t_null :: (Block, ByteString)
 t_null = (Null, [s|{"t":"Null"}|])
 
+p_walkBlock :: (Typeable a, Walkable a Block)
+       => (a -> a) -> Block -> Bool
+p_walkBlock f d = everywhere (mkT f) d == walk f d
+
+doubleNested = BulletList [[BlockQuote [], BlockQuote []]]
+
+tPWalkSucceeding = testCase "test p_walk succeeding" $ assertBool "" $ p_walkBlock blockTrans doubleNested
+
+tPWalkFailing = testCase "test p_walk failing" $ assertBool "" $ p_walkBlock' doubleNested
+  where p_walkBlock' = p_walkBlock blocksTrans
 
 tests :: [Test]
 tests =
@@ -374,6 +384,10 @@ tests =
     , testProperty "p_queryList inlinesQuery" (p_queryList inlinesQuery)
     , testProperty "p_walkList blocksTrans"  (p_walkList blocksTrans)
     , testProperty "p_queryList blocksQuery" (p_queryList blocksQuery)
+    ]
+  , testGroup "Specific cases for walk"
+    [ tPWalkFailing
+    , tPWalkSucceeding
     ]
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"

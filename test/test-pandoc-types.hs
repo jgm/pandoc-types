@@ -5,7 +5,7 @@ import Text.Pandoc.Definition
 import Text.Pandoc.Walk
 import Data.Generics
 import Data.List (tails)
-import Test.HUnit (Assertion, assertEqual, assertFailure)
+import Test.HUnit (Assertion, assertEqual, assertFailure, assertBool)
 import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
@@ -362,20 +362,16 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
 t_null :: (Block, ByteString)
 t_null = (Null, [s|{"t":"Null"}|])
 
-testBlocksInAList :: Test
-testBlocksInAList = testCase "blocks in a list" $ assertEqual "" expe actu
-  where actu = walk blocksTrans $ BulletList [[BlockQuote [], BlockQuote []]]
-        expe = BulletList [[]]
+p_walkBlock :: (Typeable a, Walkable a Block)
+       => (a -> a) -> Block -> Bool
+p_walkBlock f d = everywhere (mkT f) d == walk f d
 
-testBlocksInAListEverywhere :: Test
-testBlocksInAListEverywhere = testCase "blocks in a list with everywhere" $ assertEqual "" expe actu
-  where actu = everywhere (mkT blocksTrans) $ BulletList [[BlockQuote [], BlockQuote []]]
-        expe = BulletList [[]]
+doubleNested = BulletList [[BlockQuote [], BlockQuote []]]
 
-testBlocksInATable :: Test
-testBlocksInATable = testCase "blocks in a table" $ assertEqual "" expe actu
-  where actu = walk blocksTrans $ Table [] [] [] [] [[[BlockQuote [], BlockQuote []]]]
-        expe = Table [] [] [] [] [[]]
+tPWalkSucceeding = testCase "test p_walk succeeding" $ assertBool "" $ p_walkBlock blockTrans doubleNested
+
+tPWalkFailing = testCase "test p_walk failing" $ assertBool "" $ p_walkBlock' doubleNested
+  where p_walkBlock' = p_walkBlock blocksTrans
 
 tests :: [Test]
 tests =
@@ -390,10 +386,9 @@ tests =
     , testProperty "p_queryList blocksQuery" (p_queryList blocksQuery)
     ]
   , testGroup "Specific cases for walk"
-    [ testBlocksInATable
-    , testBlocksInAList
-    , testBlocksInAListEverywhere
-     ]
+    [ tPWalkFailing
+    , tPWalkSucceeding
+    ]
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"
       [ testProperty "round-trip" prop_roundtrip

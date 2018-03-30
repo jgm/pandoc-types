@@ -474,21 +474,19 @@ headerWith attr level = singleton . Header level attr . toList
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule
 
+-- | Table builder. Rows and headers will be padded or truncated to the size of
+-- @cellspecs@
 table :: Inlines               -- ^ Caption
       -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
       -> [Blocks]              -- ^ Headers
       -> [[Blocks]]            -- ^ Rows
       -> Blocks
 table caption cellspecs headers rows = singleton $
-  Table (toList caption) aligns widths
-      (map toList headers') (map (map toList) rows)
+  Table (toList caption) aligns widths (sanitise headers) (map sanitise rows)
    where (aligns, widths) = unzip cellspecs
-         numcols  = case (headers:rows) of
-                         [] -> 0
-                         xs -> maximum (map length xs)
-         headers' = if null headers
-                       then replicate numcols mempty
-                       else headers
+         sanitise = map toList . pad mempty numcols
+         numcols = length cellspecs
+         pad element upTo list = take upTo (list ++ repeat element)
 
 -- | A simple table without a caption.
 simpleTable :: [Blocks]   -- ^ Headers

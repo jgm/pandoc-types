@@ -3,6 +3,7 @@
 import Text.Pandoc.Arbitrary ()
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
+import Text.Pandoc.Builder (simpleTable, singleton)
 import Data.Generics
 import Data.List (tails)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
@@ -362,6 +363,22 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
 t_null :: (Block, ByteString)
 t_null = (Null, [s|{"t":"Null"}|])
 
+-- headers and rows are truncated or padded to a consistent number of
+-- cells in order to avoid syntax errors after conversion, see
+-- jgm/pandoc#4059. this test uses `simpleTable` therefore it cannot
+-- test truncation
+t_tableSan :: Test
+t_tableSan = testCase "table sanitisation" $ assertion
+             where assertion = assertEqual err expected generated
+                   err = "sanitisation error"
+                   headers = [singleton Null, singleton Null]
+                   generated = simpleTable headers [[mempty], []]
+                   expected = singleton (Table
+                                         []
+                                         [AlignDefault, AlignDefault]
+                                         [0.0, 0.0]
+                                         [[Null], [Null]] [[[], []], [[], []]])
+
 
 tests :: [Test]
 tests =
@@ -438,7 +455,8 @@ tests =
         , testEncodeDecode "Null" t_null
         ]
       ]
-    ]
+    ],
+    t_tableSan
   ]
 
 

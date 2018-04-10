@@ -84,7 +84,7 @@ import Data.Char (toLower)
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else
-import Data.Monoid
+import Data.Monoid (Monoid (mappend, mempty))
 import Control.Applicative ((<$>), (<*>))
 import Control.DeepSeq.Generics
 #endif

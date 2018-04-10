@@ -4,6 +4,7 @@
 module Text.Pandoc.Arbitrary ()
 where
 import Test.QuickCheck
+import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad (forM)
 import Text.Pandoc.Definition
 import Text.Pandoc.Builder

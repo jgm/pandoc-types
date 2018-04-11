@@ -46,7 +46,7 @@ Library
                      Text.Pandoc.JSON
                      Text.Pandoc.Arbitrary
   Other-modules:     Paths_pandoc_types
-  Build-depends:     base >= 4 && < 5,
+  Build-depends:     base >= 4.5 && < 5,
                      containers >= 0.3,
                      syb >= 0.1 && < 0.8,
                      ghc-prim >= 0.2,
@@ -85,6 +85,6 @@ benchmark benchmark-pandoc-types
   main-is:         bench.hs
   hs-source-dirs:  benchmark
   build-depends:   pandoc-types,
-                   base >= 4.2 && < 5,
+                   base >= 4.5 && < 5,
                    criterion >= 1.0 && < 1.5
   ghc-options:   -rtsopts -Wall -fno-warn-unused-do-bind -O2

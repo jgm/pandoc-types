@@ -93,14 +93,14 @@ linked to in a document:
 
 module Text.Pandoc.Walk (Walkable(..))
 where
-import Control.Applicative ()
+import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
-import Data.Traversable ()
+import Data.Traversable (Traversable)
 import qualified Data.Foldable as F
-import Data.Foldable ()
+import Data.Foldable (Foldable)
 #if MIN_VERSION_base(4,8,0)
 import Data.Monoid ((<>))
 #else

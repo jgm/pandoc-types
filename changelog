@@ -1,3 +1,15 @@
+[1.17.5]
+
+
+  * Bump upper bounds for aeson, base.
+  * Allow building on older ghc versions (George Wilson).
+  * Text.Pandoc.Arbitrary: generate SoftBreaks and LineBreaks
+    (Alexander Krotov).
+  * Pad table rows up to maximum row length, to guarantee that
+    all rows have the same number of columns
+    (see jgm/pandoc#4059, Francesco Occhipinti).
+  * Make String an instance of ToMetaValue (Alexander Krotov).
+
 [1.17.4.2]
 
   * Fix compiler warnings.

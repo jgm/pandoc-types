@@ -51,7 +51,7 @@ Library
                      syb >= 0.1 && < 0.8,
                      ghc-prim >= 0.2,
                      bytestring >= 0.9 && < 0.11,
-                     aeson >= 0.6.2 && < 1.4,
+                     aeson >= 0.6.2 && < 1.5,
                      transformers >= 0.2 && < 0.6,
                      QuickCheck >= 2
   if !impl(ghc >= 8.0)
@@ -69,7 +69,7 @@ test-suite test-pandoc-types
   build-depends:       base,
                        pandoc-types,
                        syb,
-                       aeson >= 0.6.2 && < 1.4,
+                       aeson >= 0.6.2 && < 1.5,
                        containers >= 0.3,
                        bytestring >= 0.9 && < 0.11,
                        test-framework >= 0.3 && < 0.9,

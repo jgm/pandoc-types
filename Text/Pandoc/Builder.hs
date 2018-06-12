@@ -277,7 +277,7 @@ instance ToMetaValue Inlines where
 instance ToMetaValue Bool where
   toMetaValue = MetaBool
 
-instance ToMetaValue String where
+instance {-# OVERLAPPING #-} ToMetaValue String where
   toMetaValue = MetaString
 
 instance ToMetaValue a => ToMetaValue [a] where

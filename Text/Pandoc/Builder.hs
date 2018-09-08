@@ -110,6 +110,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , toList
                            , fromList
                            , isNull
+                           , mappendPreserve
                            -- * Document builders
                            , doc
                            , ToMetaValue(..)
@@ -176,7 +177,7 @@ import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
-import Data.Semigroup
+import Data.Semigroup()
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -213,30 +214,48 @@ deriving instance Semigroup Blocks
 deriving instance Monoid Blocks
 
 instance Semigroup Inlines where
-  (Many xs) <> (Many ys) =
-    case (viewr xs, viewl ys) of
-      (EmptyR, _) -> Many ys
-      (_, EmptyL) -> Many xs
-      (xs' :> x, y :< ys') -> Many (meld <> ys')
-        where meld = case (x, y) of
-                          (Space, Space)     -> xs' |> Space
-                          (Space, SoftBreak) -> xs' |> SoftBreak
-                          (SoftBreak, Space) -> xs' |> SoftBreak
-                          (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
-                          (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
-                          (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
-                          (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
-                          (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
-                          (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
-                          (Space, LineBreak) -> xs' |> LineBreak
-                          (LineBreak, Space) -> xs' |> LineBreak
-                          (SoftBreak, LineBreak) -> xs' |> LineBreak
-                          (LineBreak, SoftBreak) -> xs' |> LineBreak
-                          (SoftBreak, SoftBreak) -> xs' |> SoftBreak
-                          _                  -> xs' |> x |> y
+  i1 <> i2 = mappendWith meld i1 i2
+    -- were build upon @meldPreserve@ adding the logic to squash extra spaces
+    where meld xs x y  = case (x, y) of
+            (Space, Space)     -> xs |> Space
+            (SoftBreak, Space) -> xs |> SoftBreak
+            (LineBreak, Space) -> xs |> LineBreak
+            _                  -> meldPreserve xs x y
 instance Monoid Inlines where
   mempty = Many mempty
   mappend = (<>)
+
+mappendPreserve :: Many Inline -> Many Inline -> Many Inline
+mappendPreserve = mappendWith meldPreserve
+
+-- @mappendWith@ is used to build @mappendPreserve@ and the @<>@
+-- operator for the @Semigroup@ instance of @Inlines@. In both cases,
+-- we use meld functions to decide how to handle sequences of inlines
+mappendWith :: (Seq Inline -> Inline -> Inline -> Seq Inline) -> Many Inline -> Many Inline -> Many Inline
+mappendWith meld (Many xs) (Many ys) =
+    case (viewr xs, viewl ys) of
+      (EmptyR, _) -> Many ys
+      (_, EmptyL) -> Many xs
+      (xs' :> x, y :< ys') -> Many (meld xs' x y <> ys')
+
+-- @meldPreserve@ preserves duplicated spaces and spaces after a
+-- newline. It's useful for combining inlines that are part of a code
+-- block, in order to preserve indentation
+meldPreserve :: Seq Inline -> Inline -> Inline -> Seq Inline
+meldPreserve xs x y = case (x, y) of
+ (Space, SoftBreak) -> xs |> SoftBreak
+ (Str t1, Str t2)   -> xs |> Str (t1 <> t2)
+ (Emph i1, Emph i2) -> xs |> Emph (i1 <> i2)
+ (Strong i1, Strong i2) -> xs |> Strong (i1 <> i2)
+ (Subscript i1, Subscript i2) -> xs |> Subscript (i1 <> i2)
+ (Superscript i1, Superscript i2) -> xs |> Superscript (i1 <> i2)
+ (Strikeout i1, Strikeout i2) -> xs |> Strikeout (i1 <> i2)
+ (Space, LineBreak) -> xs |> LineBreak
+ (SoftBreak, LineBreak) -> xs |> LineBreak
+ (LineBreak, SoftBreak) -> xs |> LineBreak
+ (SoftBreak, SoftBreak) -> xs |> SoftBreak
+ _                  -> xs |> x |> y
+
 
 instance IsString Inlines where
    fromString = text

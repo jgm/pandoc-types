@@ -22,12 +22,40 @@ arbAttr = do
 
 instance Arbitrary Inlines where
   arbitrary = (fromList :: [Inline] -> Inlines) <$> arbitrary
+  shrink = fmap fromList . shrink . toList
 
 instance Arbitrary Blocks where
   arbitrary = (fromList :: [Block] -> Blocks) <$> arbitrary
+  shrink = fmap fromList . shrink . toList
 
 instance Arbitrary Inline where
   arbitrary = resize 3 $ arbInline 2
+  shrink (Str s) = Str <$> shrink s
+  shrink (Emph ils) = Emph <$> shrink ils
+  shrink (Strong ils) = Strong <$> shrink ils
+  shrink (Strikeout ils) = Strikeout <$> shrink ils
+  shrink (Superscript ils) = Superscript <$> shrink ils
+  shrink (Subscript ils) = Subscript <$> shrink ils
+  shrink (SmallCaps ils) = SmallCaps <$> shrink ils
+  shrink (Quoted qtype ils) = Quoted qtype <$> shrink ils
+  shrink (Cite cits ils) = (Cite cits <$> shrink ils)
+                        ++ (flip Cite ils <$> shrink cits)
+  shrink (Code attr s) = (Code attr <$> shrink s)
+                      ++ (flip Code s <$> shrink attr)
+  shrink Space = []
+  shrink SoftBreak = []
+  shrink LineBreak = []
+  shrink (Math mtype s) = Math mtype <$> shrink s
+  shrink (RawInline fmt s) = RawInline fmt <$> shrink s
+  shrink (Link attr ils target) = [Link attr ils' target | ils' <- shrink ils]
+                               ++ [Link attr ils target' | target' <- shrink target]
+                               ++ [Link attr' ils target | attr' <- shrink attr]
+  shrink (Image attr ils target) = [Image attr ils' target | ils' <- shrink ils]
+                                ++ [Image attr ils target' | target' <- shrink target]
+                                ++ [Image attr' ils target | attr' <- shrink attr]
+  shrink (Note blks) = Note <$> shrink blks
+  shrink (Span attr s) = (Span attr <$> shrink s)
+                      ++ (flip Span s <$> shrink attr)
 
 arbInlines :: Int -> Gen [Inline]
 arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
@@ -64,6 +92,25 @@ arbInline n = frequency $ [ (60, Str <$> realString)
 
 instance Arbitrary Block where
   arbitrary = resize 3 $ arbBlock 2
+  shrink (Plain ils) = Plain <$> shrink ils
+  shrink (Para ils) = Para <$> shrink ils
+  shrink (LineBlock lns) = LineBlock <$> shrink lns
+  shrink (CodeBlock attr s) = (CodeBlock attr <$> shrink s)
+                           ++ (flip CodeBlock s <$> shrink attr)
+  shrink (RawBlock fmt s) = RawBlock fmt <$> shrink s
+  shrink (BlockQuote blks) = BlockQuote <$> shrink blks
+  shrink (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrink blksList
+  shrink (BulletList blksList) = BulletList <$> shrink blksList
+  shrink (DefinitionList defs) = DefinitionList <$> shrink defs
+  shrink (Header n attr ils) = (Header n attr <$> shrink ils)
+                            ++ (flip (Header n) ils <$> shrink attr)
+  shrink HorizontalRule = []
+  shrink (Table caption aligns widths cells rows) =
+    [Table caption' aligns widths cells rows | caption' <- shrink caption]
+    -- TODO: shrink table contents
+  shrink (Div attr blks) = (Div attr <$> shrink blks)
+                        ++ (flip Div blks <$> shrink attr)
+  shrink Null = []
 
 arbBlock :: Int -> Gen Block
 arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))

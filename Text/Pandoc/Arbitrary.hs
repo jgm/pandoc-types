@@ -106,8 +106,23 @@ instance Arbitrary Block where
                             ++ (flip (Header n) ils <$> shrink attr)
   shrink HorizontalRule = []
   shrink (Table caption aligns widths cells rows) =
+    -- TODO: shrink number of columns
+    -- Shrink header contents
+    [Table caption aligns widths cells' rows | cells' <- shrinkRow cells] ++
+    -- Shrink number of rows and row contents
+    [Table caption aligns widths cells rows' | rows' <- shrinkRows rows] ++
+    -- Shrink caption
     [Table caption' aligns widths cells rows | caption' <- shrink caption]
-    -- TODO: shrink table contents
+    where -- Shrink row contents without reducing the number of columns
+          shrinkRow :: [TableCell] -> [[TableCell]]
+          shrinkRow (x:xs) = [x':xs | x' <- shrink x]
+                          ++ [x:xs' | xs' <- shrinkRow xs]
+          shrinkRow [] = []
+          shrinkRows :: [[TableCell]] -> [[[TableCell]]]
+          shrinkRows (x:xs) = [xs] -- Shrink number of rows
+                           ++ [x':xs | x' <- shrinkRow x] -- Shrink row contents
+                           ++ [x:xs' | xs' <- shrinkRows xs]
+          shrinkRows [] = []
   shrink (Div attr blks) = (Div attr <$> shrink blks)
                         ++ (flip Div blks <$> shrink attr)
   shrink Null = []

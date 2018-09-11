@@ -22,23 +22,78 @@ arbAttr = do
 
 instance Arbitrary Inlines where
   arbitrary = (fromList :: [Inline] -> Inlines) <$> arbitrary
-  shrink = fmap fromList . shrink . toList
+  shrink = fmap fromList . ((++) <$> shrink <*> flattenShrinkInlines) . toList
+    where flattenShrinkInlines (x:xs) =
+            let x' = flattenInline x
+            in (if null x' then [] else [x' ++ xs]) ++ [x:xs' | xs' <- flattenShrinkInlines xs]
+          flattenShrinkInlines [] = []
+          flattenInline :: Inline -> [Inline]
+          flattenInline (Str _) = []
+          flattenInline (Emph ils) = ils
+          flattenInline (Strong ils) = ils
+          flattenInline (Strikeout ils) = ils
+          flattenInline (Superscript ils) = ils
+          flattenInline (Subscript ils) = ils
+          flattenInline (SmallCaps ils) = ils
+          flattenInline (Quoted _ ils) = ils
+          flattenInline (Cite _ ils) = ils
+          flattenInline Code{} = []
+          flattenInline Space = []
+          flattenInline SoftBreak = []
+          flattenInline LineBreak = []
+          flattenInline Math{} = []
+          flattenInline RawInline{} = []
+          flattenInline (Link _ ils _) = ils
+          flattenInline (Image _ ils _) = ils
+          flattenInline Note{} = []
+          flattenInline (Span _ ils) = ils
 
 instance Arbitrary Blocks where
   arbitrary = (fromList :: [Block] -> Blocks) <$> arbitrary
-  shrink = fmap fromList . shrink . toList
+  shrink = fmap fromList . ((++) <$> shrink <*> flattenShrinkBlocks) . toList
+    where flattenShrinkBlocks (x:xs) =
+            let x' = flattenBlock x
+            in (if null x' then [] else [x' ++ xs]) ++ [x:xs' | xs' <- flattenShrinkBlocks xs]
+          flattenShrinkBlocks [] = []
+          flattenBlock :: Block -> [Block]
+          flattenBlock Plain{} = []
+          flattenBlock Para{} = []
+          flattenBlock (LineBlock lns) = [Para x | x <- lns]
+          flattenBlock CodeBlock{} = []
+          flattenBlock RawBlock{} = []
+          flattenBlock (BlockQuote blks) = blks
+          flattenBlock (OrderedList _ blksList) = concat blksList
+          flattenBlock (BulletList blksList) = concat blksList
+          flattenBlock (DefinitionList defs) = concat [Para ils:concat blks | (ils, blks) <- defs]
+          flattenBlock (Header _ _ ils) = [Para ils]
+          flattenBlock HorizontalRule = []
+          flattenBlock (Table caption _ _ cells rows) = Para caption : concat (concat $ cells:rows)
+          flattenBlock (Div _ blks) = blks
+          flattenBlock Null = []
+
+shrinkInlineList :: [Inline] -> [[Inline]]
+shrinkInlineList = fmap toList . shrink . fromList
+
+shrinkInlinesList :: [[Inline]] -> [[[Inline]]]
+shrinkInlinesList = fmap (fmap toList) . shrink . fmap fromList
+
+shrinkBlockList :: [Block] -> [[Block]]
+shrinkBlockList = fmap toList . shrink . fromList
+
+shrinkBlocksList :: [[Block]] -> [[[Block]]]
+shrinkBlocksList = fmap (fmap toList) . shrink . fmap fromList
 
 instance Arbitrary Inline where
   arbitrary = resize 3 $ arbInline 2
   shrink (Str s) = Str <$> shrink s
-  shrink (Emph ils) = Emph <$> shrink ils
-  shrink (Strong ils) = Strong <$> shrink ils
-  shrink (Strikeout ils) = Strikeout <$> shrink ils
-  shrink (Superscript ils) = Superscript <$> shrink ils
-  shrink (Subscript ils) = Subscript <$> shrink ils
-  shrink (SmallCaps ils) = SmallCaps <$> shrink ils
-  shrink (Quoted qtype ils) = Quoted qtype <$> shrink ils
-  shrink (Cite cits ils) = (Cite cits <$> shrink ils)
+  shrink (Emph ils) = Emph <$> shrinkInlineList ils
+  shrink (Strong ils) = Strong <$> shrinkInlineList ils
+  shrink (Strikeout ils) = Strikeout <$> shrinkInlineList ils
+  shrink (Superscript ils) = Superscript <$> shrinkInlineList ils
+  shrink (Subscript ils) = Subscript <$> shrinkInlineList ils
+  shrink (SmallCaps ils) = SmallCaps <$> shrinkInlineList ils
+  shrink (Quoted qtype ils) = Quoted qtype <$> shrinkInlineList ils
+  shrink (Cite cits ils) = (Cite cits <$> shrinkInlineList ils)
                         ++ (flip Cite ils <$> shrink cits)
   shrink (Code attr s) = (Code attr <$> shrink s)
                       ++ (flip Code s <$> shrink attr)
@@ -47,13 +102,13 @@ instance Arbitrary Inline where
   shrink LineBreak = []
   shrink (Math mtype s) = Math mtype <$> shrink s
   shrink (RawInline fmt s) = RawInline fmt <$> shrink s
-  shrink (Link attr ils target) = [Link attr ils' target | ils' <- shrink ils]
+  shrink (Link attr ils target) = [Link attr ils' target | ils' <- shrinkInlineList ils]
                                ++ [Link attr ils target' | target' <- shrink target]
                                ++ [Link attr' ils target | attr' <- shrink attr]
-  shrink (Image attr ils target) = [Image attr ils' target | ils' <- shrink ils]
+  shrink (Image attr ils target) = [Image attr ils' target | ils' <- shrinkInlineList ils]
                                 ++ [Image attr ils target' | target' <- shrink target]
                                 ++ [Image attr' ils target | attr' <- shrink attr]
-  shrink (Note blks) = Note <$> shrink blks
+  shrink (Note blks) = Note <$> shrinkBlockList blks
   shrink (Span attr s) = (Span attr <$> shrink s)
                       ++ (flip Span s <$> shrink attr)
 
@@ -92,17 +147,23 @@ arbInline n = frequency $ [ (60, Str <$> realString)
 
 instance Arbitrary Block where
   arbitrary = resize 3 $ arbBlock 2
-  shrink (Plain ils) = Plain <$> shrink ils
-  shrink (Para ils) = Para <$> shrink ils
-  shrink (LineBlock lns) = LineBlock <$> shrink lns
+  shrink (Plain ils) = Plain <$> shrinkInlineList ils
+  shrink (Para ils) = Para <$> shrinkInlineList ils
+  shrink (LineBlock lns) = LineBlock <$> shrinkInlinesList lns
   shrink (CodeBlock attr s) = (CodeBlock attr <$> shrink s)
                            ++ (flip CodeBlock s <$> shrink attr)
   shrink (RawBlock fmt s) = RawBlock fmt <$> shrink s
-  shrink (BlockQuote blks) = BlockQuote <$> shrink blks
-  shrink (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrink blksList
-  shrink (BulletList blksList) = BulletList <$> shrink blksList
-  shrink (DefinitionList defs) = DefinitionList <$> shrink defs
-  shrink (Header n attr ils) = (Header n attr <$> shrink ils)
+  shrink (BlockQuote blks) = BlockQuote <$> shrinkBlockList blks
+  shrink (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrinkBlocksList blksList
+  shrink (BulletList blksList) = BulletList <$> shrinkBlocksList blksList
+  shrink (DefinitionList defs) = DefinitionList <$> shrinkDefinitionList defs
+    where shrinkDefinition (ils, blksList) = [(ils', blksList) | ils' <- shrinkInlineList ils]
+                                          ++ [(ils, blksList') | blksList' <- shrinkBlocksList blksList]
+          shrinkDefinitionList (x:xs) = [xs]
+                                     ++ [x':xs | x' <- shrinkDefinition x]
+                                     ++ [x:xs' | xs' <- shrinkDefinitionList xs]
+          shrinkDefinitionList [] = []
+  shrink (Header n attr ils) = (Header n attr <$> shrinkInlineList ils)
                             ++ (flip (Header n) ils <$> shrink attr)
   shrink HorizontalRule = []
   shrink (Table caption aligns widths cells rows) =
@@ -112,10 +173,10 @@ instance Arbitrary Block where
     -- Shrink number of rows and row contents
     [Table caption aligns widths cells rows' | rows' <- shrinkRows rows] ++
     -- Shrink caption
-    [Table caption' aligns widths cells rows | caption' <- shrink caption]
+    [Table caption' aligns widths cells rows | caption' <- shrinkInlineList caption]
     where -- Shrink row contents without reducing the number of columns
           shrinkRow :: [TableCell] -> [[TableCell]]
-          shrinkRow (x:xs) = [x':xs | x' <- shrink x]
+          shrinkRow (x:xs) = [x':xs | x' <- shrinkBlockList x]
                           ++ [x:xs' | xs' <- shrinkRow xs]
           shrinkRow [] = []
           shrinkRows :: [[TableCell]] -> [[[TableCell]]]
@@ -123,7 +184,7 @@ instance Arbitrary Block where
                            ++ [x':xs | x' <- shrinkRow x] -- Shrink row contents
                            ++ [x:xs' | xs' <- shrinkRows xs]
           shrinkRows [] = []
-  shrink (Div attr blks) = (Div attr <$> shrink blks)
+  shrink (Div attr blks) = (Div attr <$> shrinkBlockList blks)
                         ++ (flip Div blks <$> shrink attr)
   shrink Null = []
 

@@ -52,6 +52,9 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , nullMeta
                               , isNullMeta
                               , lookupMeta
+                              , lookupMetaBool
+                              , lookupMetaBlocks
+                              , lookupMetaInlines
                               , docTitle
                               , docAuthors
                               , docDate
@@ -134,15 +137,41 @@ isNullMeta (Meta m) = M.null m
 lookupMeta :: String -> Meta -> Maybe MetaValue
 lookupMeta key (Meta m) = M.lookup key m
 
--- | Extract document title from metadata; works just like the old @docTitle@.
-docTitle :: Meta -> [Inline]
-docTitle meta =
-  case lookupMeta "title" meta of
+-- | Retrieve the metadata value for a given @key@
+-- and convert to Bool.
+lookupMetaBool :: String -> Meta -> Bool
+lookupMetaBool key meta =
+  case lookupMeta key meta of
+      Just (MetaBlocks _)     -> True
+      Just (MetaInlines _)    -> True
+      Just (MetaString (_:_)) -> True
+      Just (MetaBool True)    -> True
+      _                       -> False
+
+-- | Retrieve the metadata value for a given @key@
+-- and extract blocks.
+lookupMetaBlocks :: String -> Meta -> [Block]
+lookupMetaBlocks key meta =
+  case lookupMeta key meta of
+         Just (MetaBlocks bs)   -> bs
+         Just (MetaInlines ils) -> [Plain ils]
+         Just (MetaString s)    -> [Plain [Str s]]
+         _                      -> []
+
+-- | Retrieve the metadata value for a given @key@
+-- and extract inlines.
+lookupMetaInlines :: String -> Meta -> [Inline]
+lookupMetaInlines key meta =
+  case lookupMeta key meta of
          Just (MetaString s)           -> [Str s]
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Plain ils]) -> ils
          Just (MetaBlocks [Para ils])  -> ils
          _                             -> []
+
+-- | Extract document title from metadata; works just like the old @docTitle@.
+docTitle :: Meta -> [Inline]
+docTitle = lookupMetaInlines "title"
 
 -- | Extract document authors from metadata; works just like the old
 -- @docAuthors@.
@@ -159,13 +188,7 @@ docAuthors meta =
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
-docDate meta =
-  case lookupMeta "date" meta of
-         Just (MetaString s)           -> [Str s]
-         Just (MetaInlines ils)        -> ils
-         Just (MetaBlocks [Plain ils]) -> ils
-         Just (MetaBlocks [Para ils])  -> ils
-         _                             -> []
+docDate = lookupMetaInlines "date"
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft

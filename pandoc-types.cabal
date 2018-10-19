@@ -57,7 +57,7 @@ Library
   if !impl(ghc >= 8.0)
     Build-depends:   semigroups == 0.18.*
   if impl(ghc < 7.10)
-    Build-depends:   deepseq-generics >= 0.1 && < 0.2
+    Build-depends:   deepseq-generics >= 0.1 && < 0.3
   else
     Build-depends:   deepseq >= 1.4.1 && < 1.5
   ghc-options:       -Wall

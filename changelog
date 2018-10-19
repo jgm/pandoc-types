@@ -1,3 +1,8 @@
+[1.17.5.2]
+
+  * Bump upper bound for deepseq-generics, QuickCheck, criterion.
+  * Implement QuickCheck shrinking for Inlines and Blocks (Alexander Krotov).
+
 [1.17.5.1]
 
   * Declare the ToMetaValue instance for String as OVERLAPPING (#46).

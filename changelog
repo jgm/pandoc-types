@@ -1,3 +1,8 @@
+[1.17.5.3]
+
+  * For ghc < 7.10, constrain deepseq-generics to >= 0.2, which no
+    longer exprots NFData from deepseq. Add deepseq dependency.
+
 [1.17.5.2]
 
   * Bump upper bound for deepseq-generics, QuickCheck, criterion.

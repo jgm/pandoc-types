@@ -86,6 +86,7 @@ import Control.DeepSeq
 #else
 import Data.Monoid (Monoid (mappend, mempty))
 import Control.Applicative ((<$>), (<*>))
+import Control.DeepSeq (NFData)
 import Control.DeepSeq.Generics
 #endif
 import Paths_pandoc_types (version)

@@ -1,3 +1,8 @@
+[1.17.5.4]
+
+  * Put NFData in scope for ghc < 7.10.
+  * Reduce deepseq lower bound for ghc < 7.10.
+
 [1.17.5.3]
 
   * For ghc < 7.10, constrain deepseq-generics to >= 0.2, which no

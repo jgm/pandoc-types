@@ -30,6 +30,7 @@ instance Arbitrary Inlines where
           flattenInline :: Inline -> [Inline]
           flattenInline (Str _) = []
           flattenInline (Emph ils) = ils
+          flattenInline (Underline ils) = ils
           flattenInline (Strong ils) = ils
           flattenInline (Strikeout ils) = ils
           flattenInline (Superscript ils) = ils
@@ -87,6 +88,7 @@ instance Arbitrary Inline where
   arbitrary = resize 3 $ arbInline 2
   shrink (Str s) = Str <$> shrink s
   shrink (Emph ils) = Emph <$> shrinkInlineList ils
+  shrink (Underline ils) = Underline <$> shrinkInlineList ils
   shrink (Strong ils) = Strong <$> shrinkInlineList ils
   shrink (Strikeout ils) = Strikeout <$> shrinkInlineList ils
   shrink (Superscript ils) = Superscript <$> shrinkInlineList ils
@@ -131,6 +133,7 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                                           , RawInline (Format "latex") "\\my{command}" ])
                           ] ++ [ x | x <- nesters, n > 1]
    where nesters = [ (10, Emph <$> arbInlines (n-1))
+                   , (10, Underline <$> arbInlines (n-1))
                    , (10, Strong <$> arbInlines (n-1))
                    , (10, Strikeout <$> arbInlines (n-1))
                    , (10, Superscript <$> arbInlines (n-1))

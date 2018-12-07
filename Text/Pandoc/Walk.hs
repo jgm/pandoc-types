@@ -251,6 +251,7 @@ walkInlineM :: (Walkable a Citation, Walkable a [Block],
             => (a -> m a) -> Inline -> m Inline
 walkInlineM _ (Str xs)         = return (Str xs)
 walkInlineM f (Emph xs)        = Emph <$> walkM f xs
+walkInlineM f (Underline xs)   = Underline <$> walkM f xs
 walkInlineM f (Strong xs)      = Strong <$> walkM f xs
 walkInlineM f (Strikeout xs)   = Strikeout <$> walkM f xs
 walkInlineM f (Subscript xs)   = Subscript <$> walkM f xs
@@ -305,6 +306,7 @@ queryInline :: (Walkable a Citation, Walkable a [Block],
             => (a -> c) -> Inline -> c
 queryInline _ (Str _)         = mempty
 queryInline f (Emph xs)       = query f xs
+queryInline f (Underline xs)  = query f xs
 queryInline f (Strong xs)     = query f xs
 queryInline f (Strikeout xs)  = query f xs
 queryInline f (Subscript xs)  = query f xs

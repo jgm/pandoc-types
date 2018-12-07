@@ -91,6 +91,7 @@ import Control.DeepSeq.Generics
 #endif
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
+
 import Data.Semigroup
 
 data Pandoc = Pandoc Meta [Block]
@@ -254,6 +255,7 @@ data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable
 data Inline
     = Str String            -- ^ Text (string)
     | Emph [Inline]         -- ^ Emphasized text (list of inlines)
+    | Underline [Inline]    -- ^ Underlined text (list of inlines)
     | Strong [Inline]       -- ^ Strongly emphasized text (list of inlines)
     | Strikeout [Inline]    -- ^ Strikeout text (list of inlines)
     | Superscript [Inline]  -- ^ Superscripted text (list of inlines)
@@ -462,6 +464,7 @@ instance FromJSON Inline where
     case t of
       "Str"         -> Str <$> v .: "c"
       "Emph"        -> Emph <$> v .: "c"
+      "Underline"   -> Underline <$> v .: "c"
       "Strong"      -> Strong <$> v .: "c"
       "Strikeout"   -> Strikeout <$> v .: "c"
       "Superscript" -> Superscript <$> v .: "c"
@@ -493,6 +496,7 @@ instance FromJSON Inline where
 instance ToJSON Inline where
   toJSON (Str s) = tagged "Str" s
   toJSON (Emph ils) = tagged "Emph" ils
+  toJSON (Underline ils) = tagged "Underline" ils
   toJSON (Strong ils) = tagged "Strong" ils
   toJSON (Strikeout ils) = tagged "Strikeout" ils
   toJSON (Superscript ils) = tagged "Superscript" ils

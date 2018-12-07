@@ -121,6 +121,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , text
                            , str
                            , emph
+                           , underline
                            , strong
                            , strikeout
                            , superscript
@@ -337,6 +338,9 @@ str = singleton . Str
 
 emph :: Inlines -> Inlines
 emph = singleton . Emph . toList
+
+underline :: Inlines -> Inlines
+underline = singleton . Underline . toList
 
 strong :: Inlines -> Inlines
 strong = singleton . Strong . toList

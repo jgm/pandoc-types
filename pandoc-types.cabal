@@ -22,7 +22,7 @@ Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      @Text.Pandoc.JSON@ provides functions for serializing
                      and deserializing a @Pandoc@ structure to and from JSON.
 
-Homepage:            http://johnmacfarlane.net/pandoc
+Homepage:            https://pandoc.org/
 License:             BSD3
 License-file:        LICENSE
 Author:              John MacFarlane

@@ -174,7 +174,8 @@ data Alignment = AlignLeft
                | AlignCenter
                | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
--- | List attributes.
+-- | List attributes.  The first element of the triple is the
+-- start number of the list.
 type ListAttributes = (Int, ListNumberStyle, ListNumberDelim)
 
 -- | Style of list numbers.

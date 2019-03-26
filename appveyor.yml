@@ -21,5 +21,4 @@ test_script:
   # The ugly echo "" hack is to avoid complaints about 0 being an invalid file
   # descriptor
   - echo "" | stack clean
-  - echo "" | stack --no-terminal test --resolver=nightly
-
+  - echo "" | stack --no-terminal test --resolver=lts-13

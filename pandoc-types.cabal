@@ -53,7 +53,7 @@ Library
                      bytestring >= 0.9 && < 0.11,
                      aeson >= 0.6.2 && < 1.5,
                      transformers >= 0.2 && < 0.6,
-                     QuickCheck >= 2.4 && < 2.13
+                     QuickCheck >= 2.4 && < 2.14
   if !impl(ghc >= 8.0)
     Build-depends:   semigroups == 0.18.*
   if impl(ghc < 7.10)
@@ -76,7 +76,7 @@ test-suite test-pandoc-types
                        test-framework >= 0.3 && < 0.9,
                        test-framework-hunit >= 0.2 && < 0.4,
                        test-framework-quickcheck2 >= 0.2.9 && < 0.4,
-                       QuickCheck >= 2.4 && < 2.13,
+                       QuickCheck >= 2.4 && < 2.14,
                        HUnit >= 1.2 && < 1.7,
                        string-qq == 0.0.2
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -O2

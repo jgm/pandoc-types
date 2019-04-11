@@ -70,6 +70,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , MathType(..)
                               , Citation(..)
                               , CitationMode(..)
+                              , NoteType(..)
                               , pandocTypesVersion
                               ) where
 
@@ -251,6 +252,9 @@ type Target = (String, String)
 -- | Type of math element (display or inline).
 data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
+-- | Type of note (footnote or endnote).
+data NoteType = Footnote | Endnote deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
 -- | Inline elements.
 data Inline
     = Str String            -- ^ Text (string)
@@ -270,7 +274,7 @@ data Inline
     | RawInline Format String -- ^ Raw inline
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
-    | Note [Block]          -- ^ Footnote or endnote
+    | Note NoteType [Block] -- ^ Footnote or endnote
     | Span Attr [Inline]    -- ^ Generic inline container with attributes
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
@@ -396,6 +400,20 @@ instance ToJSON MathType where
             DisplayMath -> "DisplayMath"
             InlineMath  -> "InlineMath"
 
+instance FromJSON NoteType where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "Footnote" -> return Footnote
+      "Endnote"  -> return Endnote
+      _                    -> mempty
+  parseJSON _ = mempty
+instance ToJSON NoteType where
+  toJSON mtype = taggedNoContent s
+    where s = case mtype of
+            Footnote -> "Footnote"
+            Endnote  -> "Endnote"
+
 instance FromJSON ListNumberStyle where
   parseJSON (Object v) = do
     t <- v .: "t" :: Aeson.Parser Value
@@ -485,7 +503,8 @@ instance FromJSON Inline where
                           return $ Link attr ils tgt
       "Image"       -> do (attr, ils, tgt) <- v .: "c"
                           return $ Image attr ils tgt
-      "Note"        -> Note <$> v .: "c"
+      "Note"        -> do (ntype, blks) <- v .: "c"
+                          return $ Note ntype blks
       "Span"        -> do (attr, ils) <- v .: "c"
                           return $ Span attr ils
       _ -> mempty
@@ -509,7 +528,7 @@ instance ToJSON Inline where
   toJSON (RawInline fmt s) = tagged "RawInline" (fmt, s)
   toJSON (Link attr ils target) = tagged "Link" (attr, ils, target)
   toJSON (Image attr ils target) = tagged "Image" (attr, ils, target)
-  toJSON (Note blks) = tagged "Note" blks
+  toJSON (Note ntype blks) = tagged "Note" (ntype, blks)
   toJSON (Span attr ils) = tagged "Span" (attr, ils)
 
 instance FromJSON Block where
@@ -595,6 +614,7 @@ instance NFData ListNumberDelim
 instance NFData ListNumberStyle
 instance NFData Block
 instance NFData Pandoc
+instance NFData NoteType
 #else
 instance NFData MetaValue where rnf = genericRnf
 instance NFData Meta where rnf = genericRnf
@@ -609,6 +629,7 @@ instance NFData ListNumberDelim where rnf = genericRnf
 instance NFData ListNumberStyle where rnf = genericRnf
 instance NFData Block where rnf = genericRnf
 instance NFData Pandoc where rnf = genericRnf
+instance NFData NoteType where rnf = genericRnf
 #endif
 
 pandocTypesVersion :: Version

@@ -108,7 +108,7 @@ instance Arbitrary Inline where
   shrink (Image attr ils target) = [Image attr ils' target | ils' <- shrinkInlineList ils]
                                 ++ [Image attr ils target' | target' <- shrink target]
                                 ++ [Image attr' ils target | attr' <- shrink attr]
-  shrink (Note blks) = Note <$> shrinkBlockList blks
+  shrink (Note nt blks) = Note nt <$> shrinkBlockList blks
   shrink (Span attr s) = (Span attr <$> shrink s)
                       ++ (flip Span s <$> shrink attr)
 
@@ -142,7 +142,7 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                    , (10, Link <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (10, Image <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (2,  Cite <$> arbitrary <*> arbInlines 1)
-                   , (2,  Note <$> resize 3 (listOf1 $ arbBlock (n-1)))
+                   , (2,  Note <$> arbitrary <*> resize 3 (listOf1 $ arbBlock (n-1)))
                    ]
 
 instance Arbitrary Block where
@@ -259,6 +259,14 @@ instance Arbitrary QuoteType where
                case x of
                    0 -> return SingleQuote
                    1 -> return DoubleQuote
+                   _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance Arbitrary NoteType where
+        arbitrary
+          = do x <- choose (0 :: Int, 1)
+               case x of
+                   0 -> return Footnote
+                   1 -> return Endnote
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
 
 instance Arbitrary Meta where

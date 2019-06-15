@@ -127,8 +127,8 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                           , (10, pure SoftBreak)
                           , (10, pure LineBreak)
                           , (10, Code <$> arbAttr <*> realString)
-                          , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
-                                          , RawInline (Format "latex") "\\my{command}" ])
+                          , (5,  elements [ RawInline HTML5 "<a id=\"eek\">"
+                                          , RawInline LaTeX "\\my{command}" ])
                           ] ++ [ x | x <- nesters, n > 1]
    where nesters = [ (10, Emph <$> arbInlines (n-1))
                    , (10, Strong <$> arbInlines (n-1))
@@ -196,9 +196,9 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                 ((:) <$>
                                   arbInlines ((n - 1) `mod` 3) <*>
                                   forM [1..((n - 1) `div` 3)] (const (arbInlines 3))))
-                         , (2,  elements [ RawBlock (Format "html")
+                         , (2,  elements [ RawBlock HTML5
                                             "<div>\n*&amp;*\n</div>"
-                                         , RawBlock (Format "latex")
+                                         , RawBlock LaTeX
                                             "\\begin[opt]{env}\nhi\n{\\end{env}"
                                          ])
                          , (5,  Header <$> choose (1 :: Int, 6)

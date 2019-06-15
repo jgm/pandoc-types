@@ -61,7 +61,6 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListAttributes
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
-                              , Format(..)
                               , Attr
                               , nullAttr
                               , TableCell
@@ -70,6 +69,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , MathType(..)
                               , Citation(..)
                               , CitationMode(..)
+                              , module Text.Pandoc.Format
                               , pandocTypesVersion
                               ) where
 
@@ -79,8 +79,6 @@ import Data.Aeson hiding (Null)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map as M
 import GHC.Generics (Generic)
-import Data.String
-import Data.Char (toLower)
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else
@@ -92,6 +90,7 @@ import Control.DeepSeq.Generics
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
 import Data.Semigroup
+import Text.Pandoc.Format
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -201,19 +200,6 @@ nullAttr = ("",[],[])
 
 -- | Table cells are list of Blocks
 type TableCell = [Block]
-
--- | Formats for raw blocks
-newtype Format = Format String
-               deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
-
-instance IsString Format where
-  fromString f = Format $ map toLower f
-
-instance Eq Format where
-  Format x == Format y = map toLower x == map toLower y
-
-instance Ord Format where
-  compare (Format x) (Format y) = compare (map toLower x) (map toLower y)
 
 -- | Block element.
 data Block
@@ -588,7 +574,6 @@ instance NFData Citation
 instance NFData Alignment
 instance NFData Inline
 instance NFData MathType
-instance NFData Format
 instance NFData CitationMode
 instance NFData QuoteType
 instance NFData ListNumberDelim

@@ -390,8 +390,8 @@ math = singleton . Math InlineMath
 displayMath :: String -> Inlines
 displayMath = singleton . Math DisplayMath
 
-rawInline :: String -> String -> Inlines
-rawInline format = singleton . RawInline (Format format)
+rawInline :: Format -> String -> Inlines
+rawInline format = singleton . RawInline format
 
 link :: String  -- ^ URL
      -> String  -- ^ Title
@@ -446,8 +446,8 @@ codeBlockWith attrs = singleton . CodeBlock attrs
 codeBlock :: String -> Blocks
 codeBlock = codeBlockWith nullAttr
 
-rawBlock :: String -> String -> Blocks
-rawBlock format = singleton . RawBlock (Format format)
+rawBlock :: Format -> String -> Blocks
+rawBlock format = singleton . RawBlock format
 
 blockQuote :: Blocks -> Blocks
 blockQuote = singleton . BlockQuote . toList

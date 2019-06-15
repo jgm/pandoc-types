@@ -233,7 +233,7 @@ t_linebreak :: (Inline, ByteString)
 t_linebreak = ( LineBreak, [s|{"t":"LineBreak"}|] )
 
 t_rawinline :: (Inline, ByteString)
-t_rawinline = ( RawInline (Format "tex") "\\foo{bar}"
+t_rawinline = ( RawInline TeX "\\foo{bar}"
               , [s|{"t":"RawInline","c":["tex","\\foo{bar}"]}|]
               )
 
@@ -282,7 +282,7 @@ t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar
               )
 
 t_rawblock :: (Block, ByteString)
-t_rawblock = ( RawBlock (Format "tex") "\\foo{bar}"
+t_rawblock = ( RawBlock TeX "\\foo{bar}"
               , [s|{"t":"RawBlock","c":["tex","\\foo{bar}"]}|]
               )
 

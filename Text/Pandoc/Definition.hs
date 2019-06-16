@@ -61,7 +61,6 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListAttributes
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
-                              , Format(..)
                               , Attr
                               , nullAttr
                               , TableCell
@@ -70,6 +69,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , MathType(..)
                               , Citation(..)
                               , CitationMode(..)
+                              , module Text.Pandoc.Format
                               , pandocTypesVersion
                               ) where
 
@@ -79,8 +79,6 @@ import Data.Aeson hiding (Null)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map as M
 import GHC.Generics (Generic)
-import Data.String
-import Data.Char (toLower)
 #if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
 #else
@@ -92,6 +90,7 @@ import Control.DeepSeq.Generics
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
 import Data.Semigroup
+import Text.Pandoc.Format
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -202,27 +201,15 @@ nullAttr = ("",[],[])
 -- | Table cells are list of Blocks
 type TableCell = [Block]
 
--- | Formats for raw blocks
-newtype Format = Format String
-               deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
-
-instance IsString Format where
-  fromString f = Format $ map toLower f
-
-instance Eq Format where
-  Format x == Format y = map toLower x == map toLower y
-
-instance Ord Format where
-  compare (Format x) (Format y) = compare (map toLower x) (map toLower y)
-
 -- | Block element.
 data Block
     = Plain [Inline]        -- ^ Plain text, not a paragraph
     | Para [Inline]         -- ^ Paragraph
     | LineBlock [[Inline]]  -- ^ Multiple non-breaking lines
     | CodeBlock Attr String -- ^ Code block (literal) with attributes
-    | RawBlock Format String -- ^ Raw block
+    | RawBlock String       -- ^ Raw block
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
+    | IfFormatBlock Formats [Block] -- ^ Format-conditional content
     | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
                             -- and a list of items, each a list of blocks)
     | BulletList [[Block]]  -- ^ Bullet list (list of items, each
@@ -267,7 +254,8 @@ data Inline
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
     | Math MathType String  -- ^ TeX math (literal)
-    | RawInline Format String -- ^ Raw inline
+    | RawInline String      -- ^ Raw inline
+    | IfFormatInline Formats [Inline] -- ^ Format-conditional inline content
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
     | Note [Block]          -- ^ Footnote or endnote
@@ -479,8 +467,8 @@ instance FromJSON Inline where
       "LineBreak"   -> return LineBreak
       "Math"        -> do (mtype, s) <- v .: "c"
                           return $ Math mtype s
-      "RawInline"   -> do (fmt, s) <- v .: "c"
-                          return $ RawInline fmt s
+      "RawInline"   -> do s <- v .: "c"
+                          return $ RawInline s
       "Link"        -> do (attr, ils, tgt) <- v .: "c"
                           return $ Link attr ils tgt
       "Image"       -> do (attr, ils, tgt) <- v .: "c"
@@ -488,6 +476,8 @@ instance FromJSON Inline where
       "Note"        -> Note <$> v .: "c"
       "Span"        -> do (attr, ils) <- v .: "c"
                           return $ Span attr ils
+      "IfFormatInline" -> do (fmt, ils) <- v .: "c"
+                             return $ IfFormatInline fmt ils
       _ -> mempty
   parseJSON _ = mempty
 
@@ -506,11 +496,12 @@ instance ToJSON Inline where
   toJSON SoftBreak = taggedNoContent "SoftBreak"
   toJSON LineBreak = taggedNoContent "LineBreak"
   toJSON (Math mtype s) = tagged "Math" (mtype, s)
-  toJSON (RawInline fmt s) = tagged "RawInline" (fmt, s)
+  toJSON (RawInline s) = tagged "RawInline" s
   toJSON (Link attr ils target) = tagged "Link" (attr, ils, target)
   toJSON (Image attr ils target) = tagged "Image" (attr, ils, target)
   toJSON (Note blks) = tagged "Note" blks
   toJSON (Span attr ils) = tagged "Span" (attr, ils)
+  toJSON (IfFormatInline fmts ils) = tagged "IfFormatInline" (fmts, ils)
 
 instance FromJSON Block where
   parseJSON (Object v) = do
@@ -521,8 +512,8 @@ instance FromJSON Block where
       "LineBlock"      -> LineBlock <$> v .: "c"
       "CodeBlock"      -> do (attr, s) <- v .: "c"
                              return $ CodeBlock attr s
-      "RawBlock"       -> do (fmt, s) <- v .: "c"
-                             return $ RawBlock fmt s
+      "RawBlock"       -> do s <- v .: "c"
+                             return $ RawBlock s
       "BlockQuote"     -> BlockQuote <$> v .: "c"
       "OrderedList"    -> do (attr, items) <- v .: "c"
                              return $ OrderedList attr items
@@ -535,6 +526,8 @@ instance FromJSON Block where
                              return $ Table cpt align wdths hdr rows
       "Div"            -> do (attr, blks) <- v .: "c"
                              return $ Div attr blks
+      "IfFormatBlock"  -> do (fmts, blks) <- v .: "c"
+                             return $ IfFormatBlock fmts blks
       "Null"           -> return $ Null
       _                -> mempty
   parseJSON _ = mempty
@@ -543,7 +536,8 @@ instance ToJSON Block where
   toJSON (Para ils) = tagged "Para" ils
   toJSON (LineBlock lns) = tagged "LineBlock" lns
   toJSON (CodeBlock attr s) = tagged "CodeBlock" (attr, s)
-  toJSON (RawBlock fmt s) = tagged "RawBlock" (fmt, s)
+  toJSON (IfFormatBlock fmts blks) = tagged "IfFormatBlock" (fmts, blks)
+  toJSON (RawBlock s) = tagged "RawBlock" s
   toJSON (BlockQuote blks) = tagged "BlockQuote" blks
   toJSON (OrderedList listAttrs blksList) = tagged "OrderedList" (listAttrs, blksList)
   toJSON (BulletList blksList) = tagged "BulletList" blksList
@@ -588,7 +582,6 @@ instance NFData Citation
 instance NFData Alignment
 instance NFData Inline
 instance NFData MathType
-instance NFData Format
 instance NFData CitationMode
 instance NFData QuoteType
 instance NFData ListNumberDelim

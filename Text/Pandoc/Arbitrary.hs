@@ -47,6 +47,7 @@ instance Arbitrary Inlines where
           flattenInline (Image _ ils _) = ils
           flattenInline Note{} = []
           flattenInline (Span _ ils) = ils
+          flattenInline (IfFormatInline _ ils) = ils
 
 instance Arbitrary Blocks where
   arbitrary = (fromList :: [Block] -> Blocks) <$> arbitrary
@@ -61,6 +62,7 @@ instance Arbitrary Blocks where
           flattenBlock (LineBlock lns) = [Para x | x <- lns]
           flattenBlock CodeBlock{} = []
           flattenBlock RawBlock{} = []
+          flattenBlock (IfFormatBlock _ blks) = blks
           flattenBlock (BlockQuote blks) = blks
           flattenBlock (OrderedList _ blksList) = concat blksList
           flattenBlock (BulletList blksList) = concat blksList
@@ -101,7 +103,8 @@ instance Arbitrary Inline where
   shrink SoftBreak = []
   shrink LineBreak = []
   shrink (Math mtype s) = Math mtype <$> shrink s
-  shrink (RawInline fmt s) = RawInline fmt <$> shrink s
+  shrink (RawInline s) = RawInline <$> shrink s
+  shrink (IfFormatInline fmt s) = IfFormatInline fmt <$> shrink s
   shrink (Link attr ils target) = [Link attr ils' target | ils' <- shrinkInlineList ils]
                                ++ [Link attr ils target' | target' <- shrink target]
                                ++ [Link attr' ils target | attr' <- shrink attr]
@@ -127,8 +130,12 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                           , (10, pure SoftBreak)
                           , (10, pure LineBreak)
                           , (10, Code <$> arbAttr <*> realString)
-                          , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
-                                          , RawInline (Format "latex") "\\my{command}" ])
+                          , (5,  elements
+                                 [ IfFormatInline (singleFormat HTML) $
+                                   [RawInline "<a id=\"eek\">"]
+                                 , IfFormatInline (oneOfFormats [LaTeX, ConTeXt]) $
+                                   [RawInline "\\my{command}"]
+                                 ])
                           ] ++ [ x | x <- nesters, n > 1]
    where nesters = [ (10, Emph <$> arbInlines (n-1))
                    , (10, Strong <$> arbInlines (n-1))
@@ -152,7 +159,8 @@ instance Arbitrary Block where
   shrink (LineBlock lns) = LineBlock <$> shrinkInlinesList lns
   shrink (CodeBlock attr s) = (CodeBlock attr <$> shrink s)
                            ++ (flip CodeBlock s <$> shrink attr)
-  shrink (RawBlock fmt s) = RawBlock fmt <$> shrink s
+  shrink (IfFormatBlock fmt blks) = IfFormatBlock fmt <$> shrink blks
+  shrink (RawBlock s) = RawBlock <$> shrink s
   shrink (BlockQuote blks) = BlockQuote <$> shrinkBlockList blks
   shrink (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrinkBlocksList blksList
   shrink (BulletList blksList) = BulletList <$> shrinkBlocksList blksList
@@ -196,10 +204,12 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                 ((:) <$>
                                   arbInlines ((n - 1) `mod` 3) <*>
                                   forM [1..((n - 1) `div` 3)] (const (arbInlines 3))))
-                         , (2,  elements [ RawBlock (Format "html")
-                                            "<div>\n*&amp;*\n</div>"
-                                         , RawBlock (Format "latex")
-                                            "\\begin[opt]{env}\nhi\n{\\end{env}"
+                         , (2,  elements [ IfFormatBlock (singleFormat HTML) $
+                                           [RawBlock "<div>\n*&amp;*\n</div>"]
+                                         , IfFormatBlock (oneOfFormats [LaTeX, ConTeXt]) $
+                                           [RawBlock "\\begin[opt]{env}\nhi\n\\end{env}"]
+                                         , IfFormatBlock (noneOfFormats [HTML]) $
+                                           [Plain [Str "not HTML"]]
                                          ])
                          , (5,  Header <$> choose (1 :: Int, 6)
                                        <*> pure nullAttr

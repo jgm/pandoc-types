@@ -233,9 +233,15 @@ t_linebreak :: (Inline, ByteString)
 t_linebreak = ( LineBreak, [s|{"t":"LineBreak"}|] )
 
 t_rawinline :: (Inline, ByteString)
-t_rawinline = ( RawInline (Format "tex") "\\foo{bar}"
-              , [s|{"t":"RawInline","c":["tex","\\foo{bar}"]}|]
+t_rawinline = ( RawInline "\\foo{bar}"
+              , [s|{"t":"RawInline","c":"\\foo{bar}"}|]
               )
+
+t_ifformatinline :: (Inline, ByteString)
+t_ifformatinline =
+  ( IfFormatInline (singleFormat LaTeX) [RawInline "\\foo{bar}"]
+  , [s|{"t":"IfFormatInline","c":[{"oneOf":["latex"]},[{"t":"RawInline","c":"\\foo{bar}"}]]}|]
+  )
 
 t_link :: (Inline, ByteString)
 t_link = ( Link ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
@@ -282,8 +288,13 @@ t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar
               )
 
 t_rawblock :: (Block, ByteString)
-t_rawblock = ( RawBlock (Format "tex") "\\foo{bar}"
-              , [s|{"t":"RawBlock","c":["tex","\\foo{bar}"]}|]
+t_rawblock = ( RawBlock "\\foo{bar}"
+              , [s|{"t":"RawBlock","c":"\\foo{bar}"}|]
+              )
+
+t_formatblocks :: (Block, ByteString)
+t_formatblocks = (IfFormatBlock (singleFormat LaTeX) [RawBlock "\\foo{bar}"]
+              , [s|{"t":"IfFormatBlock","c":[{"oneOf":["latex"]},[{"t":"RawBlock","c":"\\foo{bar}"}]]}|]
               )
 
 t_blockquote :: (Block, ByteString)
@@ -437,6 +448,7 @@ tests =
         , testEncodeDecode "SoftBreak" t_softbreak
         , testEncodeDecode "LineBreak" t_linebreak
         , testEncodeDecode "RawInline" t_rawinline
+        , testEncodeDecode "IfFormatInline" t_ifformatinline
         , testEncodeDecode "Link" t_link
         , testEncodeDecode "Image" t_image
         , testEncodeDecode "Note" t_note
@@ -448,6 +460,7 @@ tests =
         , testEncodeDecode "LineBlock" t_lineblock
         , testEncodeDecode "CodeBlock" t_codeblock
         , testEncodeDecode "RawBlock" t_rawblock
+        , testEncodeDecode "FormatBlocks" t_formatblocks
         , testEncodeDecode "BlockQuote" t_blockquote
         , testEncodeDecode "OrderedList" t_orderedlist
         , testEncodeDecode "BulletList" t_bulletlist

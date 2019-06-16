@@ -262,6 +262,7 @@ walkInlineM f (Image atr xs t) = Image atr <$> walkM f xs <*> pure t
 walkInlineM f (Note bs)        = Note <$> walkM f bs
 walkInlineM f (Span attr xs)   = Span attr <$> walkM f xs
 walkInlineM f (Cite cs xs)     = Cite <$> walkM f cs <*> walkM f xs
+walkInlineM f (IfFormatInline fmt xs) = IfFormatInline fmt <$> walkM f xs
 walkInlineM _ LineBreak        = return LineBreak
 walkInlineM _ SoftBreak        = return SoftBreak
 walkInlineM _ Space            = return Space
@@ -318,11 +319,12 @@ queryInline _ Space           = mempty
 queryInline _ SoftBreak       = mempty
 queryInline _ LineBreak       = mempty
 queryInline _ (Math _ _)      = mempty
-queryInline _ (RawInline _ _) = mempty
+queryInline _ (RawInline _)   = mempty
 queryInline f (Link _ xs _)   = query f xs
 queryInline f (Image _ xs _)  = query f xs
 queryInline f (Note bs)       = query f bs
 queryInline f (Span _ xs)     = query f xs
+queryInline f (IfFormatInline _ xs) = query f xs
 
 queryBlock :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monoid c)

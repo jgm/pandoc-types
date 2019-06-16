@@ -233,9 +233,15 @@ t_linebreak :: (Inline, ByteString)
 t_linebreak = ( LineBreak, [s|{"t":"LineBreak"}|] )
 
 t_rawinline :: (Inline, ByteString)
-t_rawinline = ( RawInline (LaTeX) "\\foo{bar}"
-              , [s|{"t":"RawInline","c":["latex","\\foo{bar}"]}|]
+t_rawinline = ( RawInline "\\foo{bar}"
+              , [s|{"t":"RawInline","c":"\\foo{bar}"}|]
               )
+
+t_ifformatinline :: (Inline, ByteString)
+t_ifformatinline =
+  ( IfFormatInline (singleFormat LaTeX) [RawInline "\\foo{bar}"]
+  , [s|{"t":"IfFormatInline","c":[{"oneOf":["latex"]},[{"t":"RawInline","c":"\\foo{bar}"}]]}|]
+  )
 
 t_link :: (Inline, ByteString)
 t_link = ( Link ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
@@ -442,6 +448,7 @@ tests =
         , testEncodeDecode "SoftBreak" t_softbreak
         , testEncodeDecode "LineBreak" t_linebreak
         , testEncodeDecode "RawInline" t_rawinline
+        , testEncodeDecode "IfFormatInline" t_ifformatinline
         , testEncodeDecode "Link" t_link
         , testEncodeDecode "Image" t_image
         , testEncodeDecode "Note" t_note

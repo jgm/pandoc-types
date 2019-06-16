@@ -391,7 +391,8 @@ displayMath :: String -> Inlines
 displayMath = singleton . Math DisplayMath
 
 rawInline :: Format -> String -> Inlines
-rawInline format = singleton . RawInline format
+rawInline format =
+  singleton . IfFormatInline (singleFormat format) . (:[]) . RawInline
 
 link :: String  -- ^ URL
      -> String  -- ^ Title

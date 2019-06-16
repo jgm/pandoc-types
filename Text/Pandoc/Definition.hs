@@ -254,7 +254,8 @@ data Inline
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
     | Math MathType String  -- ^ TeX math (literal)
-    | RawInline Format String -- ^ Raw inline
+    | RawInline String      -- ^ Raw inline
+    | IfFormatInline Formats [Inline] -- ^ Format-conditional inline content
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
     | Note [Block]          -- ^ Footnote or endnote
@@ -466,8 +467,8 @@ instance FromJSON Inline where
       "LineBreak"   -> return LineBreak
       "Math"        -> do (mtype, s) <- v .: "c"
                           return $ Math mtype s
-      "RawInline"   -> do (fmt, s) <- v .: "c"
-                          return $ RawInline fmt s
+      "RawInline"   -> do s <- v .: "c"
+                          return $ RawInline s
       "Link"        -> do (attr, ils, tgt) <- v .: "c"
                           return $ Link attr ils tgt
       "Image"       -> do (attr, ils, tgt) <- v .: "c"
@@ -475,6 +476,8 @@ instance FromJSON Inline where
       "Note"        -> Note <$> v .: "c"
       "Span"        -> do (attr, ils) <- v .: "c"
                           return $ Span attr ils
+      "IfFormatInline" -> do (fmt, ils) <- v .: "c"
+                             return $ IfFormatInline fmt ils
       _ -> mempty
   parseJSON _ = mempty
 
@@ -493,11 +496,12 @@ instance ToJSON Inline where
   toJSON SoftBreak = taggedNoContent "SoftBreak"
   toJSON LineBreak = taggedNoContent "LineBreak"
   toJSON (Math mtype s) = tagged "Math" (mtype, s)
-  toJSON (RawInline fmt s) = tagged "RawInline" (fmt, s)
+  toJSON (RawInline s) = tagged "RawInline" s
   toJSON (Link attr ils target) = tagged "Link" (attr, ils, target)
   toJSON (Image attr ils target) = tagged "Image" (attr, ils, target)
   toJSON (Note blks) = tagged "Note" blks
   toJSON (Span attr ils) = tagged "Span" (attr, ils)
+  toJSON (IfFormatInline fmts ils) = tagged "IfFormatInline" (fmts, ils)
 
 instance FromJSON Block where
   parseJSON (Object v) = do

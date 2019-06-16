@@ -47,6 +47,7 @@ instance Arbitrary Inlines where
           flattenInline (Image _ ils _) = ils
           flattenInline Note{} = []
           flattenInline (Span _ ils) = ils
+          flattenInline (IfFormatInline _ ils) = ils
 
 instance Arbitrary Blocks where
   arbitrary = (fromList :: [Block] -> Blocks) <$> arbitrary
@@ -102,7 +103,8 @@ instance Arbitrary Inline where
   shrink SoftBreak = []
   shrink LineBreak = []
   shrink (Math mtype s) = Math mtype <$> shrink s
-  shrink (RawInline fmt s) = RawInline fmt <$> shrink s
+  shrink (RawInline s) = RawInline <$> shrink s
+  shrink (IfFormatInline fmt s) = IfFormatInline fmt <$> shrink s
   shrink (Link attr ils target) = [Link attr ils' target | ils' <- shrinkInlineList ils]
                                ++ [Link attr ils target' | target' <- shrink target]
                                ++ [Link attr' ils target | attr' <- shrink attr]
@@ -128,8 +130,12 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                           , (10, pure SoftBreak)
                           , (10, pure LineBreak)
                           , (10, Code <$> arbAttr <*> realString)
-                          , (5,  elements [ RawInline HTML "<a id=\"eek\">"
-                                          , RawInline LaTeX "\\my{command}" ])
+                          , (5,  elements
+                                 [ IfFormatInline (singleFormat HTML) $
+                                   [RawInline "<a id=\"eek\">"]
+                                 , IfFormatInline (oneOfFormats [LaTeX, ConTeXt]) $
+                                   [RawInline "\\my{command}"]
+                                 ])
                           ] ++ [ x | x <- nesters, n > 1]
    where nesters = [ (10, Emph <$> arbInlines (n-1))
                    , (10, Strong <$> arbInlines (n-1))

@@ -447,7 +447,8 @@ codeBlock :: String -> Blocks
 codeBlock = codeBlockWith nullAttr
 
 rawBlock :: Format -> String -> Blocks
-rawBlock format = singleton . RawBlock format
+rawBlock format =
+  singleton . IfFormatBlock (singleFormat format) . (:[]) . RawBlock
 
 blockQuote :: Blocks -> Blocks
 blockQuote = singleton . BlockQuote . toList

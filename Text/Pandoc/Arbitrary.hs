@@ -61,6 +61,7 @@ instance Arbitrary Blocks where
           flattenBlock (LineBlock lns) = [Para x | x <- lns]
           flattenBlock CodeBlock{} = []
           flattenBlock RawBlock{} = []
+          flattenBlock (IfFormatBlock _ blks) = blks
           flattenBlock (BlockQuote blks) = blks
           flattenBlock (OrderedList _ blksList) = concat blksList
           flattenBlock (BulletList blksList) = concat blksList
@@ -127,7 +128,7 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                           , (10, pure SoftBreak)
                           , (10, pure LineBreak)
                           , (10, Code <$> arbAttr <*> realString)
-                          , (5,  elements [ RawInline HTML5 "<a id=\"eek\">"
+                          , (5,  elements [ RawInline HTML "<a id=\"eek\">"
                                           , RawInline LaTeX "\\my{command}" ])
                           ] ++ [ x | x <- nesters, n > 1]
    where nesters = [ (10, Emph <$> arbInlines (n-1))
@@ -152,7 +153,8 @@ instance Arbitrary Block where
   shrink (LineBlock lns) = LineBlock <$> shrinkInlinesList lns
   shrink (CodeBlock attr s) = (CodeBlock attr <$> shrink s)
                            ++ (flip CodeBlock s <$> shrink attr)
-  shrink (RawBlock fmt s) = RawBlock fmt <$> shrink s
+  shrink (IfFormatBlock fmt blks) = IfFormatBlock fmt <$> shrink blks
+  shrink (RawBlock s) = RawBlock <$> shrink s
   shrink (BlockQuote blks) = BlockQuote <$> shrinkBlockList blks
   shrink (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrinkBlocksList blksList
   shrink (BulletList blksList) = BulletList <$> shrinkBlocksList blksList
@@ -196,10 +198,12 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                 ((:) <$>
                                   arbInlines ((n - 1) `mod` 3) <*>
                                   forM [1..((n - 1) `div` 3)] (const (arbInlines 3))))
-                         , (2,  elements [ RawBlock HTML5
-                                            "<div>\n*&amp;*\n</div>"
-                                         , RawBlock LaTeX
-                                            "\\begin[opt]{env}\nhi\n{\\end{env}"
+                         , (2,  elements [ IfFormatBlock (singleFormat HTML) $
+                                           [RawBlock "<div>\n*&amp;*\n</div>"]
+                                         , IfFormatBlock (oneOfFormats [LaTeX, ConTeXt]) $
+                                           [RawBlock "\\begin[opt]{env}\nhi\n\\end{env}"]
+                                         , IfFormatBlock (noneOfFormats [HTML]) $
+                                           [Plain [Str "not HTML"]]
                                          ])
                          , (5,  Header <$> choose (1 :: Int, 6)
                                        <*> pure nullAttr

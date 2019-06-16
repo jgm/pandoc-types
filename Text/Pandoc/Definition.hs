@@ -207,8 +207,9 @@ data Block
     | Para [Inline]         -- ^ Paragraph
     | LineBlock [[Inline]]  -- ^ Multiple non-breaking lines
     | CodeBlock Attr String -- ^ Code block (literal) with attributes
-    | RawBlock Format String -- ^ Raw block
+    | RawBlock String       -- ^ Raw block
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
+    | IfFormatBlock Formats [Block] -- ^ Format-conditional content
     | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
                             -- and a list of items, each a list of blocks)
     | BulletList [[Block]]  -- ^ Bullet list (list of items, each
@@ -507,8 +508,8 @@ instance FromJSON Block where
       "LineBlock"      -> LineBlock <$> v .: "c"
       "CodeBlock"      -> do (attr, s) <- v .: "c"
                              return $ CodeBlock attr s
-      "RawBlock"       -> do (fmt, s) <- v .: "c"
-                             return $ RawBlock fmt s
+      "RawBlock"       -> do s <- v .: "c"
+                             return $ RawBlock s
       "BlockQuote"     -> BlockQuote <$> v .: "c"
       "OrderedList"    -> do (attr, items) <- v .: "c"
                              return $ OrderedList attr items
@@ -521,6 +522,8 @@ instance FromJSON Block where
                              return $ Table cpt align wdths hdr rows
       "Div"            -> do (attr, blks) <- v .: "c"
                              return $ Div attr blks
+      "IfFormatBlock"  -> do (fmts, blks) <- v .: "c"
+                             return $ IfFormatBlock fmts blks
       "Null"           -> return $ Null
       _                -> mempty
   parseJSON _ = mempty
@@ -529,7 +532,8 @@ instance ToJSON Block where
   toJSON (Para ils) = tagged "Para" ils
   toJSON (LineBlock lns) = tagged "LineBlock" lns
   toJSON (CodeBlock attr s) = tagged "CodeBlock" (attr, s)
-  toJSON (RawBlock fmt s) = tagged "RawBlock" (fmt, s)
+  toJSON (IfFormatBlock fmts blks) = tagged "IfFormatBlock" (fmts, blks)
+  toJSON (RawBlock s) = tagged "RawBlock" s
   toJSON (BlockQuote blks) = tagged "BlockQuote" blks
   toJSON (OrderedList listAttrs blksList) = tagged "OrderedList" (listAttrs, blksList)
   toJSON (BulletList blksList) = tagged "BulletList" blksList

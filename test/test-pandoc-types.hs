@@ -233,8 +233,8 @@ t_linebreak :: (Inline, ByteString)
 t_linebreak = ( LineBreak, [s|{"t":"LineBreak"}|] )
 
 t_rawinline :: (Inline, ByteString)
-t_rawinline = ( RawInline TeX "\\foo{bar}"
-              , [s|{"t":"RawInline","c":["tex","\\foo{bar}"]}|]
+t_rawinline = ( RawInline (LaTeX) "\\foo{bar}"
+              , [s|{"t":"RawInline","c":["latex","\\foo{bar}"]}|]
               )
 
 t_link :: (Inline, ByteString)
@@ -282,8 +282,13 @@ t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar
               )
 
 t_rawblock :: (Block, ByteString)
-t_rawblock = ( RawBlock TeX "\\foo{bar}"
-              , [s|{"t":"RawBlock","c":["tex","\\foo{bar}"]}|]
+t_rawblock = ( RawBlock "\\foo{bar}"
+              , [s|{"t":"RawBlock","c":"\\foo{bar}"}|]
+              )
+
+t_formatblocks :: (Block, ByteString)
+t_formatblocks = (IfFormatBlock (singleFormat LaTeX) [RawBlock "\\foo{bar}"]
+              , [s|{"t":"IfFormatBlock","c":[{"oneOf":["latex"]},[{"t":"RawBlock","c":"\\foo{bar}"}]]}|]
               )
 
 t_blockquote :: (Block, ByteString)
@@ -448,6 +453,7 @@ tests =
         , testEncodeDecode "LineBlock" t_lineblock
         , testEncodeDecode "CodeBlock" t_codeblock
         , testEncodeDecode "RawBlock" t_rawblock
+        , testEncodeDecode "FormatBlocks" t_formatblocks
         , testEncodeDecode "BlockQuote" t_blockquote
         , testEncodeDecode "OrderedList" t_orderedlist
         , testEncodeDecode "BulletList" t_bulletlist

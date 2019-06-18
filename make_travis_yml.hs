@@ -28,44 +28,44 @@ main :: IO ()
 main = do
     args <- getArgs
     case args of
-        (cabfn:xpkgs) -> do genTravisFromCabalFile cabfn xpkgs
-        _ -> putStrLnErr (unlines $ [ "expected .cabal file as command-line argument"
-                                    , "Usage: make_travis_yml.hs <cabal-file> <extra-apt-packages...>"
-                                    , ""
-                                    , "Example: make_travis_yml.hs someProject.cabal alex-3.1.4 liblzma-dev > .travis.yml"
-                                    ])
+        (cabfn:xpkgs) -> genTravisFromCabalFile cabfn xpkgs
+        _ -> putStrLnErr $ unlines [ "expected .cabal file as command-line argument"
+                                   , "Usage: make_travis_yml.hs <cabal-file> <extra-apt-packages...>"
+                                   , ""
+                                   , "Example: make_travis_yml.hs someProject.cabal alex-3.1.4 liblzma-dev > .travis.yml"
+                                   ]
 
 genTravisFromCabalFile :: FilePath -> [String] -> IO ()
 genTravisFromCabalFile fn xpkgs = do
     gpd <- readPackageDescription maxBound fn
 
-    let compilers = testedWith $ packageDescription $ gpd
+    let compilers = testedWith $ packageDescription gpd
 
     let unknownComps = nub [ c | (c,_) <- compilers, c /= GHC ]
         ghcVerConstrs = [ vc | (GHC,vc) <- compilers ]
         ghcVerConstrs' = simplifyVersionRange $ foldr unionVersionRanges noVersion ghcVerConstrs
 
-    when (null compilers) $ do
+    when (null compilers) $
         putStrLnErr "empty or missing 'tested-with:' definition in .cabal file"
 
-    unless (null unknownComps) $ do
+    unless (null unknownComps) $
         putStrLnWarn $ "ignoring unsupported compilers mentioned in tested-with: " ++ show unknownComps
 
-    when (null ghcVerConstrs) $ do
+    when (null ghcVerConstrs) $
         putStrLnErr "'tested-with:' doesn't mention any 'GHC' version"
 
-    when (isNoVersion ghcVerConstrs') $ do
+    when (isNoVersion ghcVerConstrs') $
         putStrLnErr "'tested-with:' describes an empty version range for 'GHC'"
 
-    when (isAnyVersion ghcVerConstrs') $ do
+    when (isAnyVersion ghcVerConstrs') $
         putStrLnErr "'tested-with:' allows /any/ 'GHC' version"
 
     let testedGhcVersions = filter (`withinRange` ghcVerConstrs') knownGhcVersions
 
-    when (null testedGhcVersions) $ do
+    when (null testedGhcVersions) $
         putStrLnErr "no known GHC version is allowed by the 'tested-with' specification"
 
-    putStrLnInfo $ "Generating Travis-CI config for testing for GHC versions: " ++ (unwords $ map disp' $ testedGhcVersions)
+    putStrLnInfo $ "Generating Travis-CI config for testing for GHC versions: " ++ unwords (map disp' testedGhcVersions)
 
     ----------------------------------------------------------------------------
     -- travis.yml generation starts here
@@ -89,10 +89,7 @@ genTravisFromCabalFile fn xpkgs = do
     forM_ testedGhcVersions $ \gv -> do
         let cvs = disp' (lookupCabVer gv)
             gvs = disp' gv
-            ghcopts = if gv >= Version [7,10,0] []
-                         then "-Werror"
-                         else "-Werror"
-
+            ghcopts = "-Werror"
             xpkgs' = concatMap (',':) xpkgs
 
         putStrLn $ concat [ "    - env: CABALVER=", cvs, " GHCVER=", gvs,
@@ -182,7 +179,7 @@ genTravisFromCabalFile fn xpkgs = do
                        ]
 
     lookupCabVer :: Version -> Version
-    lookupCabVer (Version (x:y:_) _) = maybe (error "internal error") id $ lookup (x,y) cabalVerMap
+    lookupCabVer (Version (x:y:_) _) = fromMaybe (error "internal error") $ lookup (x,y) cabalVerMap
       where
         cabalVerMap = fmap (fmap (`Version` []))
                       [ ((7, 0),  [1,16])

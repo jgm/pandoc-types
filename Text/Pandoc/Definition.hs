@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
-FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP #-}
+    FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP #-}
 
 {-
 Copyright (c) 2006-2016, John MacFarlane
@@ -91,7 +91,7 @@ import Control.DeepSeq.Generics
 #endif
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
-import Data.Semigroup
+import Data.Semigroup (Semigroup(..))
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -112,7 +112,7 @@ instance Semigroup Meta where
   -- note: M.union is left-biased, so if there are fields in both m1
   -- and m2, m1 wins.
 instance Monoid Meta where
-  mempty = Meta (M.empty)
+  mempty = Meta M.empty
   mappend = (<>)
 
 data MetaValue = MetaMap (M.Map String MetaValue)
@@ -293,10 +293,10 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- ToJSON/FromJSON instances. We do this by hand instead of deriving
 -- from generics, so we can have more control over the format.
 
-taggedNoContent :: [Char] -> Value
+taggedNoContent :: String -> Value
 taggedNoContent x = object [ "t" .= x ]
 
-tagged :: ToJSON a => [Char] -> a -> Value
+tagged :: ToJSON a => String -> a -> Value
 tagged x y = object [ "t" .= x, "c" .= y ]
 
 instance FromJSON MetaValue where
@@ -530,12 +530,12 @@ instance FromJSON Block where
       "DefinitionList" -> DefinitionList <$> v .: "c"
       "Header"         -> do (n, attr, ils) <- v .: "c"
                              return $ Header n attr ils
-      "HorizontalRule" -> return $ HorizontalRule
+      "HorizontalRule" -> return HorizontalRule
       "Table"          -> do (cpt, align, wdths, hdr, rows) <- v .: "c"
                              return $ Table cpt align wdths hdr rows
       "Div"            -> do (attr, blks) <- v .: "c"
                              return $ Div attr blks
-      "Null"           -> return $ Null
+      "Null"           -> return Null
       _                -> mempty
   parseJSON _ = mempty
 instance ToJSON Block where

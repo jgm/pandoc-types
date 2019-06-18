@@ -1,6 +1,6 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, MultiParamTypeClasses,
-    DeriveDataTypeable, GeneralizedNewtypeDeriving, CPP, StandaloneDeriving,
-    DeriveGeneric, DeriveTraversable #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable,
+    GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
+    DeriveTraversable #-}
 {-
 Copyright (C) 2010-2016 John MacFarlane
 
@@ -176,7 +176,7 @@ import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
-import Data.Semigroup
+import Data.Semigroup (Semigroup(..))
 
 #if MIN_VERSION_base(4,5,0)
 -- (<>) is defined in Data.Monoid
@@ -316,8 +316,7 @@ setDate = setMeta "date"
 text :: String -> Inlines
 text = fromList . map conv . breakBySpaces
   where breakBySpaces = groupBy sameCategory
-        sameCategory x y = (is_space x && is_space y) ||
-                           (not $ is_space x || is_space y)
+        sameCategory x y = is_space x == is_space y
         conv xs | all is_space xs =
            if any is_newline xs
               then SoftBreak
@@ -498,7 +497,7 @@ simpleTable :: [Blocks]   -- ^ Headers
 simpleTable headers rows =
   table mempty (replicate numcols defaults) headers rows
   where defaults = (AlignDefault, 0)
-        numcols  = case (headers:rows) of
+        numcols  = case headers:rows of
                         [] -> 0
                         xs -> maximum (map length xs)
 

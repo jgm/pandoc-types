@@ -367,7 +367,7 @@ t_null = (Null, [s|{"t":"Null"}|])
 -- cells in order to avoid syntax errors after conversion, see
 -- jgm/pandoc#4059.
 t_tableSan :: Test
-t_tableSan = testCase "table sanitisation" $ assertion
+t_tableSan = testCase "table sanitisation" assertion
              where assertion = assertEqual err expected generated
                    err = "sanitisation error"
                    generated = simpleTable

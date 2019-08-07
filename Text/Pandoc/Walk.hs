@@ -91,7 +91,19 @@ linked to in a document:
 -}
 
 
-module Text.Pandoc.Walk (Walkable(..))
+module Text.Pandoc.Walk
+  ( Walkable(..)
+  , queryBlock
+  , queryCitation
+  , queryInline
+  , queryMetaValue
+  , queryPandoc
+  , walkBlockM
+  , walkCitationM
+  , walkInlineM
+  , walkMetaValueM
+  , walkPandocM
+  )
 where
 import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad ((>=>))

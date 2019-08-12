@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 -- provides Arbitrary instance for Pandoc types
 module Text.Pandoc.Arbitrary ()
 where
@@ -16,9 +16,9 @@ realString = resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
 arbAttr :: Gen Attr
 arbAttr = do
   id' <- elements ["","loc"]
-  classes <- elements [[],["haskell"],["c","numberLines"]]
+  classes' <- elements [[],["haskell"],["c","numberLines"]]
   keyvals <- elements [[],[("start","22")],[("a","11"),("b_2","a b c")]]
-  return (id',classes,keyvals)
+  return (id',classes',keyvals)
 
 instance Arbitrary Inlines where
   arbitrary = (fromList :: [Inline] -> Inlines) <$> arbitrary
@@ -129,7 +129,7 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                           , (10, Code <$> arbAttr <*> realString)
                           , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
                                           , RawInline (Format "latex") "\\my{command}" ])
-                          ] ++ [ x | x <- nesters, n > 1]
+                          ] ++ [ x | n > 1, x <- nesters]
    where nesters = [ (10, Emph <$> arbInlines (n-1))
                    , (10, Strong <$> arbInlines (n-1))
                    , (10, Strikeout <$> arbInlines (n-1))
@@ -205,7 +205,7 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                        <*> pure nullAttr
                                        <*> arbInlines (n-1))
                          , (2,  pure HorizontalRule)
-                         ] ++ [x | x <- nesters, n > 0]
+                         ] ++ [x | n > 0, x <- nesters]
    where nesters = [ (5, BlockQuote <$> listOf1 (arbBlock (n-1)))
                    , (5, OrderedList <$> ((,,) <$> (arbitrary `suchThat` (> 0))
                                                 <*> arbitrary
@@ -269,7 +269,7 @@ instance Arbitrary Meta where
                return $ setMeta "title" x1
                       $ setMeta "author" x2
                       $ setMeta "date" x3
-                      $ nullMeta
+                        nullMeta
 
 instance Arbitrary Alignment where
         arbitrary

@@ -6,7 +6,7 @@ import Text.Pandoc.Walk (walk)
 import Text.Pandoc.Builder
 
 main :: IO ()
-main = do
+main =
   defaultMain [
       bench "simple walk" $ nf (walk prependZeroWidthSpace) mydoc
     , bench "walk concatMap" $ nf (walk $ concatMap prependZeroWidthSpace') mydoc
@@ -23,7 +23,7 @@ prependZeroWidthSpace' x = [x]
 
 prependZeroWidthSpace'' :: [Inline] -> [Inline]
 prependZeroWidthSpace'' (Str s : xs) =
-  (Str ('\8203' : s) : prependZeroWidthSpace'' xs)
+  Str ('\8203' : s) : prependZeroWidthSpace'' xs
 prependZeroWidthSpace'' (x : xs) =
   x : prependZeroWidthSpace'' xs
 prependZeroWidthSpace'' [] = []

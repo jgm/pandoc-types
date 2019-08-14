@@ -120,10 +120,6 @@ linked to in a document:
 module Text.Pandoc.Generic where
 
 import Data.Generics
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Monoid
-#endif
 
 -- | Applies a transformation on @a@s to matching elements in a @b@,
 -- moving from the bottom of the structure up.

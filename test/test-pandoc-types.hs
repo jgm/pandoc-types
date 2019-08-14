@@ -15,10 +15,6 @@ import Test.Framework.Providers.HUnit (testCase)
 import qualified Data.Map as M
 import Data.String.QQ
 import Data.ByteString.Lazy (ByteString)
-#if MIN_VERSION_base(4,8,0)
-#else
-import Data.Monoid
-#endif
 import qualified Data.Monoid as Monoid
 
 

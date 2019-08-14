@@ -2,7 +2,7 @@
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP #-}
 
 {-
-Copyright (c) 2006-2016, John MacFarlane
+Copyright (c) 2006-2019, John MacFarlane
 
 All rights reserved.
 
@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {- |
    Module      : Text.Pandoc.Definition
-   Copyright   : Copyright (C) 2006-2016 John MacFarlane
+   Copyright   : Copyright (C) 2006-2019 John MacFarlane
    License     : BSD3
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>
@@ -81,14 +81,7 @@ import qualified Data.Map as M
 import GHC.Generics (Generic)
 import Data.String
 import Data.Char (toLower)
-#if MIN_VERSION_base(4,8,0)
 import Control.DeepSeq
-#else
-import Data.Monoid (Monoid (mappend, mempty))
-import Control.Applicative ((<$>), (<*>))
-import Control.DeepSeq (NFData(..))
-import Control.DeepSeq.Generics
-#endif
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
 import Data.Semigroup (Semigroup(..))
@@ -581,7 +574,6 @@ instance ToJSON Pandoc where
            ]
 
 -- Instances for deepseq
-#if MIN_VERSION_base(4,8,0)
 instance NFData MetaValue
 instance NFData Meta
 instance NFData Citation
@@ -595,21 +587,6 @@ instance NFData ListNumberDelim
 instance NFData ListNumberStyle
 instance NFData Block
 instance NFData Pandoc
-#else
-instance NFData MetaValue where rnf = genericRnf
-instance NFData Meta where rnf = genericRnf
-instance NFData Citation where rnf = genericRnf
-instance NFData Alignment where rnf = genericRnf
-instance NFData Inline where rnf = genericRnf
-instance NFData MathType where rnf = genericRnf
-instance NFData Format where rnf = genericRnf
-instance NFData CitationMode where rnf = genericRnf
-instance NFData QuoteType where rnf = genericRnf
-instance NFData ListNumberDelim where rnf = genericRnf
-instance NFData ListNumberStyle where rnf = genericRnf
-instance NFData Block where rnf = genericRnf
-instance NFData Pandoc where rnf = genericRnf
-#endif
 
 pandocTypesVersion :: Version
 pandocTypesVersion = version

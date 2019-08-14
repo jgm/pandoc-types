@@ -6,14 +6,9 @@
 #if MIN_VERSION_base(4,9,0)
 {-# OPTIONS_GHC -fno-warn-redundant-constraints -O2 #-}
 #endif
-#if MIN_VERSION_base(4,8,0)
 #define OVERLAPS {-# OVERLAPPING #-}
-#else
-{-# LANGUAGE OverlappingInstances #-}
-#define OVERLAPS
-#endif
 {-
-Copyright (c) 2013-2017, John MacFarlane
+Copyright (c) 2013-2019, John MacFarlane
 
 All rights reserved.
 
@@ -47,7 +42,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {- |
    Module      : Text.Pandoc.Walk
-   Copyright   : Copyright (C) 2013 John MacFarlane
+   Copyright   : Copyright (C) 2013-2019 John MacFarlane
    License     : BSD3
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>
@@ -113,11 +108,7 @@ import qualified Data.Traversable as T
 import Data.Traversable (Traversable)
 import qualified Data.Foldable as F
 import Data.Foldable (Foldable)
-#if MIN_VERSION_base(4,8,0)
 import Data.Monoid ((<>))
-#else
-import Data.Monoid
-#endif
 
 class Walkable a b where
   -- | @walk f x@ walks the structure @x@ (bottom up) and replaces every

@@ -2,7 +2,7 @@
     GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
     DeriveTraversable #-}
 {-
-Copyright (C) 2010-2016 John MacFarlane
+Copyright (C) 2010-2019 John MacFarlane
 
 All rights reserved.
 
@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {- |
    Module      : Text.Pandoc.Builder
-   Copyright   : Copyright (C) 2010-2016 John MacFarlane
+   Copyright   : Copyright (C) 2010-2019 John MacFarlane
    License     : BSD3
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>
@@ -177,17 +177,6 @@ import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
 import Data.Semigroup (Semigroup(..))
-
-#if MIN_VERSION_base(4,5,0)
--- (<>) is defined in Data.Monoid
-#else
-infixr 6 <>
-
--- | An infix synonym for 'mappend'.
-(<>) :: Monoid m => m -> m -> m
-(<>) = mappend
-{-# INLINE (<>) #-}
-#endif
 
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)

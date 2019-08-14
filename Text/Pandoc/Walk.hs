@@ -136,6 +136,7 @@ instance (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
   walkM f = T.mapM (walkM f)
   query f = F.foldMap (query f)
 
+-- Walk pairs by handling both elements, then combine the results.
 instance OVERLAPS
         (Walkable a b, Walkable a c) => Walkable a (b,c) where
   walk f (x,y)  = (walk f x, walk f y)
@@ -186,6 +187,9 @@ instance Walkable [Block] Inline where
   walkM f = walkInlineM f
   query f = queryInline f
 
+--
+-- Walk Pandoc
+--
 instance Walkable Block Pandoc where
   walkM = walkPandocM
   query = queryPandoc
@@ -206,6 +210,9 @@ instance Walkable Pandoc Pandoc where
   walkM f = f
   query f = f
 
+--
+-- Walk Meta
+--
 instance Walkable Meta Meta where
   walkM f = f
   query f = f
@@ -226,6 +233,9 @@ instance Walkable [Block] Meta where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
+--
+-- Walk MetaValue
+--
 instance Walkable Inline MetaValue where
   walkM = walkMetaValueM
   query = queryMetaValue
@@ -242,6 +252,9 @@ instance Walkable [Block] MetaValue where
   walkM = walkMetaValueM
   query = queryMetaValue
 
+--
+-- Walk Citation
+--
 instance Walkable Inline Citation where
   walkM = walkCitationM
   query = queryCitation
@@ -258,6 +271,11 @@ instance Walkable [Block] Citation where
   walkM = walkCitationM
   query = queryCitation
 
+-- | Helper method to walk to elements nested below Inline nodes.
+--
+-- When walking an inline with this function, only the contents of the traversed
+-- inline element may change. The element itself, i.e. its constructor, cannot
+-- be changed.
 walkInlineM :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monad m, Applicative m, Functor m)
             => (a -> m a) -> Inline -> m Inline
@@ -281,37 +299,7 @@ walkInlineM _ x@Code {}        = return x
 walkInlineM _ x@Math {}        = return x
 walkInlineM _ x@RawInline {}   = return x
 
-walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m,
-                Applicative m, Functor m)
-           => (a -> m a) -> Block -> m Block
-walkBlockM f (Para xs)                = Para <$> walkM f xs
-walkBlockM f (Plain xs)               = Plain <$> walkM f xs
-walkBlockM f (LineBlock xs)           = LineBlock <$> walkM f xs
-walkBlockM f (BlockQuote xs)          = BlockQuote <$> walkM f xs
-walkBlockM f (OrderedList a cs)       = OrderedList a <$> walkM f cs
-walkBlockM f (BulletList cs)          = BulletList <$> walkM f cs
-walkBlockM f (DefinitionList xs)      = DefinitionList <$> walkM f xs
-walkBlockM f (Header lev attr xs)     = Header lev attr <$> walkM f xs
-walkBlockM f (Div attr bs')           = Div attr <$> walkM f bs'
-walkBlockM _ x@CodeBlock {}           = return x
-walkBlockM _ x@RawBlock {}            = return x
-walkBlockM _ HorizontalRule           = return HorizontalRule
-walkBlockM _ Null                     = return Null
-walkBlockM f (Table capt as ws hs rs) = do capt' <- walkM f capt
-                                           hs' <- walkM f hs
-                                           rs' <- walkM f rs
-                                           return $ Table capt' as ws hs' rs'
-
-walkMetaValueM :: (Walkable a MetaValue, Walkable a [Block],
-                  Walkable a [Inline], Monad f, Applicative f, Functor f)
-               => (a -> f a) -> MetaValue -> f MetaValue
-walkMetaValueM f (MetaList xs)    = MetaList <$> walkM f xs
-walkMetaValueM _ (MetaBool b)     = return $ MetaBool b
-walkMetaValueM _ (MetaString s)   = return $ MetaString s
-walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
-walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
-walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
-
+-- | TODO
 queryInline :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monoid c)
             => (a -> c) -> Inline -> c
@@ -335,6 +323,34 @@ queryInline f (Image _ xs _)  = query f xs
 queryInline f (Note bs)       = query f bs
 queryInline f (Span _ xs)     = query f xs
 
+
+-- | Helper method to walk to elements nested below Block nodes.
+--
+-- When walking a block with this function, only the contents of the traversed
+-- block element may change. The element itself, i.e. its constructor, its Attr,
+-- and its raw text value, will remain unchanged.
+walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m,
+                Applicative m, Functor m)
+           => (a -> m a) -> Block -> m Block
+walkBlockM f (Para xs)                = Para <$> walkM f xs
+walkBlockM f (Plain xs)               = Plain <$> walkM f xs
+walkBlockM f (LineBlock xs)           = LineBlock <$> walkM f xs
+walkBlockM f (BlockQuote xs)          = BlockQuote <$> walkM f xs
+walkBlockM f (OrderedList a cs)       = OrderedList a <$> walkM f cs
+walkBlockM f (BulletList cs)          = BulletList <$> walkM f cs
+walkBlockM f (DefinitionList xs)      = DefinitionList <$> walkM f xs
+walkBlockM f (Header lev attr xs)     = Header lev attr <$> walkM f xs
+walkBlockM f (Div attr bs')           = Div attr <$> walkM f bs'
+walkBlockM _ x@CodeBlock {}           = return x
+walkBlockM _ x@RawBlock {}            = return x
+walkBlockM _ HorizontalRule           = return HorizontalRule
+walkBlockM _ Null                     = return Null
+walkBlockM f (Table capt as ws hs rs) = do capt' <- walkM f capt
+                                           hs' <- walkM f hs
+                                           rs' <- walkM f rs
+                                           return $ Table capt' as ws hs' rs'
+
+-- | TODO
 queryBlock :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monoid c)
            => (a -> c) -> Block -> c
@@ -353,6 +369,21 @@ queryBlock f (Table capt _ _ hs rs)   = query f capt <> query f hs <> query f rs
 queryBlock f (Div _ bs)               = query f bs
 queryBlock _ Null                     = mempty
 
+-- | Helper method to walk to elements nested below MetaValue nodes.
+--
+-- When walking a meta value with this function, only the contents of the
+-- traversed meta value element may change. @MetaBool@ and @MetaString@ will
+-- always remain unchanged.
+walkMetaValueM :: (Walkable a MetaValue, Walkable a [Block],
+                  Walkable a [Inline], Monad f, Applicative f, Functor f)
+               => (a -> f a) -> MetaValue -> f MetaValue
+walkMetaValueM f (MetaList xs)    = MetaList <$> walkM f xs
+walkMetaValueM _ (MetaBool b)     = return $ MetaBool b
+walkMetaValueM _ (MetaString s)   = return $ MetaString s
+walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
+walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
+walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
+
 queryMetaValue :: (Walkable a MetaValue, Walkable a [Block],
                    Walkable a [Inline], Monoid c)
                => (a -> c) -> MetaValue -> c
@@ -363,6 +394,11 @@ queryMetaValue f (MetaInlines xs) = query f xs
 queryMetaValue f (MetaBlocks bs)  = query f bs
 queryMetaValue f (MetaMap m)      = query f m
 
+-- | Helper method to walk to elements nested below Citation nodes.
+--
+-- The non-inline contents of a citation will remain unchanged during traversal.
+-- Only the inline contents, viz. the citation's prefix and postfix, will be
+-- traversed further and can thus be changed during this operation.
 walkCitationM :: (Walkable a [Inline], Monad m, Applicative m, Functor m)
               => (a -> m a) -> Citation -> m Citation
 walkCitationM f (Citation id' pref suff mode notenum hash) =
@@ -374,6 +410,7 @@ queryCitation :: (Walkable a [Inline], Monoid c)
               => (a -> c) -> Citation -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
 
+-- | Helper method to walk the components of a Pandoc element.
 walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m,
                   Applicative m, Functor m)
             => (a -> m a) -> Pandoc -> m Pandoc

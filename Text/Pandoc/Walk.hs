@@ -262,7 +262,7 @@ instance Walkable [Block] Citation where
   walkM = walkCitationM
   query = queryCitation
 
--- | Helper method to walk to elements nested below Inline nodes.
+-- | Helper method to walk to elements nested below @'Inline'@ nodes.
 --
 -- When walking an inline with this function, only the contents of the traversed
 -- inline element may change. The element itself, i.e. its constructor, cannot
@@ -290,7 +290,8 @@ walkInlineM _ x@Code {}        = return x
 walkInlineM _ x@Math {}        = return x
 walkInlineM _ x@RawInline {}   = return x
 
--- | TODO
+-- | Perform a query on elements nested below an @'Inline'@ element by
+-- querying nested lists of @Inline@s, @Block@s, or @Citation@s.
 queryInline :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monoid c)
             => (a -> c) -> Inline -> c
@@ -315,10 +316,10 @@ queryInline f (Note bs)       = query f bs
 queryInline f (Span _ xs)     = query f xs
 
 
--- | Helper method to walk to elements nested below Block nodes.
+-- | Helper method to walk to elements nested below @'Block'@ nodes.
 --
 -- When walking a block with this function, only the contents of the traversed
--- block element may change. The element itself, i.e. its constructor, its Attr,
+-- block element may change. The element itself, i.e. its constructor, its @'Attr'@,
 -- and its raw text value, will remain unchanged.
 walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m,
                 Applicative m, Functor m)
@@ -341,7 +342,8 @@ walkBlockM f (Table capt as ws hs rs) = do capt' <- walkM f capt
                                            rs' <- walkM f rs
                                            return $ Table capt' as ws hs' rs'
 
--- | TODO
+-- | Perform a query on elements nested below a @'Block'@ element by
+-- querying all directly nested lists of @Inline@s or @Block@s.
 queryBlock :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monoid c)
            => (a -> c) -> Block -> c
@@ -360,7 +362,7 @@ queryBlock f (Table capt _ _ hs rs)   = query f capt <> query f hs <> query f rs
 queryBlock f (Div _ bs)               = query f bs
 queryBlock _ Null                     = mempty
 
--- | Helper method to walk to elements nested below MetaValue nodes.
+-- | Helper method to walk to elements nested below @'MetaValue'@ nodes.
 --
 -- When walking a meta value with this function, only the contents of the
 -- traversed meta value element may change. @MetaBool@ and @MetaString@ will
@@ -375,6 +377,9 @@ walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
 walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
 walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
 
+-- | Perform a query on elements nested below a @'MetaValue'@ element by
+-- querying all directly nested lists of @Inline@s, list of @Block@s, or
+-- lists or maps of @MetaValue@s.
 queryMetaValue :: (Walkable a MetaValue, Walkable a [Block],
                    Walkable a [Inline], Monoid c)
                => (a -> c) -> MetaValue -> c
@@ -385,7 +390,7 @@ queryMetaValue f (MetaInlines xs) = query f xs
 queryMetaValue f (MetaBlocks bs)  = query f bs
 queryMetaValue f (MetaMap m)      = query f m
 
--- | Helper method to walk to elements nested below Citation nodes.
+-- | Helper method to walk to elements nested below @'Citation'@ nodes.
 --
 -- The non-inline contents of a citation will remain unchanged during traversal.
 -- Only the inline contents, viz. the citation's prefix and postfix, will be
@@ -397,6 +402,8 @@ walkCitationM f (Citation id' pref suff mode notenum hash) =
        suff' <- walkM f suff
        return $ Citation id' pref' suff' mode notenum hash
 
+-- | Perform a query on elements nested below a @'Citation'@ element by
+-- querying the prefix and postfix @Inline@ lists.
 queryCitation :: (Walkable a [Inline], Monoid c)
               => (a -> c) -> Citation -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
@@ -409,6 +416,8 @@ walkPandocM f (Pandoc m bs) = do m' <- walkM f m
                                  bs' <- walkM f bs
                                  return $ Pandoc m' bs'
 
+-- | Query a pandoc element by recursing first into its @'Meta'@ data
+-- and then append the result of recursing into the list of @'Block'@s.
 queryPandoc :: (Walkable a Meta, Walkable a [Block], Monoid c)
              => (a -> c) -> Pandoc -> c
 queryPandoc f (Pandoc m bs) = query f m <> query f bs

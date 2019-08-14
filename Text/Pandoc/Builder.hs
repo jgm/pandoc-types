@@ -2,7 +2,7 @@
     GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
     DeriveTraversable #-}
 {-
-Copyright (C) 2010-2016 John MacFarlane
+Copyright (C) 2010-2019 John MacFarlane
 
 All rights reserved.
 
@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {- |
    Module      : Text.Pandoc.Builder
-   Copyright   : Copyright (C) 2010-2016 John MacFarlane
+   Copyright   : Copyright (C) 2010-2019 John MacFarlane
    License     : BSD3
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>

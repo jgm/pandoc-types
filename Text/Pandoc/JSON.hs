@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 {-
-Copyright (c) 2013-2016, John MacFarlane
+Copyright (c) 2013-2019, John MacFarlane
 
 All rights reserved.
 
@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {- |
    Module      : Text.Pandoc.JSON
-   Copyright   : Copyright (C) 2013-2016 John MacFarlane
+   Copyright   : Copyright (C) 2013-2019 John MacFarlane
    License     : BSD3
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>

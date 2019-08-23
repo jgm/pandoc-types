@@ -1,3 +1,15 @@
+[1.17.6]
+
+  * Walk: export walk and query helpers (Albert Krewinkel) [API change].
+    The `walk*M` and `query*` functions are helpful when defining new
+    `Walkable` instances.
+  * Allow QuickCheck 2.13.
+  * Document meaning of Int in ListAttributes (#45).
+  * Update copyright year spans to include 2019 (Albert Krewinkel).
+  * Remove CPP instructions for GHC versions < 7.10 (Albert Krewinkel).
+  *  update list of GHC versions used for testing (Albert Krewinkel).
+  * Fix compiler and hlint warnings (Pete Ryland).
+
 [1.17.5.4]
 
   * Put NFData in scope for ghc < 7.10.

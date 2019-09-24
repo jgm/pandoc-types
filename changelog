@@ -1,3 +1,8 @@
+[1.17.6.1]
+
+
+  * Relax version bound for string-qq.
+
 [1.17.6]
 
   * Walk: export walk and query helpers (Albert Krewinkel) [API change].

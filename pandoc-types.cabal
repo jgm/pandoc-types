@@ -75,7 +75,7 @@ test-suite test-pandoc-types
                        test-framework-quickcheck2 >= 0.2.9 && < 0.4,
                        QuickCheck >= 2.4 && < 2.14,
                        HUnit >= 1.2 && < 1.7,
-                       string-qq == 0.0.2
+                       string-qq >= 0.0.2 && < 0.1
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -O2
 
 benchmark benchmark-pandoc-types

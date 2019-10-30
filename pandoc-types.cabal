@@ -86,5 +86,6 @@ benchmark benchmark-pandoc-types
   hs-source-dirs:  benchmark
   build-depends:   pandoc-types,
                    base >= 4.5 && < 5,
+                   text,
                    criterion >= 1.0 && < 1.6
   ghc-options:   -rtsopts -Wall -fno-warn-unused-do-bind -O2

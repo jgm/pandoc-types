@@ -1,17 +1,23 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances, ScopedTypeVariables, OverloadedStrings #-}
 -- provides Arbitrary instance for Pandoc types
 module Text.Pandoc.Arbitrary ()
 where
 import Test.QuickCheck
 import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad (forM)
+import Data.Text (Text)
+import qualified Data.Text as T
 import Text.Pandoc.Definition
 import Text.Pandoc.Builder
 
-realString :: Gen String
-realString = resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
-                                           , (1, elements ['\128'..'\9999']) ]
+realString :: Gen Text
+realString = fmap T.pack $ resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
+                                                         , (1, elements ['\128'..'\9999']) ]
+
+instance Arbitrary Text where
+  arbitrary = T.pack <$> arbitrary
+  shrink xs = T.pack <$> shrink (T.unpack xs)
 
 arbAttr :: Gen Attr
 arbAttr = do
@@ -238,7 +244,7 @@ instance Arbitrary CitationMode where
 
 instance Arbitrary Citation where
         arbitrary
-          = Citation <$> listOf (elements $ ['a'..'z'] ++ ['0'..'9'] ++ ['_'])
+          = Citation <$> fmap T.pack (listOf $ elements $ ['a'..'z'] ++ ['0'..'9'] ++ ['_'])
                      <*> arbInlines 1
                      <*> arbInlines 1
                      <*> arbitrary

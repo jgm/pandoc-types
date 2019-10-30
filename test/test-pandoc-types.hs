@@ -13,6 +13,8 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.Providers.HUnit (testCase)
 import qualified Data.Map as M
+import Data.Text (Text)
+import qualified Data.Text as T
 import Data.String.QQ
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.Monoid as Monoid
@@ -37,7 +39,7 @@ p_queryList f d = everything mappend (mempty `mkQ` f) d ==
                   query (mconcat . map f . tails) d
 
 inlineTrans :: Inline -> Inline
-inlineTrans (Str xs) = Str $ map toUpper xs
+inlineTrans (Str xs) = Str $ T.toUpper xs
 inlineTrans (Emph xs) = Strong xs
 inlineTrans x = x
 
@@ -62,7 +64,7 @@ blocksTrans [BlockQuote xs] = xs
 blocksTrans [Div _ xs] = xs
 blocksTrans xs = xs
 
-inlineQuery :: Inline -> String
+inlineQuery :: Inline -> Text
 inlineQuery (Str xs) = xs
 inlineQuery _ = ""
 

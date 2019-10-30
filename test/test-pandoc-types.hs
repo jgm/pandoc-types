@@ -7,7 +7,6 @@ import Text.Pandoc.Builder (singleton, plain, text, simpleTable)
 import Data.Generics
 import Data.List (tails)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
-import Data.Char (toUpper)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2 (testProperty)

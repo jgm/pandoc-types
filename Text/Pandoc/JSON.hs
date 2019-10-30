@@ -76,6 +76,7 @@ import Text.Pandoc.Definition
 import Text.Pandoc.Walk
 import Data.Maybe (listToMaybe)
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.Text as T
 import Data.Aeson
 import System.Environment (getArgs)
 
@@ -126,4 +127,4 @@ instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where
   toJSONFilter f = getArgs >>= toJSONFilter . f
 
 instance (ToJSONFilter a) => ToJSONFilter (Maybe Format -> a) where
-  toJSONFilter f = getArgs >>= toJSONFilter . f . fmap Format . listToMaybe
+  toJSONFilter f = getArgs >>= toJSONFilter . f . fmap (Format . T.pack) . listToMaybe

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable,
     GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
-    DeriveTraversable #-}
+    DeriveTraversable, OverloadedStrings #-}
 {-
 Copyright (C) 2010-2019 John MacFarlane
 
@@ -167,12 +167,13 @@ where
 import Text.Pandoc.Definition
 import Data.String
 import qualified Data.Map as M
+import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
 import Data.Traversable (Traversable)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
-import Data.List (groupBy)
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
@@ -228,7 +229,7 @@ instance Monoid Inlines where
   mappend = (<>)
 
 instance IsString Inlines where
-   fromString = text
+   fromString = text . T.pack
 
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
 trimInlines :: Inlines -> Inlines
@@ -266,18 +267,24 @@ instance ToMetaValue Inlines where
 instance ToMetaValue Bool where
   toMetaValue = MetaBool
 
-instance {-# OVERLAPPING #-} ToMetaValue String where
+instance ToMetaValue Text where
   toMetaValue = MetaString
+
+instance {-# OVERLAPPING #-} ToMetaValue String where
+  toMetaValue = MetaString . T.pack
 
 instance ToMetaValue a => ToMetaValue [a] where
   toMetaValue = MetaList . map toMetaValue
 
-instance ToMetaValue a => ToMetaValue (M.Map String a) where
+instance ToMetaValue a => ToMetaValue (M.Map Text a) where
   toMetaValue = MetaMap . M.map toMetaValue
 
+instance ToMetaValue a => ToMetaValue (M.Map String a) where
+  toMetaValue = MetaMap . M.map toMetaValue . M.mapKeys T.pack
+
 class HasMeta a where
-  setMeta :: ToMetaValue b => String -> b -> a -> a
-  deleteMeta :: String -> a -> a
+  setMeta :: ToMetaValue b => Text -> b -> a -> a
+  deleteMeta :: Text -> a -> a
 
 instance HasMeta Meta where
   setMeta key val (Meta ms) = Meta $ M.insert key (toMetaValue val) ms
@@ -290,7 +297,7 @@ instance HasMeta Pandoc where
     Pandoc (Meta $ M.delete key ms) bs
 
 setTitle :: Inlines -> Pandoc -> Pandoc
-setTitle = setMeta "title"
+setTitle = setMeta  "title"
 
 setAuthors :: [Inlines] -> Pandoc -> Pandoc
 setAuthors = setMeta "author"
@@ -302,12 +309,12 @@ setDate = setMeta "date"
 
 -- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's
 -- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
-text :: String -> Inlines
+text :: Text -> Inlines
 text = fromList . map conv . breakBySpaces
-  where breakBySpaces = groupBy sameCategory
+  where breakBySpaces = T.groupBy sameCategory
         sameCategory x y = is_space x == is_space y
-        conv xs | all is_space xs =
-           if any is_newline xs
+        conv xs | T.all is_space xs =
+           if T.any is_newline xs
               then SoftBreak
               else Space
         conv xs = Str xs
@@ -320,7 +327,7 @@ text = fromList . map conv . breakBySpaces
         is_newline '\n' = True
         is_newline _    = False
 
-str :: String -> Inlines
+str :: Text -> Inlines
 str = singleton . Str
 
 emph :: Inlines -> Inlines
@@ -354,11 +361,11 @@ cite :: [Citation] -> Inlines -> Inlines
 cite cts = singleton . Cite cts . toList
 
 -- | Inline code with attributes.
-codeWith :: Attr -> String -> Inlines
+codeWith :: Attr -> Text -> Inlines
 codeWith attrs = singleton . Code attrs
 
 -- | Plain inline code.
-code :: String -> Inlines
+code :: Text -> Inlines
 code = codeWith nullAttr
 
 space :: Inlines
@@ -371,38 +378,38 @@ linebreak :: Inlines
 linebreak = singleton LineBreak
 
 -- | Inline math
-math :: String -> Inlines
+math :: Text -> Inlines
 math = singleton . Math InlineMath
 
 -- | Display math
-displayMath :: String -> Inlines
+displayMath :: Text -> Inlines
 displayMath = singleton . Math DisplayMath
 
-rawInline :: String -> String -> Inlines
+rawInline :: Text -> Text -> Inlines
 rawInline format = singleton . RawInline (Format format)
 
-link :: String  -- ^ URL
-     -> String  -- ^ Title
+link :: Text  -- ^ URL
+     -> Text  -- ^ Title
      -> Inlines -- ^ Label
      -> Inlines
 link = linkWith nullAttr
 
 linkWith :: Attr    -- ^ Attributes
-         -> String  -- ^ URL
-         -> String  -- ^ Title
+         -> Text  -- ^ URL
+         -> Text  -- ^ Title
          -> Inlines -- ^ Label
          -> Inlines
 linkWith attr url title x = singleton $ Link attr (toList x) (url, title)
 
-image :: String  -- ^ URL
-      -> String  -- ^ Title
+image :: Text  -- ^ URL
+      -> Text  -- ^ Title
       -> Inlines -- ^ Alt text
       -> Inlines
 image = imageWith nullAttr
 
 imageWith :: Attr -- ^ Attributes
-          -> String  -- ^ URL
-          -> String  -- ^ Title
+          -> Text  -- ^ URL
+          -> Text  -- ^ Title
           -> Inlines -- ^ Alt text
           -> Inlines
 imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
@@ -427,14 +434,14 @@ lineBlock :: [Inlines] -> Blocks
 lineBlock = singleton . LineBlock . map toList
 
 -- | A code block with attributes.
-codeBlockWith :: Attr -> String -> Blocks
+codeBlockWith :: Attr -> Text -> Blocks
 codeBlockWith attrs = singleton . CodeBlock attrs
 
 -- | A plain code block.
-codeBlock :: String -> Blocks
+codeBlock :: Text -> Blocks
 codeBlock = codeBlockWith nullAttr
 
-rawBlock :: String -> String -> Blocks
+rawBlock :: Text -> Text -> Blocks
 rawBlock format = singleton . RawBlock (Format format)
 
 blockQuote :: Blocks -> Blocks

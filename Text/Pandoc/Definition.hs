@@ -78,9 +78,10 @@ import Data.Ord (comparing)
 import Data.Aeson hiding (Null)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map as M
+import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Data.String
-import Data.Char (toLower)
 import Control.DeepSeq
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
@@ -97,7 +98,7 @@ instance Monoid Pandoc where
   mappend = (<>)
 
 -- | Metadata for the document:  title, authors, date.
-newtype Meta = Meta { unMeta :: M.Map String MetaValue }
+newtype Meta = Meta { unMeta :: M.Map Text MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 instance Semigroup Meta where
@@ -108,10 +109,10 @@ instance Monoid Meta where
   mempty = Meta M.empty
   mappend = (<>)
 
-data MetaValue = MetaMap (M.Map String MetaValue)
+data MetaValue = MetaMap (M.Map Text MetaValue)
                | MetaList [MetaValue]
                | MetaBool Bool
-               | MetaString String
+               | MetaString Text
                | MetaInlines [Inline]
                | MetaBlocks [Block]
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
@@ -125,7 +126,7 @@ isNullMeta (Meta m) = M.null m
 -- Helper functions to extract metadata
 
 -- | Retrieve the metadata value for a given @key@.
-lookupMeta :: String -> Meta -> Maybe MetaValue
+lookupMeta :: Text -> Meta -> Maybe MetaValue
 lookupMeta key (Meta m) = M.lookup key m
 
 -- | Extract document title from metadata; works just like the old @docTitle@.
@@ -187,7 +188,7 @@ data ListNumberDelim = DefaultDelim
                      | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | Attributes: identifier, classes, key-value pairs
-type Attr = (String, [String], [(String, String)])
+type Attr = (Text, [Text], [(Text, Text)])
 
 nullAttr :: Attr
 nullAttr = ("",[],[])
@@ -196,25 +197,25 @@ nullAttr = ("",[],[])
 type TableCell = [Block]
 
 -- | Formats for raw blocks
-newtype Format = Format String
+newtype Format = Format Text
                deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
 
 instance IsString Format where
-  fromString f = Format $ map toLower f
+  fromString f = Format $ T.toLower $ T.pack f
 
 instance Eq Format where
-  Format x == Format y = map toLower x == map toLower y
+  Format x == Format y = T.toLower x == T.toLower y
 
 instance Ord Format where
-  compare (Format x) (Format y) = compare (map toLower x) (map toLower y)
+  compare (Format x) (Format y) = compare (T.toLower x) (T.toLower y)
 
 -- | Block element.
 data Block
     = Plain [Inline]        -- ^ Plain text, not a paragraph
     | Para [Inline]         -- ^ Paragraph
     | LineBlock [[Inline]]  -- ^ Multiple non-breaking lines
-    | CodeBlock Attr String -- ^ Code block (literal) with attributes
-    | RawBlock Format String -- ^ Raw block
+    | CodeBlock Attr Text -- ^ Code block (literal) with attributes
+    | RawBlock Format Text -- ^ Raw block
     | BlockQuote [Block]    -- ^ Block quote (list of blocks)
     | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
                             -- and a list of items, each a list of blocks)
@@ -239,14 +240,14 @@ data Block
 data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Link target (URL, title).
-type Target = (String, String)
+type Target = (Text, Text)
 
 -- | Type of math element (display or inline).
 data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Inline elements.
 data Inline
-    = Str String            -- ^ Text (string)
+    = Str Text            -- ^ Text (string)
     | Emph [Inline]         -- ^ Emphasized text (list of inlines)
     | Strong [Inline]       -- ^ Strongly emphasized text (list of inlines)
     | Strikeout [Inline]    -- ^ Strikeout text (list of inlines)
@@ -255,19 +256,19 @@ data Inline
     | SmallCaps [Inline]    -- ^ Small caps text (list of inlines)
     | Quoted QuoteType [Inline] -- ^ Quoted text (list of inlines)
     | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
-    | Code Attr String      -- ^ Inline code (literal)
+    | Code Attr Text      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
-    | Math MathType String  -- ^ TeX math (literal)
-    | RawInline Format String -- ^ Raw inline
+    | Math MathType Text  -- ^ TeX math (literal)
+    | RawInline Format Text -- ^ Raw inline
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
     | Note [Block]          -- ^ Footnote or endnote
     | Span Attr [Inline]    -- ^ Generic inline container with attributes
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
-data Citation = Citation { citationId      :: String
+data Citation = Citation { citationId      :: Text
                          , citationPrefix  :: [Inline]
                          , citationSuffix  :: [Inline]
                          , citationMode    :: CitationMode
@@ -286,10 +287,10 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- ToJSON/FromJSON instances. We do this by hand instead of deriving
 -- from generics, so we can have more control over the format.
 
-taggedNoContent :: String -> Value
+taggedNoContent :: Text -> Value
 taggedNoContent x = object [ "t" .= x ]
 
-tagged :: ToJSON a => String -> a -> Value
+tagged :: ToJSON a => Text -> a -> Value
 tagged x y = object [ "t" .= x, "c" .= y ]
 
 instance FromJSON MetaValue where

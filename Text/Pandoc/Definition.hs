@@ -201,13 +201,13 @@ newtype Format = Format Text
                deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
 
 instance IsString Format where
-  fromString f = Format $ T.toLower $ T.pack f
+  fromString f = Format $ T.toCaseFold $ T.pack f
 
 instance Eq Format where
-  Format x == Format y = T.toLower x == T.toLower y
+  Format x == Format y = T.toCaseFold x == T.toCaseFold y
 
 instance Ord Format where
-  compare (Format x) (Format y) = compare (T.toLower x) (T.toLower y)
+  compare (Format x) (Format y) = compare (T.toCaseFold x) (T.toCaseFold y)
 
 -- | Block element.
 data Block

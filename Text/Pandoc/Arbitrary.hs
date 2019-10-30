@@ -15,9 +15,11 @@ realString :: Gen Text
 realString = fmap T.pack $ resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
                                                          , (1, elements ['\128'..'\9999']) ]
 
-instance Arbitrary Text where
-  arbitrary = T.pack <$> arbitrary
-  shrink xs = T.pack <$> shrink (T.unpack xs)
+shrinkText :: Text -> [Text]
+shrinkText xs = T.pack <$> shrink (T.unpack xs)
+
+shrinkText2 :: (Text, Text) -> [(Text, Text)]
+shrinkText2 = liftShrink2 shrinkText shrinkText
 
 arbAttr :: Gen Attr
 arbAttr = do
@@ -25,6 +27,12 @@ arbAttr = do
   classes' <- elements [[],["haskell"],["c","numberLines"]]
   keyvals <- elements [[],[("start","22")],[("a","11"),("b_2","a b c")]]
   return (id',classes',keyvals)
+
+shrinkAttr :: Attr -> [Attr]
+shrinkAttr (a, b, c)
+  = [ (a', b', c') | a' <- shrinkText a,
+                     b' <- liftShrink shrinkText b,
+                     c' <- liftShrink shrinkText2 c ]
 
 instance Arbitrary Inlines where
   arbitrary = (fromList :: [Inline] -> Inlines) <$> arbitrary
@@ -91,7 +99,7 @@ shrinkBlocksList = fmap (fmap toList) . shrink . fmap fromList
 
 instance Arbitrary Inline where
   arbitrary = resize 3 $ arbInline 2
-  shrink (Str s) = Str <$> shrink s
+  shrink (Str s) = Str <$> shrinkText s
   shrink (Emph ils) = Emph <$> shrinkInlineList ils
   shrink (Strong ils) = Strong <$> shrinkInlineList ils
   shrink (Strikeout ils) = Strikeout <$> shrinkInlineList ils
@@ -101,22 +109,22 @@ instance Arbitrary Inline where
   shrink (Quoted qtype ils) = Quoted qtype <$> shrinkInlineList ils
   shrink (Cite cits ils) = (Cite cits <$> shrinkInlineList ils)
                         ++ (flip Cite ils <$> shrink cits)
-  shrink (Code attr s) = (Code attr <$> shrink s)
-                      ++ (flip Code s <$> shrink attr)
+  shrink (Code attr s) = (Code attr <$> shrinkText s)
+                      ++ (flip Code s <$> shrinkAttr attr)
   shrink Space = []
   shrink SoftBreak = []
   shrink LineBreak = []
-  shrink (Math mtype s) = Math mtype <$> shrink s
-  shrink (RawInline fmt s) = RawInline fmt <$> shrink s
+  shrink (Math mtype s) = Math mtype <$> shrinkText s
+  shrink (RawInline fmt s) = RawInline fmt <$> shrinkText s
   shrink (Link attr ils target) = [Link attr ils' target | ils' <- shrinkInlineList ils]
-                               ++ [Link attr ils target' | target' <- shrink target]
-                               ++ [Link attr' ils target | attr' <- shrink attr]
+                               ++ [Link attr ils target' | target' <- shrinkText2 target]
+                               ++ [Link attr' ils target | attr' <- shrinkAttr attr]
   shrink (Image attr ils target) = [Image attr ils' target | ils' <- shrinkInlineList ils]
-                                ++ [Image attr ils target' | target' <- shrink target]
-                                ++ [Image attr' ils target | attr' <- shrink attr]
+                                ++ [Image attr ils target' | target' <- shrinkText2 target]
+                                ++ [Image attr' ils target | attr' <- shrinkAttr attr]
   shrink (Note blks) = Note <$> shrinkBlockList blks
   shrink (Span attr s) = (Span attr <$> shrink s)
-                      ++ (flip Span s <$> shrink attr)
+                      ++ (flip Span s <$> shrinkAttr attr)
 
 arbInlines :: Int -> Gen [Inline]
 arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
@@ -156,9 +164,9 @@ instance Arbitrary Block where
   shrink (Plain ils) = Plain <$> shrinkInlineList ils
   shrink (Para ils) = Para <$> shrinkInlineList ils
   shrink (LineBlock lns) = LineBlock <$> shrinkInlinesList lns
-  shrink (CodeBlock attr s) = (CodeBlock attr <$> shrink s)
-                           ++ (flip CodeBlock s <$> shrink attr)
-  shrink (RawBlock fmt s) = RawBlock fmt <$> shrink s
+  shrink (CodeBlock attr s) = (CodeBlock attr <$> shrinkText s)
+                           ++ (flip CodeBlock s <$> shrinkAttr attr)
+  shrink (RawBlock fmt s) = RawBlock fmt <$> shrinkText s
   shrink (BlockQuote blks) = BlockQuote <$> shrinkBlockList blks
   shrink (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrinkBlocksList blksList
   shrink (BulletList blksList) = BulletList <$> shrinkBlocksList blksList
@@ -170,7 +178,7 @@ instance Arbitrary Block where
                                      ++ [x:xs' | xs' <- shrinkDefinitionList xs]
           shrinkDefinitionList [] = []
   shrink (Header n attr ils) = (Header n attr <$> shrinkInlineList ils)
-                            ++ (flip (Header n) ils <$> shrink attr)
+                            ++ (flip (Header n) ils <$> shrinkAttr attr)
   shrink HorizontalRule = []
   shrink (Table caption aligns widths cells rows) =
     -- TODO: shrink number of columns
@@ -191,7 +199,7 @@ instance Arbitrary Block where
                            ++ [x:xs' | xs' <- shrinkRows xs]
           shrinkRows [] = []
   shrink (Div attr blks) = (Div attr <$> shrinkBlockList blks)
-                        ++ (flip Div blks <$> shrink attr)
+                        ++ (flip Div blks <$> shrinkAttr attr)
   shrink Null = []
 
 arbBlock :: Int -> Gen Block

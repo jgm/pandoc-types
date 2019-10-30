@@ -297,7 +297,7 @@ instance HasMeta Pandoc where
     Pandoc (Meta $ M.delete key ms) bs
 
 setTitle :: Inlines -> Pandoc -> Pandoc
-setTitle = setMeta  "title"
+setTitle = setMeta "title"
 
 setAuthors :: [Inlines] -> Pandoc -> Pandoc
 setAuthors = setMeta "author"

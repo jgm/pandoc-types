@@ -46,6 +46,7 @@ Library
                      Text.Pandoc.Builder
                      Text.Pandoc.JSON
                      Text.Pandoc.Arbitrary
+                     Text.Pandoc.Legacy.Definition
   Other-modules:     Paths_pandoc_types
   Build-depends:     base >= 4.5 && < 5,
                      containers >= 0.3,

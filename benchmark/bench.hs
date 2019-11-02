@@ -4,6 +4,7 @@ import Criterion.Main (bench, defaultMain, nf)
 import Text.Pandoc.Definition (Pandoc, Inline (Str))
 import Text.Pandoc.Walk (walk)
 import Text.Pandoc.Builder
+import qualified Data.Text as T
 
 main :: IO ()
 main =
@@ -14,16 +15,16 @@ main =
     ]
 
 prependZeroWidthSpace :: Inline -> Inline
-prependZeroWidthSpace (Str s) = Str ('\8203' : s)
+prependZeroWidthSpace (Str s) = Str (T.cons '\8203' s)
 prependZeroWidthSpace x = x
 
 prependZeroWidthSpace' :: Inline -> [Inline]
-prependZeroWidthSpace' (Str s) = [Str ('\8203' : s)]
+prependZeroWidthSpace' (Str s) = [Str (T.cons '\8203' s)]
 prependZeroWidthSpace' x = [x]
 
 prependZeroWidthSpace'' :: [Inline] -> [Inline]
 prependZeroWidthSpace'' (Str s : xs) =
-  Str ('\8203' : s) : prependZeroWidthSpace'' xs
+  Str (T.cons '\8203' s) : prependZeroWidthSpace'' xs
 prependZeroWidthSpace'' (x : xs) =
   x : prependZeroWidthSpace'' xs
 prependZeroWidthSpace'' [] = []

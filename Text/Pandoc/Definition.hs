@@ -101,9 +101,9 @@ newtype Meta = Meta { unMeta :: M.Map String MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 instance Semigroup Meta where
-  (Meta m1) <> (Meta m2) = Meta (M.union m1 m2)
-  -- note: M.union is left-biased, so if there are fields in both m1
-  -- and m2, m1 wins.
+  (Meta m1) <> (Meta m2) = Meta (M.union m2 m1)
+  -- note: M.union is left-biased, so if there are fields in both m2
+  -- and m1, m2 wins.
 instance Monoid Meta where
   mempty = Meta M.empty
   mappend = (<>)

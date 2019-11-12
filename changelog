@@ -1,5 +1,43 @@
-[1.17.6.1]
+[1.20.0]
 
+  * Change all uses of String in type definitions to strict Text
+    (Christian Despres) [API change].  The MetaValue instances using String
+    have been kept, and parallel ones using Text were added.
+
+  * Remove the Arbitrary Text orphan instance (Christian Despres).
+    This instance should not have been in the Text.Pandoc.Arbitrary, since
+    it would have been exported with the rest of the instances in that
+    module. Instead, more shrink* functions were added to compensate for
+    the absence of this instance.
+
+  * Add Text.Pandoc.Legacy.Definition (Christian Despres).
+    To ease the transition to Text, this module provides an interface
+    compatible with the String one, so that any unqualified imports of
+    Text.Pandoc.Definition in other packages can be replaced by
+    Text.Pandoc.Legacy.Definition without other code changes. This is done
+    with PatternSynonyms.
+
+    Some of the constructors of the types Meta, MetaValue, Block, Inline,
+    Format, and Citation required PatternSynonym handling. The Attr and
+    Target types had to be redefined, and certain functions had to be
+    rewritten to handle String or the old Attr and Target types in this
+    module. This module otherwise exports the definitions in
+    Text.Pandoc.Definition unchanged.
+
+    This is not a perfect drop-in replacement, since some imports like
+    Inline(..) will no longer work. This may also cause incomplete pattern
+    warnings when used, since the coverage checker does not seem to be
+    aware of PatternSynonyms.
+
+  * Add Text.Pandoc.Legacy.Builder (Christian Despres).
+
+    Like Text.Pandoc.Legacy.Definition, this modules provides a
+    compatibility interface while the transition to Text takes
+    place. Unlike that module, this module only requires redefining the
+    ToMetaValue and HasMeta classes and a few functions so that they use
+    the old types. No PatternSynonyms are required.
+
+[1.17.6.1]
 
   * Relax version bound for string-qq.
 

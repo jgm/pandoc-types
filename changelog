@@ -1,5 +1,58 @@
-[1.17.6.1]
+[1.20]
 
+  * Change all uses of String in type definitions to strict Text
+    (Christian Despres) [API change].  The MetaValue instances using String
+    have been kept, and parallel ones using Text were added.
+
+  * Remove the Arbitrary Text orphan instance (Christian Despres).
+    This instance should not have been in the Text.Pandoc.Arbitrary, since
+    it would have been exported with the rest of the instances in that
+    module. Instead, more shrink* functions were added to compensate for
+    the absence of this instance.
+
+  * Add Text.Pandoc.Legacy.Definition (Christian Despres).
+    To ease the transition to Text, this module provides an interface
+    compatible with the String one, so that any unqualified imports of
+    Text.Pandoc.Definition in other packages can be replaced by
+    Text.Pandoc.Legacy.Definition without other code changes. This is done
+    with PatternSynonyms.
+
+    Some of the constructors of the types Meta, MetaValue, Block, Inline,
+    Format, and Citation required PatternSynonym handling. The Attr and
+    Target types had to be redefined, and certain functions had to be
+    rewritten to handle String or the old Attr and Target types in this
+    module. This module otherwise exports the definitions in
+    Text.Pandoc.Definition unchanged.
+
+    This is not a perfect drop-in replacement, since some imports like
+    Inline(..) will no longer work. This may also cause incomplete pattern
+    warnings when used, since the coverage checker does not seem to be
+    aware of PatternSynonyms.
+
+  * Add Text.Pandoc.Legacy.Builder (Christian Despres).
+    Like Text.Pandoc.Legacy.Definition, this modules provides a
+    compatibility interface while the transition to Text takes
+    place. Unlike that module, this module only requires redefining the
+    ToMetaValue and HasMeta classes and a few functions so that they use
+    the old types. No PatternSynonyms are required.
+
+  * Change Semigroup/Monoid instance for Meta.
+    Previously `<>` was left-biased, so if meta1 and meta2 both
+    contained a field 'foo', the value from meta1 would be retained
+    in `meta1 <> meta2`, and the value from meta2 ignored.
+    This is counterintuitive and doesn't work well with pandoc;
+    for example, we want to be able to override a value in an
+    earlier `--metadata-file` with a later one on the command line.
+
+    It also makes the behavior of metadata more like other
+    things (such as reference links, where later definitions
+    take precedence over earlier ones).
+
+    Note that this change may break some current workflows,
+    if one is relying on metadata fields that occur later in
+    a document to be overridden by those occurring earlier.
+
+[1.17.6.1]
 
   * Relax version bound for string-qq.
 

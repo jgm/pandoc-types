@@ -5,10 +5,10 @@ module Text.Pandoc.Legacy.Definition
   , D.Meta
   , pattern Meta
   , unMeta
-  , D.MetaValue ( D.MetaList
-                , D.MetaBool
-                , D.MetaInlines
-                , D.MetaBlocks
+  , D.MetaValue ( MetaList
+                , MetaBool
+                , MetaInlines
+                , MetaBlocks
                 )
   , pattern MetaMap
   , pattern MetaString
@@ -18,33 +18,33 @@ module Text.Pandoc.Legacy.Definition
   , D.docTitle
   , D.docAuthors
   , D.docDate
-  , D.Block ( D.Plain
-            , D.Para
-            , D.LineBlock
-            , D.BlockQuote
-            , D.OrderedList
-            , D.BulletList
-            , D.DefinitionList
-            , D.HorizontalRule
-            , D.Table
-            , D.Null
+  , D.Block ( Plain
+            , Para
+            , LineBlock
+            , BlockQuote
+            , OrderedList
+            , BulletList
+            , DefinitionList
+            , HorizontalRule
+            , Table
+            , Null
             )
   , pattern CodeBlock
   , pattern RawBlock
   , pattern Header
   , pattern Div
-  , D.Inline ( D.Emph
-             , D.Strong
-             , D.Strikeout
-             , D.Superscript
-             , D.Subscript
-             , D.SmallCaps
-             , D.Quoted
-             , D.Cite
-             , D.Space
-             , D.SoftBreak
-             , D.LineBreak
-             , D.Note
+  , D.Inline ( Emph
+             , Strong
+             , Strikeout
+             , Superscript
+             , Subscript
+             , SmallCaps
+             , Quoted
+             , Cite
+             , Space
+             , SoftBreak
+             , LineBreak
+             , Note
              )
   , pattern Str
   , pattern Code
@@ -78,6 +78,37 @@ module Text.Pandoc.Legacy.Definition
   ) where
 
 import qualified Text.Pandoc.Definition as D
+import Text.Pandoc.Definition
+  ( MetaValue ( MetaList
+              , MetaBool
+              , MetaInlines
+              , MetaBlocks
+              )
+  , Block ( Plain
+          , Para
+          , LineBlock
+          , BlockQuote
+          , OrderedList
+          , BulletList
+          , DefinitionList
+          , HorizontalRule
+          , Table
+          , Null
+          )
+  , Inline ( Emph
+           , Strong
+           , Strikeout
+           , Superscript
+           , Subscript
+           , SmallCaps
+           , Quoted
+           , Cite
+           , Space
+           , SoftBreak
+           , LineBreak
+           , Note
+           )
+  )
 import qualified Data.Map as M
 import qualified Data.Text as T
 
@@ -104,6 +135,8 @@ pattern Meta {unMeta} <- D.Meta (toLegacyMap -> unMeta)
   where
     Meta = D.Meta . fromLegacyMap
 
+{-# COMPLETE Meta :: D.Meta #-}
+
 pattern MetaMap :: M.Map String D.MetaValue -> D.MetaValue
 pattern MetaMap x <- D.MetaMap (toLegacyMap -> x)
   where
@@ -113,6 +146,8 @@ pattern MetaString :: String -> D.MetaValue
 pattern MetaString x <- D.MetaString (T.unpack -> x)
   where
     MetaString = D.MetaString . T.pack
+
+{-# COMPLETE MetaList, MetaBool, MetaInlines, MetaBlocks, MetaMap, MetaString :: D.MetaValue #-}
 
 lookupMeta :: String -> D.Meta -> Maybe D.MetaValue
 lookupMeta = D.lookupMeta . T.pack
@@ -136,6 +171,10 @@ pattern Div :: Attr -> [D.Block] -> D.Block
 pattern Div a b <- D.Div (toLegacyAttr -> a) b
   where
     Div = D.Div . fromLegacyAttr
+
+{-# COMPLETE Plain, Para, LineBlock, BlockQuote, OrderedList,
+             BulletList, DefinitionList, HorizontalRule, Table,
+             Null, CodeBlock, RawBlock, Header, Div :: D.Block #-}
 
 pattern Str :: String -> D.Inline
 pattern Str s <- D.Str (T.unpack -> s)
@@ -172,10 +211,17 @@ pattern Span a i <- D.Span (toLegacyAttr -> a) i
   where
     Span = D.Span . fromLegacyAttr
 
+
+{-# COMPLETE Emph, Strong, Strikeout, Superscript, Subscript,
+             SmallCaps, Quoted, Cite, Space, SoftBreak, LineBreak,
+             Note, Str, Code, Math, RawInline, Link, Image, Span :: Inline #-}
+
 pattern Format :: String -> D.Format
 pattern Format x <- D.Format (T.unpack -> x)
   where
     Format x = D.Format $ T.pack x
+
+{-# COMPLETE Format :: D.Format #-}
 
 type Attr = (String, [String], [(String, String)])
 
@@ -206,3 +252,5 @@ pattern Citation
                                  citationHash
   where
     Citation = D.Citation . T.pack
+
+{-# COMPLETE Citation :: D.Citation #-}

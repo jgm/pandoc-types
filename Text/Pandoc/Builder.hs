@@ -307,7 +307,7 @@ setDate = setMeta "date"
 
 -- Inline list builders
 
--- | Convert a 'String' to 'Inlines', treating interword spaces as 'Space's
+-- | Convert a 'Text' to 'Inlines', treating interword spaces as 'Space's
 -- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
 text :: Text -> Inlines
 text = fromList . map conv . breakBySpaces

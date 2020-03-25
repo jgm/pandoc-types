@@ -66,6 +66,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , Caption(..)
                               , Alignment(..)
                               , ColWidth
+                              , ColSpec
                               , Row(..)
                               , RowHead
                               , RowBody
@@ -221,6 +222,9 @@ data Alignment = AlignLeft
 -- default width.
 type ColWidth = Maybe Double
 
+-- | The specification for a single table column.
+type ColSpec = (Alignment, Maybe Double)
+
 -- | A table row
 data Row = Row Attr RowHead RowBody
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
@@ -291,7 +295,7 @@ data Block
     -- | Table, with attributes, caption, optional short caption,
     -- column alignments and widths (required), table head, table
     -- body, and table foot
-    | Table Attr Caption [(Alignment, ColWidth)] TableHead TableBody TableFoot
+    | Table Attr Caption [ColSpec] TableHead TableBody TableFoot
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing

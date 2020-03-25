@@ -476,7 +476,7 @@ horizontalRule = singleton HorizontalRule
 -- | Table builder. Rows and headers will be padded or truncated to the size of
 -- @cellspecs@
 table :: Inlines               -- ^ Caption
-      -> [(Alignment, ColWidth)] -- ^ Column alignments and fractional widths
+      -> [ColSpec] -- ^ Column alignments and fractional widths
       -> [Blocks]              -- ^ Headers
       -> [[Blocks]]            -- ^ Rows
       -> Blocks

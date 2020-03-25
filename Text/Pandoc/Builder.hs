@@ -475,14 +475,18 @@ horizontalRule = singleton HorizontalRule
 -- | Table builder. Rows and headers will be padded or truncated to the size of
 -- @cellspecs@
 table :: Inlines               -- ^ Caption
-      -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
+      -> [(Alignment, ColWidth)] -- ^ Column alignments and fractional widths
       -> [Blocks]              -- ^ Headers
       -> [[Blocks]]            -- ^ Rows
       -> Blocks
-table caption cellspecs headers rows = singleton $
-  Table (toList caption) aligns widths (sanitise headers) (map sanitise rows)
-   where (aligns, widths) = unzip cellspecs
-         sanitise = map toList . pad mempty numcols
+table capt cellspecs headers rows = singleton $
+  Table nullAttr
+        (caption Nothing $ para capt)
+        cellspecs
+        [sanitise headers]
+        (map sanitise rows)
+        []
+   where sanitise = Row nullAttr [] . map (Cell nullAttr Nothing 1 1 . toList) . pad mempty numcols
          numcols = length cellspecs
          pad element upTo list = take upTo (list ++ repeat element)
 
@@ -492,10 +496,13 @@ simpleTable :: [Blocks]   -- ^ Headers
             -> Blocks
 simpleTable headers rows =
   table mempty (replicate numcols defaults) headers rows
-  where defaults = (AlignDefault, 0)
+  where defaults = (AlignDefault, Nothing)
         numcols  = case headers:rows of
                         [] -> 0
                         xs -> maximum (map length xs)
+
+caption :: Maybe Inlines -> Blocks -> Caption
+caption x = Caption (toList <$> x) . toList
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList

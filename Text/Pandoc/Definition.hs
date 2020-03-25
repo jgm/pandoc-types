@@ -57,14 +57,25 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , docDate
                               , Block(..)
                               , Inline(..)
-                              , Alignment(..)
                               , ListAttributes
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
                               , Format(..)
                               , Attr
                               , nullAttr
-                              , TableCell
+                              , Caption(..)
+                              , Alignment(..)
+                              , ColWidth
+                              , Row(..)
+                              , RowHead
+                              , RowBody
+                              , TableHead
+                              , TableBody
+                              , TableFoot
+                              , Cell(..)
+                              , emptyCell
+                              , RowSpan
+                              , ColSpan
                               , QuoteType(..)
                               , Target
                               , MathType(..)
@@ -162,12 +173,6 @@ docDate meta =
          Just (MetaBlocks [Para ils])  -> ils
          _                             -> []
 
--- | Alignment of a table column.
-data Alignment = AlignLeft
-               | AlignRight
-               | AlignCenter
-               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
 -- | List attributes.  The first element of the triple is the
 -- start number of the list.
 type ListAttributes = (Int, ListNumberStyle, ListNumberDelim)
@@ -193,9 +198,6 @@ type Attr = (Text, [Text], [(Text, Text)])
 nullAttr :: Attr
 nullAttr = ("",[],[])
 
--- | Table cells are list of Blocks
-type TableCell = [Block]
-
 -- | Formats for raw blocks
 newtype Format = Format Text
                deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
@@ -209,31 +211,91 @@ instance Eq Format where
 instance Ord Format where
   compare (Format x) (Format y) = compare (T.toCaseFold x) (T.toCaseFold y)
 
+-- | Alignment of a table column.
+data Alignment = AlignLeft
+               | AlignRight
+               | AlignCenter
+               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+-- | The relative width of a column. A @Nothing@ value represents the
+-- default width.
+type ColWidth = Maybe Double
+
+-- | A table row
+data Row = Row Attr RowHead RowBody
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+-- | The header section of a table row.
+type RowHead = [Cell]
+
+-- | The body of a table row.
+type RowBody = [Cell]
+
+-- | The head of a table.
+type TableHead = [Row]
+
+-- | The body of a table.
+type TableBody = [Row]
+
+-- | The foot of a table.
+type TableFoot = [Row]
+
+-- | The caption of a table, with an optional short caption for
+-- inclusion in a list of figures.
+data Caption = Caption (Maybe [Inline]) [Block]
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+-- | A table cell.
+data Cell = Cell Attr (Maybe Alignment) RowSpan ColSpan [Block]
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+-- | A 1×1 empty cell.
+emptyCell :: Cell
+emptyCell = Cell nullAttr Nothing 1 1 []
+
+-- | The number of positions in a row occupied by a cell; the width of
+-- a cell.
+type RowSpan = Int
+
+-- | The number of positions in a column occupied by a cell; the
+-- height of a cell.
+type ColSpan = Int
+
 -- | Block element.
 data Block
-    = Plain [Inline]        -- ^ Plain text, not a paragraph
-    | Para [Inline]         -- ^ Paragraph
-    | LineBlock [[Inline]]  -- ^ Multiple non-breaking lines
-    | CodeBlock Attr Text -- ^ Code block (literal) with attributes
-    | RawBlock Format Text -- ^ Raw block
-    | BlockQuote [Block]    -- ^ Block quote (list of blocks)
-    | OrderedList ListAttributes [[Block]] -- ^ Ordered list (attributes
-                            -- and a list of items, each a list of blocks)
-    | BulletList [[Block]]  -- ^ Bullet list (list of items, each
-                            -- a list of blocks)
-    | DefinitionList [([Inline],[[Block]])]  -- ^ Definition list
-                            -- Each list item is a pair consisting of a
-                            -- term (a list of inlines) and one or more
-                            -- definitions (each a list of blocks)
-    | Header Int Attr [Inline] -- ^ Header - level (integer) and text (inlines)
-    | HorizontalRule        -- ^ Horizontal rule
-    | Table [Inline] [Alignment] [Double] [TableCell] [[TableCell]]  -- ^ Table,
-                            -- with caption, column alignments (required),
-                            -- relative column widths (0 = default),
-                            -- column headers (each a list of blocks), and
-                            -- rows (each a list of lists of blocks)
-    | Div Attr [Block]      -- ^ Generic block container with attributes
-    | Null                  -- ^ Nothing
+    -- | Plain text, not a paragraph
+    = Plain [Inline]
+    -- | Paragraph
+    | Para [Inline]
+    -- | Multiple non-breaking lines
+    | LineBlock [[Inline]]
+    -- | Code block (literal) with attributes
+    | CodeBlock Attr Text
+    -- | Raw block
+    | RawBlock Format Text
+    -- | Block quote (list of blocks)
+    | BlockQuote [Block]
+    -- | Ordered list (attributes and a list of items, each a list of
+    -- blocks)
+    | OrderedList ListAttributes [[Block]]
+    -- | Bullet list (list of items, each a list of blocks)
+    | BulletList [[Block]]
+    -- | Definition list. Each list item is a pair consisting of a
+    -- term (a list of inlines) and one or more definitions (each a
+    -- list of blocks)
+    | DefinitionList [([Inline],[[Block]])]
+    -- | Header - level (integer) and text (inlines)
+    | Header Int Attr [Inline]
+    -- | Horizontal rule
+    | HorizontalRule
+    -- | Table, with attributes, caption, optional short caption,
+    -- column alignments and widths (required), table head, table
+    -- body, and table foot
+    | Table Attr Caption [(Alignment, ColWidth)] TableHead TableBody TableFoot
+    -- | Generic block container with attributes
+    | Div Attr [Block]
+    -- | Nothing
+    | Null
     deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 -- | Type of quotation marks to use in Quoted inline.
@@ -282,6 +344,8 @@ instance Ord Citation where
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+
+
 
 
 -- ToJSON/FromJSON instances. We do this by hand instead of deriving
@@ -450,6 +514,38 @@ instance ToJSON Alignment where
             AlignCenter  -> "AlignCenter"
             AlignDefault -> "AlignDefault"
 
+instance FromJSON Row where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "Row" -> do (attr, hdr, body) <- v .: "c"
+                  return $ Row attr hdr body
+      _     -> mempty
+  parseJSON _ = mempty
+instance ToJSON Row where
+  toJSON (Row attr hdr body) = tagged "Row" (attr, hdr, body)
+
+instance FromJSON Caption where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "Caption" -> do (mshort, body) <- v .: "c"
+                      return $ Caption mshort body
+      _     -> mempty
+  parseJSON _ = mempty
+instance ToJSON Caption where
+  toJSON (Caption mshort body) = tagged "Caption" (mshort, body)
+
+instance FromJSON Cell where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "Cell" -> do (attr, malign, rs, cs, body) <- v .: "c"
+                   return $ Cell attr malign rs cs body
+      _     -> mempty
+  parseJSON _ = mempty
+instance ToJSON Cell where
+  toJSON (Cell attr malign rs cs body) = tagged "Cell" (attr, malign, rs, cs, body)
 
 instance FromJSON Inline where
   parseJSON (Object v) = do
@@ -525,8 +621,8 @@ instance FromJSON Block where
       "Header"         -> do (n, attr, ils) <- v .: "c"
                              return $ Header n attr ils
       "HorizontalRule" -> return HorizontalRule
-      "Table"          -> do (cpt, align, wdths, hdr, rows) <- v .: "c"
-                             return $ Table cpt align wdths hdr rows
+      "Table"          -> do (attr, cpt, align, hdr, body, foot) <- v .: "c"
+                             return $ Table attr cpt align hdr body foot
       "Div"            -> do (attr, blks) <- v .: "c"
                              return $ Div attr blks
       "Null"           -> return Null
@@ -544,8 +640,8 @@ instance ToJSON Block where
   toJSON (DefinitionList defs) = tagged "DefinitionList" defs
   toJSON (Header n attr ils) = tagged "Header" (n, attr, ils)
   toJSON HorizontalRule = taggedNoContent "HorizontalRule"
-  toJSON (Table caption aligns widths cells rows) =
-    tagged "Table" (caption, aligns, widths, cells, rows)
+  toJSON (Table attr caption aligns hd body foot) =
+    tagged "Table" (attr, caption, aligns, hd, body, foot)
   toJSON (Div attr blks) = tagged "Div" (attr, blks)
   toJSON Null = taggedNoContent "Null"
 
@@ -579,6 +675,9 @@ instance NFData MetaValue
 instance NFData Meta
 instance NFData Citation
 instance NFData Alignment
+instance NFData Cell
+instance NFData Row
+instance NFData Caption
 instance NFData Inline
 instance NFData MathType
 instance NFData Format

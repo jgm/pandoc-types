@@ -244,6 +244,63 @@ instance Walkable [Block] MetaValue where
   query = queryMetaValue
 
 --
+-- Walk Row
+--
+instance Walkable Inline Row where
+  walkM = walkRowM
+  query = queryRow
+
+instance Walkable [Inline] Row where
+  walkM = walkRowM
+  query = queryRow
+
+instance Walkable Block Row where
+  walkM = walkRowM
+  query = queryRow
+
+instance Walkable [Block] Row where
+  walkM = walkRowM
+  query = queryRow
+
+--
+-- Walk Caption
+--
+instance Walkable Inline Caption where
+  walkM = walkCaptionM
+  query = queryCaption
+
+instance Walkable [Inline] Caption where
+  walkM = walkCaptionM
+  query = queryCaption
+
+instance Walkable Block Caption where
+  walkM = walkCaptionM
+  query = queryCaption
+
+instance Walkable [Block] Caption where
+  walkM = walkCaptionM
+  query = queryCaption
+
+--
+-- Walk Cell
+--
+instance Walkable Inline Cell where
+  walkM = walkCellM
+  query = queryCell
+
+instance Walkable [Inline] Cell where
+  walkM = walkCellM
+  query = queryCell
+
+instance Walkable Block Cell where
+  walkM = walkCellM
+  query = queryCell
+
+instance Walkable [Block] Cell where
+  walkM = walkCellM
+  query = queryCell
+
+--
 -- Walk Citation
 --
 instance Walkable Inline Citation where
@@ -321,8 +378,8 @@ queryInline f (Span _ xs)     = query f xs
 -- When walking a block with this function, only the contents of the traversed
 -- block element may change. The element itself, i.e. its constructor, its @'Attr'@,
 -- and its raw text value, will remain unchanged.
-walkBlockM :: (Walkable a [Block], Walkable a [Inline], Monad m,
-                Applicative m, Functor m)
+walkBlockM :: (Walkable a [Block], Walkable a [Inline], Walkable a Row,
+               Walkable a Caption, Monad m, Applicative m, Functor m)
            => (a -> m a) -> Block -> m Block
 walkBlockM f (Para xs)                = Para <$> walkM f xs
 walkBlockM f (Plain xs)               = Plain <$> walkM f xs
@@ -337,15 +394,17 @@ walkBlockM _ x@CodeBlock {}           = return x
 walkBlockM _ x@RawBlock {}            = return x
 walkBlockM _ HorizontalRule           = return HorizontalRule
 walkBlockM _ Null                     = return Null
-walkBlockM f (Table capt as ws hs rs) = do capt' <- walkM f capt
-                                           hs' <- walkM f hs
-                                           rs' <- walkM f rs
-                                           return $ Table capt' as ws hs' rs'
+walkBlockM f (Table attr capt as hs bs fs)
+  = do capt' <- walkM f capt
+       hs' <- walkM f hs
+       bs' <- walkM f bs
+       fs' <- walkM f fs
+       return $ Table attr capt' as hs' bs' fs'
 
 -- | Perform a query on elements nested below a @'Block'@ element by
 -- querying all directly nested lists of @Inline@s or @Block@s.
-queryBlock :: (Walkable a Citation, Walkable a [Block],
-                Walkable a [Inline], Monoid c)
+queryBlock :: (Walkable a Citation, Walkable a [Block], Walkable a Row,
+               Walkable a Caption, Walkable a [Inline], Monoid c)
            => (a -> c) -> Block -> c
 queryBlock f (Para xs)                = query f xs
 queryBlock f (Plain xs)               = query f xs
@@ -358,7 +417,11 @@ queryBlock f (BulletList cs)          = query f cs
 queryBlock f (DefinitionList xs)      = query f xs
 queryBlock f (Header _ _ xs)          = query f xs
 queryBlock _ HorizontalRule           = mempty
-queryBlock f (Table capt _ _ hs rs)   = query f capt <> query f hs <> query f rs
+queryBlock f (Table _ capt _ hs bs fs)
+  = query f capt <>
+    query f hs <>
+    query f bs <>
+    query f fs
 queryBlock f (Div _ bs)               = query f bs
 queryBlock _ Null                     = mempty
 
@@ -407,6 +470,42 @@ walkCitationM f (Citation id' pref suff mode notenum hash) =
 queryCitation :: (Walkable a [Inline], Monoid c)
               => (a -> c) -> Citation -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
+
+-- | Helper method to walk the elements nested below @'Row'@ nodes. The
+-- @'Attr'@ component is not changed by this operation.
+walkRowM :: (Walkable a Cell, Monad m)
+         => (a -> m a) -> Row -> m Row
+walkRowM f (Row attr hd bd) = do hd' <- walkM f hd
+                                 bd' <- walkM f bd
+                                 return $ Row attr hd' bd'
+
+-- | Query the elements below a 'Row' element.
+queryRow :: (Walkable a Cell, Monoid c)
+         => (a -> c) -> Row -> c
+queryRow f (Row _ hd bd) = query f hd <> query f bd
+
+-- | Helper method to walk the elements nested below 'Cell'
+-- nodes. Only the @'[Block]'@ cell content is changed by this
+-- operation.
+walkCellM :: (Walkable a [Block], Monad m)
+          => (a -> m a) -> Cell -> m Cell
+walkCellM f (Cell attr ma rs cs content) = Cell attr ma rs cs <$> walkM f content
+
+-- | Query the elements below a 'Cell' element.
+queryCell :: (Walkable a [Block], Monoid c)
+          => (a -> c) -> Cell -> c
+queryCell f (Cell _ _ _ _ content) = query f content
+
+-- | Helper method to walk the elements nested below 'Caption'
+-- nodes.
+walkCaptionM :: (Walkable a [Block], Walkable a [Inline], Monad m)
+          => (a -> m a) -> Caption -> m Caption
+walkCaptionM f (Caption mshort body) = Caption <$> walkM f mshort <*> walkM f body
+
+-- | Query the elements below a 'Cell' element.
+queryCaption :: (Walkable a [Block], Walkable a [Inline], Monoid c)
+          => (a -> c) -> Caption -> c
+queryCaption f (Caption mshort body) = query f mshort <> query f body
 
 -- | Helper method to walk the components of a Pandoc element.
 walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m,

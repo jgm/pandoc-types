@@ -76,12 +76,12 @@ headers in a document with regular paragraphs in ALL CAPS:
 'query' can be used, for example, to compile a list of URLs
 linked to in a document:
 
-> extractURL :: Inline -> [String]
+> extractURL :: Inline -> [Text]
 > extractURL (Link _ _ (u,_)) = [u]
 > extractURL (Image _ _ (u,_)) = [u]
 > extractURL _ = []
 >
-> extractURLs :: Pandoc -> [String]
+> extractURLs :: Pandoc -> [Text]
 > extractURLs = query extractURL
 -}
 
@@ -89,11 +89,17 @@ linked to in a document:
 module Text.Pandoc.Walk
   ( Walkable(..)
   , queryBlock
+  , queryCaption
+  , queryRow
+  , queryCell
   , queryCitation
   , queryInline
   , queryMetaValue
   , queryPandoc
   , walkBlockM
+  , walkCaptionM
+  , walkRowM
+  , walkCellM
   , walkCitationM
   , walkInlineM
   , walkMetaValueM
@@ -485,7 +491,7 @@ queryRow :: (Walkable a Cell, Monoid c)
 queryRow f (Row _ hd bd) = query f hd <> query f bd
 
 -- | Helper method to walk the elements nested below 'Cell'
--- nodes. Only the @'[Block]'@ cell content is changed by this
+-- nodes. Only the @['Block']@ cell content is changed by this
 -- operation.
 walkCellM :: (Walkable a [Block], Monad m)
           => (a -> m a) -> Cell -> m Cell

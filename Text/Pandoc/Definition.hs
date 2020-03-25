@@ -244,8 +244,7 @@ type TableBody = [Row]
 -- | The foot of a table.
 type TableFoot = [Row]
 
--- | The caption of a table, with an optional short caption for
--- inclusion in a list of figures.
+-- | The caption of a table, with an optional short caption.
 data Caption = Caption (Maybe [Inline]) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
@@ -257,12 +256,10 @@ data Cell = Cell Attr (Maybe Alignment) RowSpan ColSpan [Block]
 emptyCell :: Cell
 emptyCell = Cell nullAttr Nothing 1 1 []
 
--- | The number of positions in a row occupied by a cell; the width of
--- a cell.
+-- | The number of rows occupied by a cell; the height of a cell.
 type RowSpan = Int
 
--- | The number of positions in a column occupied by a cell; the
--- height of a cell.
+-- | The number of columns occupied by a cell; the width of a cell.
 type ColSpan = Int
 
 -- | Block element.

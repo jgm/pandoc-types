@@ -161,6 +161,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , horizontalRule
                            , table
                            , simpleTable
+                           , caption
                            , divWith
                            )
 where
@@ -481,7 +482,7 @@ table :: Inlines               -- ^ Caption
       -> Blocks
 table capt cellspecs headers rows = singleton $
   Table nullAttr
-        (caption Nothing $ para capt)
+        (caption Nothing $ if isNull capt then mempty else para capt)
         cellspecs
         [sanitise headers]
         (map sanitise rows)

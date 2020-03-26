@@ -248,7 +248,7 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
 
 arbRow :: Int -> Int -> Gen Row
 arbRow cs n = do
-  hs <- choose (0 :: Int, max cs 0)
+  hs <- choose (0 :: Int, cs)
   Row <$> arbAttr
       <*> vectorOf (cs - hs) (arbCell n)
       <*> vectorOf hs (arbCell n)
@@ -283,11 +283,8 @@ instance Arbitrary Citation where
 
 instance Arbitrary Row where
   arbitrary = do
-    hs <- choose (0 :: Int, 2)
-    bs <- choose (0 :: Int, 4)
-    Row <$> arbAttr
-        <*> vectorOf hs arbitrary
-        <*> vectorOf bs arbitrary
+    w <- choose (1 :: Int, 4)
+    resize 3 $ arbRow w 2
   shrink (Row attr rh rb)
     = [Row attr' rh rb | attr' <- shrinkAttr attr] ++
       [Row attr rh' rb | rh' <- shrink rh] ++

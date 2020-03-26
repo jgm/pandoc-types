@@ -347,8 +347,6 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 
-
-
 -- ToJSON/FromJSON instances. We do this by hand instead of deriving
 -- from generics, so we can have more control over the format.
 

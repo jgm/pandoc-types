@@ -191,6 +191,7 @@ instance Arbitrary Block where
   shrink HorizontalRule = []
   shrink (Table attr capt specs rhw thead tbody tfoot) =
     -- TODO: shrink number of columns
+    -- TODO: update the row head span?
     -- Shrink number of head rows and head row contents
     [Table attr capt specs rhw thead' tbody tfoot | thead' <- shrinkRows thead] ++
     -- Shrink number of body rows and body row contents

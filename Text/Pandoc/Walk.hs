@@ -400,12 +400,12 @@ walkBlockM _ x@CodeBlock {}           = return x
 walkBlockM _ x@RawBlock {}            = return x
 walkBlockM _ HorizontalRule           = return HorizontalRule
 walkBlockM _ Null                     = return Null
-walkBlockM f (Table attr capt as hs bs fs)
+walkBlockM f (Table attr capt as rhw hs bs fs)
   = do capt' <- walkM f capt
        hs' <- walkM f hs
        bs' <- walkM f bs
        fs' <- walkM f fs
-       return $ Table attr capt' as hs' bs' fs'
+       return $ Table attr capt' as rhw hs' bs' fs'
 
 -- | Perform a query on elements nested below a @'Block'@ element by
 -- querying all directly nested lists of @Inline@s or @Block@s.
@@ -423,7 +423,7 @@ queryBlock f (BulletList cs)          = query f cs
 queryBlock f (DefinitionList xs)      = query f xs
 queryBlock f (Header _ _ xs)          = query f xs
 queryBlock _ HorizontalRule           = mempty
-queryBlock f (Table _ capt _ hs bs fs)
+queryBlock f (Table _ capt _ _ hs bs fs)
   = query f capt <>
     query f hs <>
     query f bs <>
@@ -481,14 +481,12 @@ queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
 -- @'Attr'@ component is not changed by this operation.
 walkRowM :: (Walkable a Cell, Monad m)
          => (a -> m a) -> Row -> m Row
-walkRowM f (Row attr hd bd) = do hd' <- walkM f hd
-                                 bd' <- walkM f bd
-                                 return $ Row attr hd' bd'
+walkRowM f (Row attr bd) = Row attr <$> walkM f bd
 
 -- | Query the elements below a 'Row' element.
 queryRow :: (Walkable a Cell, Monoid c)
          => (a -> c) -> Row -> c
-queryRow f (Row _ hd bd) = query f hd <> query f bd
+queryRow f (Row _ bd) = query f bd
 
 -- | Helper method to walk the elements nested below 'Cell'
 -- nodes. Only the @['Block']@ cell content is changed by this

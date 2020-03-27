@@ -484,10 +484,11 @@ table capt cellspecs headers rows = singleton $
   Table nullAttr
         (caption Nothing $ if isNull capt then mempty else para capt)
         cellspecs
+        0
         [sanitise headers]
         (map sanitise rows)
         []
-   where sanitise = Row nullAttr [] . map (Cell nullAttr Nothing 1 1 . toList) . pad mempty numcols
+   where sanitise = Row nullAttr . map (Cell nullAttr Nothing 1 1 . toList) . pad mempty numcols
          numcols = length cellspecs
          pad element upTo list = take upTo (list ++ repeat element)
 

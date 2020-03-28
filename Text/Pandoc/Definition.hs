@@ -64,7 +64,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , Attr
                               , nullAttr
                               , Caption(..)
-                              , RowHeadSpan
+                              , RowHeadColumns
                               , Alignment(..)
                               , ColWidth
                               , ColSpec
@@ -213,7 +213,7 @@ instance Ord Format where
 
 -- | The width of the row head of each row of a table. The row body
 -- takes up the remaining table width.
-type RowHeadSpan = Int
+type RowHeadColumns = Int
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft
@@ -229,7 +229,8 @@ type ColWidth = Maybe Double
 type ColSpec = (Alignment, Maybe Double)
 
 -- | A table row. The header cells of the row are determined by the
--- value of the 'RowHeadSpan' of the table.
+-- value of the 'RowHeadColumns' of the table and the ultimate
+-- placement of the table cells on the grid.
 data Row = Row Attr [Cell]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
@@ -290,7 +291,7 @@ data Block
     -- | Table, with attributes, caption, optional short caption,
     -- column alignments and widths (required), table head, table
     -- body, and table foot
-    | Table Attr Caption [ColSpec] RowHeadSpan TableHead TableBody TableFoot
+    | Table Attr Caption [ColSpec] RowHeadColumns TableHead TableBody TableFoot
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing

@@ -269,6 +269,63 @@ instance Walkable [Block] Row where
   query = queryRow
 
 --
+-- Walk TableHead
+--
+instance Walkable Inline TableHead where
+  walkM = walkTableHeadM
+  query = queryTableHead
+
+instance Walkable [Inline] TableHead where
+  walkM = walkTableHeadM
+  query = queryTableHead
+
+instance Walkable Block TableHead where
+  walkM = walkTableHeadM
+  query = queryTableHead
+
+instance Walkable [Block] TableHead where
+  walkM = walkTableHeadM
+  query = queryTableHead
+
+--
+-- Walk TableBody
+--
+instance Walkable Inline TableBody where
+  walkM = walkTableBodyM
+  query = queryTableBody
+
+instance Walkable [Inline] TableBody where
+  walkM = walkTableBodyM
+  query = queryTableBody
+
+instance Walkable Block TableBody where
+  walkM = walkTableBodyM
+  query = queryTableBody
+
+instance Walkable [Block] TableBody where
+  walkM = walkTableBodyM
+  query = queryTableBody
+
+--
+-- Walk TableFoot
+--
+instance Walkable Inline TableFoot where
+  walkM = walkTableFootM
+  query = queryTableFoot
+
+instance Walkable [Inline] TableFoot where
+  walkM = walkTableFootM
+  query = queryTableFoot
+
+instance Walkable Block TableFoot where
+  walkM = walkTableFootM
+  query = queryTableFoot
+
+instance Walkable [Block] TableFoot where
+  walkM = walkTableFootM
+  query = queryTableFoot
+
+--
 -- Walk Caption
 --
 instance Walkable Inline Caption where
@@ -385,7 +442,8 @@ queryInline f (Span _ xs)     = query f xs
 -- block element may change. The element itself, i.e. its constructor, its @'Attr'@,
 -- and its raw text value, will remain unchanged.
 walkBlockM :: (Walkable a [Block], Walkable a [Inline], Walkable a Row,
-               Walkable a Caption, Monad m, Applicative m, Functor m)
+               Walkable a Caption, Walkable a TableHead, Walkable a TableBody,
+               Walkable a TableFoot, Monad m, Applicative m, Functor m)
            => (a -> m a) -> Block -> m Block
 walkBlockM f (Para xs)                = Para <$> walkM f xs
 walkBlockM f (Plain xs)               = Plain <$> walkM f xs
@@ -400,17 +458,18 @@ walkBlockM _ x@CodeBlock {}           = return x
 walkBlockM _ x@RawBlock {}            = return x
 walkBlockM _ HorizontalRule           = return HorizontalRule
 walkBlockM _ Null                     = return Null
-walkBlockM f (Table attr capt as rhw hs bs fs)
+walkBlockM f (Table attr capt as hs bs fs)
   = do capt' <- walkM f capt
        hs' <- walkM f hs
        bs' <- walkM f bs
        fs' <- walkM f fs
-       return $ Table attr capt' as rhw hs' bs' fs'
+       return $ Table attr capt' as hs' bs' fs'
 
 -- | Perform a query on elements nested below a @'Block'@ element by
 -- querying all directly nested lists of @Inline@s or @Block@s.
 queryBlock :: (Walkable a Citation, Walkable a [Block], Walkable a Row,
-               Walkable a Caption, Walkable a [Inline], Monoid c)
+               Walkable a Caption, Walkable a TableHead, Walkable a TableBody,
+               Walkable a TableFoot, Walkable a [Inline], Monoid c)
            => (a -> c) -> Block -> c
 queryBlock f (Para xs)                = query f xs
 queryBlock f (Plain xs)               = query f xs
@@ -423,7 +482,7 @@ queryBlock f (BulletList cs)          = query f cs
 queryBlock f (DefinitionList xs)      = query f xs
 queryBlock f (Header _ _ xs)          = query f xs
 queryBlock _ HorizontalRule           = mempty
-queryBlock f (Table _ capt _ _ hs bs fs)
+queryBlock f (Table _ capt _ hs bs fs)
   = query f capt <>
     query f hs <>
     query f bs <>
@@ -488,6 +547,40 @@ queryRow :: (Walkable a Cell, Monoid c)
          => (a -> c) -> Row -> c
 queryRow f (Row _ bd) = query f bd
 
+-- | Helper method to walk the elements nested below @'TableHead'@ nodes. The
+-- @'Attr'@ component is not changed by this operation.
+walkTableHeadM :: (Walkable a Row, Monad m)
+               => (a -> m a) -> TableHead -> m TableHead
+walkTableHeadM f (TableHead attr body) = TableHead attr <$> walkM f body
+
+-- | Query the elements below a 'TableHead' element.
+queryTableHead :: (Walkable a Row, Monoid c)
+               => (a -> c) -> TableHead -> c
+queryTableHead f (TableHead _ body) = query f body
+
+-- | Helper method to walk the elements nested below @'TableBody'@
+-- nodes. The @'Attr'@ and @'RowHeadColumns'@ components are not
+-- changed by this operation.
+walkTableBodyM :: (Walkable a Row, Monad m)
+               => (a -> m a) -> TableBody -> m TableBody
+walkTableBodyM f (TableBody attr rhc hd bd) = TableBody attr rhc <$> walkM f hd <*> walkM f bd
+
+-- | Query the elements below a 'TableBody' element.
+queryTableBody :: (Walkable a Row, Monoid c)
+               => (a -> c) -> TableBody -> c
+queryTableBody f (TableBody _ _ hd bd) = query f hd <> query f bd
+
+-- | Helper method to walk the elements nested below @'TableFoot'@ nodes. The
+-- @'Attr'@ component is not changed by this operation.
+walkTableFootM :: (Walkable a Row, Monad m)
+               => (a -> m a) -> TableFoot -> m TableFoot
+walkTableFootM f (TableFoot attr body) = TableFoot attr <$> walkM f body
+
+-- | Query the elements below a 'TableFoot' element.
+queryTableFoot :: (Walkable a Row, Monoid c)
+               => (a -> c) -> TableFoot -> c
+queryTableFoot f (TableFoot _ body) = query f body
+
 -- | Helper method to walk the elements nested below 'Cell'
 -- nodes. Only the @['Block']@ cell content is changed by this
 -- operation.
@@ -502,12 +595,12 @@ queryCell f (Cell _ _ _ _ content) = query f content
 
 -- | Helper method to walk the elements nested below 'Caption'
 -- nodes.
-walkCaptionM :: (Walkable a [Block], Walkable a [Inline], Monad m)
+walkCaptionM :: (Walkable a [Block], Walkable a [Inline], Monad m, Walkable a ShortCaption)
           => (a -> m a) -> Caption -> m Caption
 walkCaptionM f (Caption mshort body) = Caption <$> walkM f mshort <*> walkM f body
 
 -- | Query the elements below a 'Cell' element.
-queryCaption :: (Walkable a [Block], Walkable a [Inline], Monoid c)
+queryCaption :: (Walkable a [Block], Walkable a [Inline], Walkable a ShortCaption, Monoid c)
           => (a -> c) -> Caption -> c
 queryCaption f (Caption mshort body) = query f mshort <> query f body
 

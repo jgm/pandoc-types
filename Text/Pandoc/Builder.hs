@@ -482,13 +482,14 @@ table :: Inlines               -- ^ Caption
       -> Blocks
 table capt cellspecs headers rows = singleton $
   Table nullAttr
-        (caption Nothing $ if isNull capt then mempty else para capt)
+        (caption Nothing $ plain capt)
         cellspecs
-        0
-        [sanitise headers]
-        (map sanitise rows)
-        []
-   where sanitise = Row nullAttr . map (Cell nullAttr Nothing 1 1 . toList) . pad mempty numcols
+        (TableHead nullAttr [sanitise headers])
+        [TableBody nullAttr 0 [] $ map sanitise rows]
+        (TableFoot nullAttr [])
+   where sanitise = Row nullAttr .
+                    map (Cell nullAttr AlignDefault 1 1 . toList) .
+                    pad mempty numcols
          numcols = length cellspecs
          pad element upTo list = take upTo (list ++ repeat element)
 
@@ -498,13 +499,13 @@ simpleTable :: [Blocks]   -- ^ Headers
             -> Blocks
 simpleTable headers rows =
   table mempty (replicate numcols defaults) headers rows
-  where defaults = (AlignDefault, Nothing)
+  where defaults = (AlignDefault, ColWidthDefault)
         numcols  = case headers:rows of
                         [] -> 0
                         xs -> maximum (map length xs)
 
-caption :: Maybe Inlines -> Blocks -> Caption
-caption x = Caption (toList <$> x) . toList
+caption :: Maybe ShortCaption -> Blocks -> Caption
+caption x = Caption x . toList
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList

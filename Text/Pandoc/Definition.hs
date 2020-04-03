@@ -64,18 +64,19 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , Attr
                               , nullAttr
                               , Caption(..)
-                              , RowHeadColumns
+                              , ShortCaption
+                              , RowHeadColumns(..)
                               , Alignment(..)
-                              , ColWidth
+                              , ColWidth(..)
                               , ColSpec
                               , Row(..)
-                              , TableHead
-                              , TableBody
-                              , TableFoot
+                              , TableHead(..)
+                              , TableBody(..)
+                              , TableFoot(..)
                               , Cell(..)
                               , emptyCell
-                              , RowSpan
-                              , ColSpan
+                              , RowSpan(..)
+                              , ColSpan(..)
                               , QuoteType(..)
                               , Target
                               , MathType(..)
@@ -211,9 +212,11 @@ instance Eq Format where
 instance Ord Format where
   compare (Format x) (Format y) = compare (T.toCaseFold x) (T.toCaseFold y)
 
--- | The width of the row head of each row of a table. The row body
--- takes up the remaining table width.
-type RowHeadColumns = Int
+-- | The number of columns taken up by the row head of each row of a
+-- 'TableBody'. The row body takes up the remaining columns.
+newtype RowHeadColumns = RowHeadColumns
+  { getRowHeadColumns :: Int
+  } deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft
@@ -221,45 +224,54 @@ data Alignment = AlignLeft
                | AlignCenter
                | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
--- | The relative width of a column. A @Nothing@ value represents the
--- default width.
-type ColWidth = Maybe Double
+-- | The relative width of a column.
+data ColWidth = ColWidth Double
+              | ColWidthDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | The specification for a single table column.
-type ColSpec = (Alignment, Maybe Double)
+type ColSpec = (Alignment, ColWidth)
 
--- | A table row. The header cells of the row are determined by the
--- value of the 'RowHeadColumns' of the table and the ultimate
--- placement of the table cells on the grid.
+-- | A table row.
 data Row = Row Attr [Cell]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | The head of a table.
-type TableHead = [Row]
+data TableHead = TableHead Attr [Row]
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
--- | The body of a table.
-type TableBody = [Row]
+-- | A body of a table, with an intermediate head and the specified
+-- number of row header columns.
+data TableBody = TableBody Attr RowHeadColumns [Row] [Row]
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | The foot of a table.
-type TableFoot = [Row]
+data TableFoot = TableFoot Attr [Row]
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+-- | A short caption, for use in, for instance, lists of figures.
+type ShortCaption = [Inline]
 
 -- | The caption of a table, with an optional short caption.
-data Caption = Caption (Maybe [Inline]) [Block]
+data Caption = Caption (Maybe ShortCaption) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | A table cell.
-data Cell = Cell Attr (Maybe Alignment) RowSpan ColSpan [Block]
+data Cell = Cell Attr Alignment RowSpan ColSpan [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | A 1×1 empty cell.
 emptyCell :: Cell
-emptyCell = Cell nullAttr Nothing 1 1 []
+emptyCell = Cell nullAttr AlignDefault 1 1 []
 
 -- | The number of rows occupied by a cell; the height of a cell.
-type RowSpan = Int
+newtype RowSpan = RowSpan
+  { getRowSpan :: Int
+  } deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
 
 -- | The number of columns occupied by a cell; the width of a cell.
-type ColSpan = Int
+newtype ColSpan = ColSpan
+  { getColSpan :: Int
+  } deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
 
 -- | Block element.
 data Block
@@ -290,8 +302,8 @@ data Block
     | HorizontalRule
     -- | Table, with attributes, caption, optional short caption,
     -- column alignments and widths (required), table head, table
-    -- body, and table foot
-    | Table Attr Caption [ColSpec] RowHeadColumns TableHead TableBody TableFoot
+    -- bodies, and table foot
+    | Table Attr Caption [ColSpec] TableHead [TableBody] TableFoot
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing
@@ -512,6 +524,18 @@ instance ToJSON Alignment where
             AlignCenter  -> "AlignCenter"
             AlignDefault -> "AlignDefault"
 
+instance FromJSON ColWidth where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "ColWidth"        -> ColWidth <$> v .: "c"
+      "ColWidthDefault" -> return ColWidthDefault
+      _     -> mempty
+  parseJSON _ = mempty
+instance ToJSON ColWidth where
+  toJSON (ColWidth ils)  = tagged "ColWidth" ils
+  toJSON ColWidthDefault = taggedNoContent "ColWidthDefault"
+
 instance FromJSON Row where
   parseJSON (Object v) = do
     t <- v .: "t" :: Aeson.Parser Value
@@ -533,6 +557,69 @@ instance FromJSON Caption where
   parseJSON _ = mempty
 instance ToJSON Caption where
   toJSON (Caption mshort body) = tagged "Caption" (mshort, body)
+
+instance FromJSON RowSpan where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "RowSpan" -> RowSpan <$> v .: "c"
+      _         -> mempty
+  parseJSON _ = mempty
+instance ToJSON RowSpan where
+  toJSON (RowSpan h)  = tagged "RowSpan" h
+
+instance FromJSON ColSpan where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "ColSpan" -> ColSpan <$> v .: "c"
+      _         -> mempty
+  parseJSON _ = mempty
+instance ToJSON ColSpan where
+  toJSON (ColSpan w)  = tagged "ColSpan" w
+
+instance FromJSON RowHeadColumns where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "RowHeadColumns" -> RowHeadColumns <$> v .: "c"
+      _                -> mempty
+  parseJSON _ = mempty
+instance ToJSON RowHeadColumns where
+  toJSON (RowHeadColumns w)  = tagged "RowHeadColumns" w
+
+instance FromJSON TableHead where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "TableHead" -> do (attr, body) <- v .: "c"
+                        return $ TableHead attr body
+      _           -> mempty
+  parseJSON _ = mempty
+instance ToJSON TableHead where
+  toJSON (TableHead attr body) = tagged "TableHead" (attr, body)
+
+instance FromJSON TableBody where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "TableBody" -> do (attr, rhc, hd, body) <- v .: "c"
+                        return $ TableBody attr rhc hd body
+      _           -> mempty
+  parseJSON _ = mempty
+instance ToJSON TableBody where
+  toJSON (TableBody attr rhc hd body) = tagged "TableBody" (attr, rhc, hd, body)
+
+instance FromJSON TableFoot where
+  parseJSON (Object v) = do
+    t <- v .: "t" :: Aeson.Parser Value
+    case t of
+      "TableFoot" -> do (attr, body) <- v .: "c"
+                        return $ TableFoot attr body
+      _           -> mempty
+  parseJSON _ = mempty
+instance ToJSON TableFoot where
+  toJSON (TableFoot attr body) = tagged "TableFoot" (attr, body)
 
 instance FromJSON Cell where
   parseJSON (Object v) = do
@@ -619,8 +706,8 @@ instance FromJSON Block where
       "Header"         -> do (n, attr, ils) <- v .: "c"
                              return $ Header n attr ils
       "HorizontalRule" -> return HorizontalRule
-      "Table"          -> do (attr, cpt, align, rhw, hdr, body, foot) <- v .: "c"
-                             return $ Table attr cpt align rhw hdr body foot
+      "Table"          -> do (attr, cpt, align, hdr, body, foot) <- v .: "c"
+                             return $ Table attr cpt align hdr body foot
       "Div"            -> do (attr, blks) <- v .: "c"
                              return $ Div attr blks
       "Null"           -> return Null
@@ -638,8 +725,8 @@ instance ToJSON Block where
   toJSON (DefinitionList defs) = tagged "DefinitionList" defs
   toJSON (Header n attr ils) = tagged "Header" (n, attr, ils)
   toJSON HorizontalRule = taggedNoContent "HorizontalRule"
-  toJSON (Table attr caption aligns rhw hd body foot) =
-    tagged "Table" (attr, caption, aligns, rhw, hd, body, foot)
+  toJSON (Table attr caption aligns hd body foot) =
+    tagged "Table" (attr, caption, aligns, hd, body, foot)
   toJSON (Div attr blks) = tagged "Div" (attr, blks)
   toJSON Null = taggedNoContent "Null"
 
@@ -673,8 +760,13 @@ instance NFData MetaValue
 instance NFData Meta
 instance NFData Citation
 instance NFData Alignment
+instance NFData RowSpan
+instance NFData ColSpan
 instance NFData Cell
 instance NFData Row
+instance NFData TableHead
+instance NFData TableBody
+instance NFData TableFoot
 instance NFData Caption
 instance NFData Inline
 instance NFData MathType
@@ -683,6 +775,8 @@ instance NFData CitationMode
 instance NFData QuoteType
 instance NFData ListNumberDelim
 instance NFData ListNumberStyle
+instance NFData ColWidth
+instance NFData RowHeadColumns
 instance NFData Block
 instance NFData Pandoc
 

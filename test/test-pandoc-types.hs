@@ -330,19 +330,26 @@ t_table = ( Table
                    ,Str "table"
                    ,Space
                    ,Str "syntax."]])
-            [(AlignDefault,Nothing)
-            ,(AlignRight,Nothing)
-            ,(AlignLeft,Nothing)
-            ,(AlignCenter,Nothing)
-            ,(AlignDefault,Nothing)]
-            1 
-            [tRow 
+            [(AlignDefault,ColWidthDefault)
+            ,(AlignRight,ColWidthDefault)
+            ,(AlignLeft,ColWidthDefault)
+            ,(AlignCenter,ColWidthDefault)
+            ,(AlignDefault,ColWidthDefault)]
+            (TableHead ("idh", ["klsh"], [("k1h", "v1h"), ("k2h", "v2h")])
+             [tRow
               [tCell [Str "Head"]
               ,tCell [Str "Right"]
               ,tCell [Str "Left"]
               ,tCell [Str "Center"]
-              ,tCell [Str "Default"]]]
-            [tRow
+              ,tCell [Str "Default"]]])
+            [TableBody ("idb", ["klsb"], [("k1b", "v1b"), ("k2b", "v2b")]) 1
+             [tRow
+              [tCell [Str "ihead12"]
+              ,tCell [Str "i12"]
+              ,tCell [Str "i12"]
+              ,tCell [Str "i12"]
+              ,tCell [Str "i12"]]]
+             [tRow
               [tCell [Str "head12"]
               ,tCell' [Str "12"]
               ,tCell [Str "12"]
@@ -359,19 +366,19 @@ t_table = ( Table
               ,tCell [Str "1"]
               ,tCell [Str "1"]
               ,tCell [Str "1"]
-              ,tCell [Str "1"]]]
-            [tRow
+              ,tCell [Str "1"]]]]
+            (TableFoot ("idf", ["klsf"], [("k1f", "v1f"), ("k2f", "v2f")])
+             [tRow
               [tCell [Str "foot"]
               ,tCell [Str "footright"]
               ,tCell [Str "footleft"]
               ,tCell [Str "footcenter"]
-              ,tCell [Str "footdefault"]]]
-          ,
-            [s|{"t":"Table","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"Caption","c":[[{"t":"Str","c":"short"}],[{"t":"Para","c":[{"t":"Str","c":"Demonstration"},{"t":"Space"},{"t":"Str","c":"of"},{"t":"Space"},{"t":"Str","c":"simple"},{"t":"Space"},{"t":"Str","c":"table"},{"t":"Space"},{"t":"Str","c":"syntax."}]}]]},[[{"t":"AlignDefault"},null],[{"t":"AlignRight"},null],[{"t":"AlignLeft"},null],[{"t":"AlignCenter"},null],[{"t":"AlignDefault"},null]],1,[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Head"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Right"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Left"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Center"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Default"}]}]]}]]}],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]]},{"t":"Cell","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],null,1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],null,1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]}]]},{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]}]]},{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]}]]}],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"foot"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footright"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footleft"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footcenter"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footdefault"}]}]]}]]}]]}|]
+              ,tCell [Str "footdefault"]]])
+          ,[s|{"t":"Table","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"Caption","c":[[{"t":"Str","c":"short"}],[{"t":"Para","c":[{"t":"Str","c":"Demonstration"},{"t":"Space"},{"t":"Str","c":"of"},{"t":"Space"},{"t":"Str","c":"simple"},{"t":"Space"},{"t":"Str","c":"table"},{"t":"Space"},{"t":"Str","c":"syntax."}]}]]},[[{"t":"AlignDefault"},{"t":"ColWidthDefault"}],[{"t":"AlignRight"},{"t":"ColWidthDefault"}],[{"t":"AlignLeft"},{"t":"ColWidthDefault"}],[{"t":"AlignCenter"},{"t":"ColWidthDefault"}],[{"t":"AlignDefault"},{"t":"ColWidthDefault"}]],{"t":"TableHead","c":[["idh",["klsh"],[["k1h","v1h"],["k2h","v2h"]]],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Head"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Right"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Left"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Center"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Default"}]}]]}]]}]]},[{"t":"TableBody","c":[["idb",["klsb"],[["k1b","v1b"],["k2b","v2b"]]],{"t":"RowHeadColumns","c":1},[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"ihead12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]}]]}],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]]},{"t":"Cell","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]}]]},{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]}]]},{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"head1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]}]]}]]}],{"t":"TableFoot","c":[["idf",["klsf"],[["k1f","v1f"],["k2f","v2f"]]],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"foot"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footright"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footleft"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footcenter"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footdefault"}]}]]}]]}]]}]}|]
               )
   where
-    tCell i = Cell ("a", ["b"], [("c", "d"), ("e", "f")]) (Just AlignDefault) 1 1 [Plain i]
-    tCell' i = Cell ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) Nothing 1 1 [Plain i]
+    tCell i = Cell ("a", ["b"], [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
+    tCell' i = Cell ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) AlignDefault 1 1 [Plain i]
     tRow = Row ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
 
 t_div :: (Block, ByteString)
@@ -394,21 +401,23 @@ t_tableSan = testCase "table sanitisation" assertion
                                   [plain (text "foo"), plain (text "bar")]
                                   [[mempty]
                                   ,[]]
-                   tCell i = Cell nullAttr Nothing 1 1 [Plain [Str i]]
+                   tCell i = Cell nullAttr AlignDefault 1 1 [Plain [Str i]]
                    emptyRow = Row nullAttr $ replicate 2 emptyCell
                    expected = singleton (Table
-                                         nullAttr
-                                         (Caption Nothing [])
-                                         [(AlignDefault,Nothing)
-                                         ,(AlignDefault,Nothing)]
-                                         0
-                                         [Row
                                           nullAttr
-                                          [tCell "foo"
-                                          ,tCell "bar"]]
-                                         [emptyRow
-                                         ,emptyRow]
-                                         [])
+                                          (Caption Nothing [])
+                                          [(AlignDefault,ColWidthDefault)
+                                          ,(AlignDefault,ColWidthDefault)]
+                                          (TableHead nullAttr
+                                           [Row nullAttr
+                                            [tCell "foo"
+                                            ,tCell "bar"]])
+                                          [TableBody nullAttr 0
+                                           []
+                                           [emptyRow
+                                           ,emptyRow]]
+                                         (TableFoot nullAttr
+                                          []))
 
 tests :: [Test]
 tests =

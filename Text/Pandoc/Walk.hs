@@ -91,6 +91,9 @@ module Text.Pandoc.Walk
   , queryBlock
   , queryCaption
   , queryRow
+  , queryTableHead
+  , queryTableBody
+  , queryTableFoot
   , queryCell
   , queryCitation
   , queryInline
@@ -99,6 +102,9 @@ module Text.Pandoc.Walk
   , walkBlockM
   , walkCaptionM
   , walkRowM
+  , walkTableHeadM
+  , walkTableBodyM
+  , walkTableFootM
   , walkCellM
   , walkCitationM
   , walkInlineM

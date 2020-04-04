@@ -224,7 +224,8 @@ data Alignment = AlignLeft
                | AlignCenter
                | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
--- | The relative width of a column.
+-- | The width of a table column, as a fraction of the total table
+-- width.
 data ColWidth = ColWidth Double
               | ColWidthDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 

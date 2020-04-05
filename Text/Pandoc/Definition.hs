@@ -214,9 +214,8 @@ instance Ord Format where
 
 -- | The number of columns taken up by the row head of each row of a
 -- 'TableBody'. The row body takes up the remaining columns.
-newtype RowHeadColumns = RowHeadColumns
-  { getRowHeadColumns :: Int
-  } deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
+newtype RowHeadColumns = RowHeadColumns Int
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft
@@ -265,14 +264,12 @@ emptyCell :: Cell
 emptyCell = Cell nullAttr AlignDefault 1 1 []
 
 -- | The number of rows occupied by a cell; the height of a cell.
-newtype RowSpan = RowSpan
-  { getRowSpan :: Int
-  } deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
+newtype RowSpan = RowSpan Int
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
 
 -- | The number of columns occupied by a cell; the width of a cell.
-newtype ColSpan = ColSpan
-  { getColSpan :: Int
-  } deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
+newtype ColSpan = ColSpan Int
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
 
 -- | Block element.
 data Block

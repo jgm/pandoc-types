@@ -74,7 +74,6 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , TableBody(..)
                               , TableFoot(..)
                               , Cell(..)
-                              , emptyCell
                               , RowSpan(..)
                               , ColSpan(..)
                               , QuoteType(..)
@@ -258,10 +257,6 @@ data Caption = Caption (Maybe ShortCaption) [Block]
 -- | A table cell.
 data Cell = Cell Attr Alignment RowSpan ColSpan [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | A 1×1 empty cell.
-emptyCell :: Cell
-emptyCell = Cell nullAttr AlignDefault 1 1 []
 
 -- | The number of rows occupied by a cell; the height of a cell.
 newtype RowSpan = RowSpan Int

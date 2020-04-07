@@ -3,7 +3,9 @@
 import Text.Pandoc.Arbitrary ()
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
-import Text.Pandoc.Builder (singleton, plain, text, simpleTable)
+import Text.Pandoc.Builder (singleton, plain, text, simpleTable, table, emptyCell,
+                            normalizeTableHead, normalizeTableBody, normalizeTableFoot,
+                            emptyCaption)
 import Data.Generics
 import Data.List (tails)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
@@ -11,6 +13,7 @@ import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.Providers.HUnit (testCase)
+import Test.QuickCheck (forAll, choose, Property, Arbitrary, Testable)
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -419,6 +422,172 @@ t_tableSan = testCase "table sanitisation" assertion
                                          (TableFoot nullAttr
                                           []))
 
+withWidth :: Testable prop => (Int -> prop) -> Property
+withWidth = forAll $ choose (2 :: Int, 16)
+
+widthNormIsIdempotent :: (Arbitrary a, Show a, Eq a)
+                      => (Int -> a -> a) -> Property
+widthNormIsIdempotent f = withWidth $
+  \n a -> let a' = f n a in f n a' == a'
+
+p_tableNormHeadIdempotent :: Property
+p_tableNormHeadIdempotent = widthNormIsIdempotent normalizeTableHead
+
+p_tableNormBodyIdempotent :: Property
+p_tableNormBodyIdempotent = widthNormIsIdempotent normalizeTableBody
+
+p_tableNormFootIdempotent :: Property
+p_tableNormFootIdempotent = widthNormIsIdempotent normalizeTableFoot
+
+cellSubset :: Cell -> Cell -> Bool
+cellSubset (Cell attr1 align1 rs1 cs1 body1) (Cell attr2 align2 rs2 cs2 body2)
+  = and [ attr1 == attr2
+        , align1 == align2
+        , dimValid rs1 rs2
+        , dimValid cs1 cs2
+        , body1 == body2 ]
+  where
+    dimValid x y = (y < 1 && x == 1) || (x >= 1 && x <= y)
+
+-- True when the first list is an initial segment of the second,
+-- modulo cell subsetting and the appending of padding cells onto the
+-- second.
+cellsSubsetPad :: [Cell] -> [Cell] -> Bool
+cellsSubsetPad (x:xs) (y:ys) = cellSubset x y && cellsSubsetPad xs ys
+cellsSubsetPad xs _ = all isPadCell xs
+  where
+    isPadCell = (== emptyCell)
+
+-- Only valid for the TableHead and TableFoot. See also
+-- p_tableNormBodyIsSubset.
+rowSubset :: Row -> Row -> Bool
+rowSubset (Row a1 x1) (Row a2 x2) = a1 == a2 && cellsSubsetPad x1 x2
+
+normIsSubset :: (Arbitrary a, Show a, Eq a)
+             => (Int -> a -> a)
+             -> (a -> [Row])
+             -> Property
+normIsSubset f proj = withWidth $
+  \n a -> let a' = f n a in proj a' `rowsSubset` proj a
+  where
+    rowsSubset (x:xs) (y:ys) = rowSubset x y && rowsSubset xs ys
+    rowsSubset []     _      = True
+    rowsSubset (_:_)  []     = False
+
+p_tableNormHeadIsSubset :: Property
+p_tableNormHeadIsSubset = normIsSubset normalizeTableHead thproj
+  where
+    thproj (TableHead _ r) = r
+
+-- Checking that each row is a subset of its unnormalized version is a
+-- little onerous in the TableBody (because of the row head/row body
+-- distinction), so we settle for testing it only for the first row.
+p_tableNormBodyIsSubset :: Property
+p_tableNormBodyIsSubset = withWidth $
+  \n tb -> checkBody n (normalizeTableBody n tb) tb
+  where
+    cellLength (Cell _ _ _ (ColSpan w) _) = w
+    cellLengths = sum . map cellLength
+    gatherLen n = gatherLen' n 0
+    gatherLen' n count (c:cs) | count < n
+      = let (beg, end) = gatherLen' n (count + cellLength c) cs
+        in (c : beg, end)
+    gatherLen' _ _ cs = ([], cs)
+    -- Gather as much of the head as we can from the new and old rows,
+    -- then make sure the dimensions line up and the subsetting is
+    -- correct.
+    checkRow n rhc (Row _ r') (Row _ r)
+      = let (rhead', rbody') = gatherLen rhc r'
+            (rhead, rbody) = gatherLen rhc r
+        in and [ cellLengths rhead' == rhc
+               , rhc + cellLengths rbody' == n
+               , cellsSubsetPad rhead' rhead
+               , cellsSubsetPad rbody' rbody ]
+    checkRows n rhc (r':_) (r:_) = checkRow n rhc r' r
+    checkRows _ _   []     []    = True
+    checkRows _ _   _      _     = False
+    checkBody n (TableBody _ (RowHeadColumns rhc) th' tb') (TableBody _ _ th tb)
+      = checkRows n rhc th' th && checkRows n rhc tb' tb
+
+p_tableNormFootIsSubset :: Property
+p_tableNormFootIsSubset = normIsSubset normalizeTableFoot tfproj
+  where
+    tfproj (TableFoot _ r) = r
+
+-- True when the first row in a section (table head, table foot,
+-- intermediate header, body of table body) has the correct
+-- width. Only with the first row is it easy to check.
+firstRowCorrectWidth :: Int -> [Row] -> [Row] -> Bool
+firstRowCorrectWidth n (Row _ cs:_) (_:_) = n == sum (map cellLength cs)
+  where cellLength (Cell _ _ _ (ColSpan w) _) = w
+firstRowCorrectWidth _ []           []    = True
+firstRowCorrectWidth _ _            _     = False
+
+testRowCorrectWidth :: (Arbitrary a, Show a, Eq a)
+                     => (Int -> a -> a)
+                     -> (a -> [Row])
+                     -> Property
+testRowCorrectWidth f proj = withWidth $
+  \n a -> let a' = f n a in firstRowCorrectWidth n (proj a') (proj a)
+
+p_tableNormHeadRowWidth :: Property
+p_tableNormHeadRowWidth = testRowCorrectWidth normalizeTableHead thproj
+  where
+    thproj (TableHead _ r) = r
+
+p_tableNormBodyRowWidth :: Property
+p_tableNormBodyRowWidth = withWidth $
+  \n tb -> compBody n tb $ normalizeTableBody n tb
+  where
+    compBody n (TableBody _ _ th tb) (TableBody _ _ th' tb')
+      = firstRowCorrectWidth n th' th && firstRowCorrectWidth n tb' tb
+
+p_tableNormFootRowWidth :: Property
+p_tableNormFootRowWidth = testRowCorrectWidth normalizeTableFoot tfproj
+  where
+    tfproj (TableFoot _ r) = r
+
+t_tableNormExample :: Test
+t_tableNormExample = testCase "table normalization example" assertion
+  where
+    assertion = assertEqual "normalization error" expected generated
+    cl a h w = Cell (a, [], []) AlignDefault h w []
+    rws = map $ Row nullAttr
+    th = TableHead nullAttr . rws
+    tb n x y = TableBody nullAttr n (rws x) (rws y)
+    tf = TableFoot nullAttr . rws
+    initialHeads =
+      [[cl "a" 1 1,cl "b" 3 2]
+      ,[cl "c" 2 2           ,cl "d" 1 1]
+      ]
+    finalHeads =
+      [[cl "a" 1 1, cl "b" 2 2]
+      ,[cl "c" 1 1]
+      ]
+    initialTB = tb 1
+      [[cl "e" 4 3,cl "f" 4 3]
+      ,[]
+      ,[emptyCell]
+      ]
+      [[]
+      ,[cl "g" (-7) 0]]
+    finalTB = tb 1
+      [[cl "e" 3 1,cl "f" 3 2]
+      ,[]
+      ,[]
+      ]
+      [[emptyCell,emptyCell,emptyCell]
+      ,[cl "g" 1 1,emptyCell,emptyCell]
+      ]
+    spec = replicate 3 (AlignDefault, ColWidthDefault)
+    expected = singleton $ Table nullAttr
+                                 emptyCaption
+                                 spec
+                                 (th finalHeads)
+                                 [finalTB]
+                                 (tf finalHeads)
+    generated = table emptyCaption spec (th initialHeads) [initialTB] (tf initialHeads)
+
 tests :: [Test]
 tests =
   [ testGroup "Walk"
@@ -494,8 +663,20 @@ tests =
         , testEncodeDecode "Null" t_null
         ]
       ]
-    ],
-    t_tableSan
+    ]
+  , testGroup "Table normalization"
+    [ testProperty "p_tableNormHeadIdempotent" p_tableNormHeadIdempotent
+    , testProperty "p_tableNormBodyIdempotent" p_tableNormBodyIdempotent
+    , testProperty "p_tableNormFootIdempotent" p_tableNormFootIdempotent
+    , testProperty "p_tableNormHeadIsSubset" p_tableNormHeadIsSubset
+    , testProperty "p_tableNormBodyIsSubset" p_tableNormBodyIsSubset
+    , testProperty "p_tableNormFootIsSubset" p_tableNormFootIsSubset
+    , testProperty "p_tableNormHeadRowWidth" p_tableNormHeadRowWidth
+    , testProperty "p_tableNormBodyRowWidth" p_tableNormBodyRowWidth
+    , testProperty "p_tableNormFootRowWidth" p_tableNormFootRowWidth
+    ]
+  , t_tableSan
+  , t_tableNormExample
   ]
 
 

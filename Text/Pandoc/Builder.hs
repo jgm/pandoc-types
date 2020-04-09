@@ -546,7 +546,10 @@ simpleTable headers rows =
                         [] -> 0
                         xs -> maximum (map length xs)
         toRow = Row nullAttr . map simpleCell
-        th = TableHead nullAttr [toRow headers]
+        toHeaderRow l
+          | null l    = []
+          | otherwise = [toRow headers]
+        th = TableHead nullAttr (toHeaderRow headers)
         tb = TableBody nullAttr 0 [] $ map toRow rows
         tf = TableFoot nullAttr []
 

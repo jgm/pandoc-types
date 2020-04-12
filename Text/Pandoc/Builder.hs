@@ -121,6 +121,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , text
                            , str
                            , emph
+                           , underline
                            , strong
                            , strikeout
                            , superscript
@@ -228,6 +229,7 @@ instance Semigroup Inlines where
                           (SoftBreak, Space) -> xs' |> SoftBreak
                           (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
                           (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
+                          (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
                           (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
                           (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
                           (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
@@ -346,6 +348,9 @@ str = singleton . Str
 
 emph :: Inlines -> Inlines
 emph = singleton . Emph . toList
+
+underline :: Inlines -> Inlines
+underline = singleton . Underline . toList
 
 strong :: Inlines -> Inlines
 strong = singleton . Strong . toList

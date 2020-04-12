@@ -173,6 +173,11 @@ t_emph = ( Emph [Str "Hello"]
          , [s|{"t":"Emph","c":[{"t":"Str","c":"Hello"}]}|]
          )
 
+t_underline :: (Inline, ByteString)
+t_underline = ( Underline [Str "Hello"]
+         , [s|{"t":"Underline","c":[{"t":"Str","c":"Hello"}]}|]
+         )
+
 t_strong :: (Inline, ByteString)
 t_strong = ( Strong [Str "Hello"]
            , [s|{"t":"Strong","c":[{"t":"Str","c":"Hello"}]}|]
@@ -630,6 +635,7 @@ tests =
       , testGroup "Inline"
         [ testEncodeDecode "Str" t_str
         , testEncodeDecode "Emph" t_emph
+        , testEncodeDecode "Underline" t_underline
         , testEncodeDecode "Strong" t_strong
         , testEncodeDecode "Strikeout" t_strikeout
         , testEncodeDecode "Superscript" t_superscript

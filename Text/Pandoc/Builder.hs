@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable,
     GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
-    DeriveTraversable, OverloadedStrings #-}
+    DeriveTraversable, OverloadedStrings, PatternGuards #-}
 {-
 Copyright (C) 2010-2019 John MacFarlane
 
@@ -159,9 +159,23 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , header
                            , headerWith
                            , horizontalRule
+                           , cell
+                           , simpleCell
+                           , emptyCell
+                           , cellWith
                            , table
                            , simpleTable
+                           , tableWith
+                           , caption
+                           , simpleCaption
+                           , emptyCaption
                            , divWith
+                           -- * Table processing
+                           , normalizeTableHead
+                           , normalizeTableBody
+                           , normalizeTableFoot
+                           , placeRowSection
+                           , clipRows
                            )
 where
 import Text.Pandoc.Definition
@@ -472,30 +486,245 @@ headerWith attr level = singleton . Header level attr . toList
 horizontalRule :: Blocks
 horizontalRule = singleton HorizontalRule
 
--- | Table builder. Rows and headers will be padded or truncated to the size of
--- @cellspecs@
-table :: Inlines               -- ^ Caption
-      -> [(Alignment, Double)] -- ^ Column alignments and fractional widths
-      -> [Blocks]              -- ^ Headers
-      -> [[Blocks]]            -- ^ Rows
+cellWith :: Attr
+         -> Alignment
+         -> RowSpan
+         -> ColSpan
+         -> Blocks
+         -> Cell
+cellWith at a r c = Cell at a r c . toList
+
+cell :: Alignment
+     -> RowSpan
+     -> ColSpan
+     -> Blocks
+     -> Cell
+cell = cellWith nullAttr
+
+-- | A 1×1 cell with default alignment.
+simpleCell :: Blocks -> Cell
+simpleCell = cell AlignDefault 1 1
+
+-- | A 1×1 empty cell.
+emptyCell :: Cell
+emptyCell = simpleCell mempty
+
+-- | Table builder. Performs normalization with 'normalizeTableHead',
+-- 'normalizeTableBody', and 'normalizeTableFoot'. The number of table
+-- columns is given by the length of @['ColSpec']@.
+table :: Caption
+      -> [ColSpec]
+      -> TableHead
+      -> [TableBody]
+      -> TableFoot
       -> Blocks
-table caption cellspecs headers rows = singleton $
-  Table (toList caption) aligns widths (sanitise headers) (map sanitise rows)
-   where (aligns, widths) = unzip cellspecs
-         sanitise = map toList . pad mempty numcols
-         numcols = length cellspecs
-         pad element upTo list = take upTo (list ++ repeat element)
+table = tableWith nullAttr
+
+tableWith :: Attr
+          -> Caption
+          -> [ColSpec]
+          -> TableHead
+          -> [TableBody]
+          -> TableFoot
+          -> Blocks
+tableWith attr capt specs th tbs tf
+  = singleton $ Table attr capt specs th' tbs' tf'
+  where
+    twidth = length specs
+    th'  = normalizeTableHead twidth th
+    tbs' = map (normalizeTableBody twidth) tbs
+    tf'  = normalizeTableFoot twidth tf
 
 -- | A simple table without a caption.
 simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
 simpleTable headers rows =
-  table mempty (replicate numcols defaults) headers rows
-  where defaults = (AlignDefault, 0)
+  table emptyCaption (replicate numcols defaults) th [tb] tf
+  where defaults = (AlignDefault, ColWidthDefault)
         numcols  = case headers:rows of
                         [] -> 0
                         xs -> maximum (map length xs)
+        toRow = Row nullAttr . map simpleCell
+        toHeaderRow l
+          | null l    = []
+          | otherwise = [toRow headers]
+        th = TableHead nullAttr (toHeaderRow headers)
+        tb = TableBody nullAttr 0 [] $ map toRow rows
+        tf = TableFoot nullAttr []
+
+caption :: Maybe ShortCaption -> Blocks -> Caption
+caption x = Caption x . toList
+
+simpleCaption :: Blocks -> Caption
+simpleCaption = caption Nothing
+
+emptyCaption :: Caption
+emptyCaption = simpleCaption mempty
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList
+
+-- | Normalize the 'TableHead' with 'clipRows' and 'placeRowSection'
+-- so that when placed on a grid with the given width and a height
+-- equal to the number of rows in the initial 'TableHead', there will
+-- be no empty spaces or overlapping cells, and the cells will not
+-- protrude beyond the grid.
+normalizeTableHead :: Int -> TableHead -> TableHead
+normalizeTableHead twidth (TableHead attr rows)
+  = TableHead attr $ normalizeHeaderSection twidth rows
+
+-- | Normalize the intermediate head and body section of a
+-- 'TableBody', as in 'normalizeTableHead', but additionally ensure
+-- that row head cells do not go beyond the row head.
+normalizeTableBody :: Int -> TableBody -> TableBody
+normalizeTableBody twidth (TableBody attr rhc th tb)
+  = TableBody attr rhc' (normBody th) (normBody tb)
+  where
+    rhc' = max 0 $ min (RowHeadColumns twidth) rhc
+    normBody = normalizeBodySection twidth rhc'
+
+-- | Normalize the 'TableFoot', as in 'normalizeTableHead'.
+normalizeTableFoot :: Int -> TableFoot -> TableFoot
+normalizeTableFoot twidth (TableFoot attr rows)
+  = TableFoot attr $ normalizeHeaderSection twidth rows
+
+normalizeHeaderSection :: Int -- ^ The desired width of the table
+                       -> [Row]
+                       -> [Row]
+normalizeHeaderSection twidth rows
+  = normalizeRows' (replicate twidth 1) $ clipRows rows
+  where
+    normalizeRows' oldHang (Row attr cells:rs)
+      = let (newHang, cells', _) = placeRowSection oldHang $ cells <> repeat emptyCell
+            rs' = normalizeRows' newHang rs
+        in Row attr cells' : rs'
+    normalizeRows' _ [] = []
+
+normalizeBodySection :: Int -- ^ The desired width of the table
+                     -> RowHeadColumns -- ^ The width of the row head,
+                                       -- between 0 and the table
+                                       -- width
+                     -> [Row]
+                     -> [Row]
+normalizeBodySection twidth (RowHeadColumns rhc) rows
+  = normalizeRows' (replicate rhc 1) (replicate rbc 1) $ clipRows rows
+  where
+    rbc = twidth - rhc
+
+    normalizeRows' headHang bodyHang (Row attr cells:rs)
+      = let (headHang', rowHead, cells') = placeRowSection headHang $ cells <> repeat emptyCell
+            (bodyHang', rowBody, _)      = placeRowSection bodyHang cells'
+            rs' = normalizeRows' headHang' bodyHang' rs
+        in Row attr (rowHead <> rowBody) : rs'
+    normalizeRows' _ _ [] = []
+
+-- | Normalize the given list of cells so that they fit on a single
+-- grid row. The 'RowSpan' values of the cells are assumed to be valid
+-- (clamped to lie between 1 and the remaining grid height). The cells
+-- in the list are also assumed to be able to fill the entire grid
+-- row. These conditions can be met by appending @repeat 'emptyCell'@
+-- to the @['Cell']@ list and using 'clipRows' on the entire table
+-- section beforehand.
+--
+-- Normalization follows the principle that cells are placed on a grid
+-- row in order, each at the first available grid position from the
+-- left, having their 'ColSpan' reduced if they would overlap with a
+-- previous cell, stopping once the row is filled. Only the dimensions
+-- of cells are changed, and only of those cells that fit on the row.
+--
+-- Possible overlap is detected using the given @['RowSpan']@, which
+-- is the "overhang" of the previous grid row, a list of the heights
+-- of cells that descend through the previous row, reckoned
+-- /only from the previous row/.
+-- Its length should be the width (number of columns) of the current
+-- grid row.
+--
+-- For example, the numbers in the following headerless grid table
+-- represent the overhang at each grid position for that table:
+--
+-- @
+--     1   1   1   1
+--   +---+---+---+---+
+--   | 1 | 2   2 | 3 |
+--   +---+       +   +
+--   | 1 | 1   1 | 2 |
+--   +---+---+---+   +
+--   | 1   1 | 1 | 1 |
+--   +---+---+---+---+
+-- @
+--
+-- In any table, the row before the first has an overhang of
+-- @replicate tableWidth 1@, since there are no cells to descend into
+-- the table from there.  The overhang of the first row in the example
+-- is @[1, 2, 2, 3]@.
+--
+-- So if after 'clipRows' the unnormalized second row of that example
+-- table were
+--
+-- > r = [("a", 1, 2),("b", 2, 3)] -- the cells displayed as (label, RowSpan, ColSpan) only
+--
+-- a correct invocation of 'placeRowSection' to normalize it would be
+--
+-- >>> placeRowSection [1, 2, 2, 3] $ r ++ repeat emptyCell
+-- ([1, 1, 1, 2], [("a", 1, 1)], [("b", 2, 3)] ++ repeat emptyCell) -- wouldn't stop printing, of course
+--
+-- and if the third row were only @[("c", 1, 2)]@, then the expression
+-- would be
+--
+-- >>> placeRowSection [1, 1, 1, 2] $ [("c", 1, 2)] ++ repeat emptyCell
+-- ([1, 1, 1, 1], [("c", 1, 2), emptyCell], repeat emptyCell)
+placeRowSection :: [RowSpan] -- ^ The overhang of the previous grid
+                             -- row
+                -> [Cell]    -- ^ The cells to lay on the grid row
+                -> ([RowSpan], [Cell], [Cell]) -- ^ The overhang of
+                                               -- the current grid
+                                               -- row, the normalized
+                                               -- cells that fit on
+                                               -- the current row, and
+                                               -- the remaining
+                                               -- unmodified cells
+placeRowSection oldHang cellStream
+  -- If the grid has overhang at our position, try to re-lay in
+  -- the next position.
+  | o:os <- oldHang
+  , o > 1 = let (newHang, newCell, cellStream') = placeRowSection os cellStream
+            in (o - 1 : newHang, newCell, cellStream')
+  -- Otherwise if there is any available width, place the cell and
+  -- continue.
+  | c:cellStream' <- cellStream
+  , (h, w) <- getDim c
+  , w' <- max 1 w
+  , (n, oldHang') <- dropAtMostWhile (== 1) (getColSpan w') oldHang
+  , n > 0
+  = let w'' = min (ColSpan n) w'
+        c' = setW w'' c
+        (newHang, newCell, remainCell) = placeRowSection oldHang' cellStream'
+    in (replicate (getColSpan w'') h <> newHang, c' : newCell, remainCell)
+  -- Otherwise there is no room in the section, or not enough cells
+  -- were given.
+  | otherwise = ([], [], cellStream)
+  where
+    getColSpan (ColSpan w) = w
+    getDim (Cell _ _ h w _) = (h, w)
+    setW w (Cell a ma h _ b) = Cell a ma h w b
+
+    dropAtMostWhile :: (a -> Bool) -> Int -> [a] -> (Int, [a])
+    dropAtMostWhile p n = go 0
+      where
+        go acc (l:ls) | p l && acc < n = go (acc+1) ls
+        go acc l = (acc, l)
+
+-- | Ensure that the height of each cell in a table section lies
+-- between 1 and the distance from its row to the end of the
+-- section. So if there were four rows in the input list, the cells in
+-- the second row would have their height clamped between 1 and 3.
+clipRows :: [Row] -> [Row]
+clipRows rows
+  = let totalHeight = RowSpan $ length rows
+    in map clipRowH $ zip [totalHeight, totalHeight - 1..1] rows
+  where
+    getH (Cell _ _ h _ _) = h
+    setH h (Cell a ma _ w body) = Cell a ma h w body
+    clipH low high c = let h = getH c in setH (min high $ max low h) c
+    clipRowH (high, Row attr cells) = Row attr $ map (clipH 1 high) cells

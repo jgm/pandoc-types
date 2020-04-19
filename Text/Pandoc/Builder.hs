@@ -722,9 +722,9 @@ placeRowSection oldHang cellStream
 clipRows :: [Row] -> [Row]
 clipRows rows
   = let totalHeight = RowSpan $ length rows
-    in map clipRowH $ zip [totalHeight, totalHeight - 1..1] rows
+    in zipWith clipRowH [totalHeight, totalHeight - 1..1] rows
   where
     getH (Cell _ _ h _ _) = h
     setH h (Cell a ma _ w body) = Cell a ma h w body
     clipH low high c = let h = getH c in setH (min high $ max low h) c
-    clipRowH (high, Row attr cells) = Row attr $ map (clipH 1 high) cells
+    clipRowH high (Row attr cells) = Row attr $ map (clipH 1 high) cells

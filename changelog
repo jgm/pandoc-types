@@ -1,3 +1,41 @@
+[1.21]
+
+  * Add Underline constructor (#68, Vaibhav Sagar).
+
+  * Improve table types to allow col, rowspans and more (#65, Christian
+    Despres).  The additions include modification of the Block type, some
+    newtypes related to tables, and changes to the table builders.  The table
+    builder is now aware of the new Table constructor, and normalizes the
+    input table appropriately, so that when laid onto a grid the resulting
+    table has no empty spaces, overlapping cells, or cells that extend beyond
+    their section boundary.
+
+    Three properties of normalization are checked:
+
+    - Normalization is idempotent.
+    - Each row of a normalized table is an initial segment of the
+      corresponding row in the unnormalized table, modulo changed cell
+      dimensions, dropped cells, and padding with empty cells. This is only
+      checked for the first row of the TableBody, however, due to row head
+      difficulties.
+    - The sum of the cell lengths in the first row of every
+      normalized table section is always equal to the total table width.
+
+    `simpleTable` has been changed so that a null header list becomes a
+    TableHead with a null body, not a TableHead with a single empty row.
+
+  * Bump QuickCheck upper bound.
+
+  * Change lower bound for QuickCheck to 2.10 (needed for `liftShrink2`).
+
+  * Small code quality improvements (Joseph C. Sible, #69).
+
+  * Allow aeson 1.5 (#72, Felix Yan).
+
+  * Fixed documentation typo (Merlin Göttlinger).
+
+  * Add COMPLETE pragmas to the pattern definitions (Christian Despres).
+
 [1.20]
 
   * Change all uses of String in type definitions to strict Text

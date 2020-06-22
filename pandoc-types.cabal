@@ -1,5 +1,6 @@
+cabal-version:       2.0
 Name:                pandoc-types
-Version:             1.21
+version:             1.21
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent
@@ -31,7 +32,6 @@ Bug-Reports:         https://github.com/jgm/pandoc-types/issues
 Copyright:           (c) 2006-2019 John MacFarlane
 Category:            Text
 Build-type:          Simple
-Cabal-version:       >=1.8
 Tested-With:         GHC == 7.10.3, GHC == 8.0.1, GHC == 8.2.2, GHC == 8.4.2,
                      GHC == 8.6.5
 Extra-Source-Files:  changelog

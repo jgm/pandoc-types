@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import Criterion.Main (bench, defaultMain, nf)
-import Text.Pandoc.Definition (Pandoc, Inline (Str))
 import Text.Pandoc.Walk (walk)
 import Text.Pandoc.Builder
 import qualified Data.Text as T

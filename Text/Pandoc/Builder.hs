@@ -547,9 +547,7 @@ simpleTable :: [Blocks]   -- ^ Headers
 simpleTable headers rows =
   table emptyCaption (replicate numcols defaults) th [tb] tf
   where defaults = (AlignDefault, ColWidthDefault)
-        numcols  = case headers:rows of
-                        [] -> 0
-                        xs -> maximum (map length xs)
+        numcols  = maximum (map length (headers:rows))
         toRow = Row nullAttr . map simpleCell
         toHeaderRow l
           | null l    = []

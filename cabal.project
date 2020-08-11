@@ -1,0 +1,2 @@
+packages: pandoc-types.cabal
+tests: True

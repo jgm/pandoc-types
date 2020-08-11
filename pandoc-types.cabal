@@ -1,4 +1,4 @@
-cabal-version:       2.0
+cabal-version:       2.2
 Name:                pandoc-types
 version:             1.21
 Synopsis:            Types for representing a structured document
@@ -24,7 +24,7 @@ Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      and deserializing a @Pandoc@ structure to and from JSON.
 
 Homepage:            https://pandoc.org/
-License:             BSD3
+License:             BSD-3-Clause
 License-file:        LICENSE
 Author:              John MacFarlane
 Maintainer:          jgm@berkeley.edu
@@ -40,6 +40,7 @@ Source-repository    head
   location:          git://github.com/jgm/pandoc-types.git
 
 Library
+  hs-source-dirs:    src
   Exposed-modules:   Text.Pandoc.Definition
                      Text.Pandoc.Generic
                      Text.Pandoc.Walk

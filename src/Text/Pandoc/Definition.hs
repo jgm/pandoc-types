@@ -214,7 +214,7 @@ instance Ord Format where
 -- | The number of columns taken up by the row head of each row of a
 -- 'TableBody'. The row body takes up the remaining columns.
 newtype RowHeadColumns = RowHeadColumns Int
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
 
 -- | Alignment of a table column.
 data Alignment = AlignLeft
@@ -261,11 +261,11 @@ data Cell = Cell Attr Alignment RowSpan ColSpan [Block]
 
 -- | The number of rows occupied by a cell; the height of a cell.
 newtype RowSpan = RowSpan Int
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
 
 -- | The number of columns occupied by a cell; the width of a cell.
 newtype ColSpan = ColSpan Int
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum)
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
 
 -- | Block element.
 data Block
@@ -531,101 +531,23 @@ instance ToJSON ColWidth where
   toJSON (ColWidth ils)  = tagged "ColWidth" ils
   toJSON ColWidthDefault = taggedNoContent "ColWidthDefault"
 
-instance FromJSON Row where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "Row" -> do (attr, body) <- v .: "c"
-                  return $ Row attr body
-      _     -> mempty
-  parseJSON _ = mempty
-instance ToJSON Row where
-  toJSON (Row attr body) = tagged "Row" (attr, body)
+instance FromJSON Row
+instance ToJSON Row
 
-instance FromJSON Caption where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "Caption" -> do (mshort, body) <- v .: "c"
-                      return $ Caption mshort body
-      _     -> mempty
-  parseJSON _ = mempty
-instance ToJSON Caption where
-  toJSON (Caption mshort body) = tagged "Caption" (mshort, body)
+instance FromJSON Caption
+instance ToJSON Caption
 
-instance FromJSON RowSpan where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "RowSpan" -> RowSpan <$> v .: "c"
-      _         -> mempty
-  parseJSON _ = mempty
-instance ToJSON RowSpan where
-  toJSON (RowSpan h)  = tagged "RowSpan" h
+instance FromJSON TableHead
+instance ToJSON TableHead
 
-instance FromJSON ColSpan where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "ColSpan" -> ColSpan <$> v .: "c"
-      _         -> mempty
-  parseJSON _ = mempty
-instance ToJSON ColSpan where
-  toJSON (ColSpan w)  = tagged "ColSpan" w
+instance FromJSON TableBody
+instance ToJSON TableBody
 
-instance FromJSON RowHeadColumns where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "RowHeadColumns" -> RowHeadColumns <$> v .: "c"
-      _                -> mempty
-  parseJSON _ = mempty
-instance ToJSON RowHeadColumns where
-  toJSON (RowHeadColumns w)  = tagged "RowHeadColumns" w
+instance FromJSON TableFoot
+instance ToJSON TableFoot
 
-instance FromJSON TableHead where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "TableHead" -> do (attr, body) <- v .: "c"
-                        return $ TableHead attr body
-      _           -> mempty
-  parseJSON _ = mempty
-instance ToJSON TableHead where
-  toJSON (TableHead attr body) = tagged "TableHead" (attr, body)
-
-instance FromJSON TableBody where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "TableBody" -> do (attr, rhc, hd, body) <- v .: "c"
-                        return $ TableBody attr rhc hd body
-      _           -> mempty
-  parseJSON _ = mempty
-instance ToJSON TableBody where
-  toJSON (TableBody attr rhc hd body) = tagged "TableBody" (attr, rhc, hd, body)
-
-instance FromJSON TableFoot where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "TableFoot" -> do (attr, body) <- v .: "c"
-                        return $ TableFoot attr body
-      _           -> mempty
-  parseJSON _ = mempty
-instance ToJSON TableFoot where
-  toJSON (TableFoot attr body) = tagged "TableFoot" (attr, body)
-
-instance FromJSON Cell where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "Cell" -> do (attr, malign, rs, cs, body) <- v .: "c"
-                   return $ Cell attr malign rs cs body
-      _     -> mempty
-  parseJSON _ = mempty
-instance ToJSON Cell where
-  toJSON (Cell attr malign rs cs body) = tagged "Cell" (attr, malign, rs, cs, body)
+instance FromJSON Cell
+instance ToJSON Cell
 
 instance FromJSON Inline where
   parseJSON (Object v) = do

@@ -110,7 +110,7 @@ instance Monoid Pandoc where
 
 -- | Metadata for the document:  title, authors, date.
 newtype Meta = Meta { unMeta :: M.Map Text MetaValue }
-               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, ToJSON, FromJSON)
 
 instance Semigroup Meta where
   (Meta m1) <> (Meta m2) = Meta (M.union m2 m1)
@@ -382,11 +382,6 @@ instance ToJSON MetaValue where
   toJSON (MetaInlines ils) = tagged "MetaInlines" ils
   toJSON (MetaBlocks blks) = tagged "MetaBlocks" blks
 
-instance FromJSON Meta where
-  parseJSON j = Meta <$> parseJSON j
-instance ToJSON Meta where
-  toJSON meta = toJSON $ unMeta meta
-
 instance FromJSON CitationMode where
   parseJSON (Object v) = do
     t <- v .: "t" :: Aeson.Parser Value
@@ -403,32 +398,8 @@ instance ToJSON CitationMode where
             SuppressAuthor -> "SuppressAuthor"
             NormalCitation -> "NormalCitation"
 
-
-instance FromJSON Citation where
-  parseJSON (Object v) = do
-    citationId'      <- v .: "citationId"
-    citationPrefix'  <- v .: "citationPrefix"
-    citationSuffix'  <- v .: "citationSuffix"
-    citationMode'    <- v .: "citationMode"
-    citationNoteNum' <- v .: "citationNoteNum"
-    citationHash'    <- v .: "citationHash"
-    return Citation { citationId = citationId'
-                    , citationPrefix = citationPrefix'
-                    , citationSuffix = citationSuffix'
-                    , citationMode = citationMode'
-                    , citationNoteNum = citationNoteNum'
-                    , citationHash = citationHash'
-                    }
-  parseJSON _ = mempty
-instance ToJSON Citation where
-  toJSON cit =
-    object [ "citationId"      .= citationId cit
-           , "citationPrefix"  .= citationPrefix cit
-           , "citationSuffix"  .= citationSuffix cit
-           , "citationMode"    .= citationMode cit
-           , "citationNoteNum" .= citationNoteNum cit
-           , "citationHash"    .= citationHash cit
-           ]
+instance FromJSON Citation
+instance ToJSON Citation
 
 instance FromJSON QuoteType where
   parseJSON (Object v) = do

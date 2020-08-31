@@ -106,6 +106,11 @@ testEncodeDecode msg pair = testGroup msg [ testCase "Encoding" $ testEncode pai
                                           , testCase "Decoding" $ testDecode pair
                                           ]
 
+t_meta :: (Meta, ByteString)
+t_meta = ( Meta $ M.fromList [("foo", MetaBool True)]
+         , [s|{"foo":{"t":"MetaBool","c":true}}|]
+         )
+
 t_metamap :: (MetaValue, ByteString)
 t_metamap = ( MetaMap $
               M.fromList [("foo", MetaBool True)]
@@ -323,6 +328,48 @@ t_header :: (Block, ByteString)
 t_header = ( Header 2 ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Head"]
            , [s|{"t":"Header","c":[2,["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Head"}]]}|]
            )
+
+t_row :: (Row, ByteString)
+t_row = (Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+         [Cell ("", [], []) AlignRight 2 3 [Para [Str "bar"]]]
+        ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["",[],[]],{"t":"AlignRight"},2,3,[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]]]|])
+
+t_caption :: (Caption, ByteString)
+t_caption = (Caption (Just [Str "foo"]) [Para [Str "bar"]]
+            ,[s|[[{"t":"Str","c":"foo"}],[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]|])
+
+t_tablehead :: (TableHead, ByteString)
+t_tablehead = (TableHead ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
+              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+
+t_tablebody :: (TableBody, ByteString)
+t_tablebody = (TableBody ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) 3
+               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
+               [Row ("id'",["kls'"],[("k1", "v1"), ("k2", "v2")]) []]
+              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],3,[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]],[[["id'",["kls'"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+
+t_tablefoot :: (TableFoot, ByteString)
+t_tablefoot = (TableFoot ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
+              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+
+t_cell :: (Cell, ByteString)
+t_cell = (Cell ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) AlignLeft 1 1
+          [Para [Str "bar"]]
+         ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignLeft"},1,1,[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]|])
+
+t_rowheadcolumns :: (RowHeadColumns, ByteString)
+t_rowheadcolumns = (1
+                   ,[s|1|])
+
+t_rowspan :: (RowSpan, ByteString)
+t_rowspan = (1
+            ,[s|1|])
+
+t_colspan :: (ColSpan, ByteString)
+t_colspan = (1
+            ,[s|1|])
 
 t_table :: (Block, ByteString)
 t_table = ( Table
@@ -613,7 +660,8 @@ tests =
       ]
     , testGroup "JSON encoding/decoding"
       [ testGroup "Meta"
-        [ testEncodeDecode "MetaMap" t_metamap
+        [ testEncodeDecode "Meta" t_meta
+        , testEncodeDecode "MetaMap" t_metamap
         , testEncodeDecode "MetaList" t_metalist
         , testEncodeDecode "MetaBool" t_metabool
         , testEncodeDecode "MetaString" t_metastring
@@ -670,6 +718,17 @@ tests =
         , testEncodeDecode "Div" t_div
         , testEncodeDecode "Null" t_null
         ]
+      , testGroup "Table"
+        [ testEncodeDecode "Row" t_row
+        , testEncodeDecode "Caption" t_caption
+        , testEncodeDecode "TableHead" t_tablehead
+        , testEncodeDecode "TableBody" t_tablebody
+        , testEncodeDecode "TableFoot" t_tablefoot
+        , testEncodeDecode "Cell" t_cell
+        , testEncodeDecode "RowHeadColumns" t_rowheadcolumns
+        , testEncodeDecode "RowSpan" t_rowspan
+        , testEncodeDecode "ColSpan" t_colspan
+        ]
       ]
     ]
   , testGroup "Table normalization"
@@ -690,3 +749,4 @@ tests =
 
 main :: IO ()
 main = defaultMain tests
+

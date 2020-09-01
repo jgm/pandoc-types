@@ -238,8 +238,9 @@ data Row = Row Attr [Cell]
 data TableHead = TableHead Attr [Row]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
--- | A body of a table, with an intermediate head and the specified
--- number of row header columns.
+-- | A body of a table, with an intermediate head, intermediate body,
+-- and the specified number of row header columns in the intermediate
+-- body.
 data TableBody = TableBody Attr RowHeadColumns [Row] [Row]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 

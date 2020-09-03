@@ -579,13 +579,16 @@ normalizeTableHead twidth (TableHead attr rows)
 
 -- | Normalize the intermediate head and body section of a
 -- 'TableBody', as in 'normalizeTableHead', but additionally ensure
--- that row head cells do not go beyond the row head.
+-- that row head cells do not go beyond the row head inside the
+-- intermediate body.
 normalizeTableBody :: Int -> TableBody -> TableBody
 normalizeTableBody twidth (TableBody attr rhc th tb)
-  = TableBody attr rhc' (normBody th) (normBody tb)
+  = TableBody attr
+              rhc'
+              (normalizeHeaderSection twidth th)
+              (normalizeBodySection twidth rhc' tb)
   where
     rhc' = max 0 $ min (RowHeadColumns twidth) rhc
-    normBody = normalizeBodySection twidth rhc'
 
 -- | Normalize the 'TableFoot', as in 'normalizeTableHead'.
 normalizeTableFoot :: Int -> TableFoot -> TableFoot

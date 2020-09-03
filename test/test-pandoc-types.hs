@@ -468,16 +468,18 @@ cellsSubsetPad xs _ = all isPadCell xs
 rowSubset :: Row -> Row -> Bool
 rowSubset (Row a1 x1) (Row a2 x2) = a1 == a2 && cellsSubsetPad x1 x2
 
+-- The remarks in rowSubset apply.
+rowsSubset :: [Row] -> [Row] -> Bool
+rowsSubset (x:xs) (y:ys) = rowSubset x y && rowsSubset xs ys
+rowsSubset []     _      = True
+rowsSubset (_:_)  []     = False
+
 normIsSubset :: (Arbitrary a, Show a, Eq a)
              => (Int -> a -> a)
              -> (a -> [Row])
              -> Property
 normIsSubset f proj = withWidth $
   \n a -> let a' = f n a in proj a' `rowsSubset` proj a
-  where
-    rowsSubset (x:xs) (y:ys) = rowSubset x y && rowsSubset xs ys
-    rowsSubset []     _      = True
-    rowsSubset (_:_)  []     = False
 
 p_tableNormHeadIsSubset :: Property
 p_tableNormHeadIsSubset = normIsSubset normalizeTableHead thproj
@@ -486,7 +488,9 @@ p_tableNormHeadIsSubset = normIsSubset normalizeTableHead thproj
 
 -- Checking that each row is a subset of its unnormalized version is a
 -- little onerous in the TableBody (because of the row head/row body
--- distinction), so we settle for testing it only for the first row.
+-- distinction), so we settle for testing it only for the first row of
+-- the intermediate body. The intermediate head is still checked
+-- fully.
 p_tableNormBodyIsSubset :: Property
 p_tableNormBodyIsSubset = withWidth $
   \n tb -> checkBody n (normalizeTableBody n tb) tb
@@ -512,7 +516,7 @@ p_tableNormBodyIsSubset = withWidth $
     checkRows _ _   []     []    = True
     checkRows _ _   _      _     = False
     checkBody n (TableBody _ (RowHeadColumns rhc) th' tb') (TableBody _ _ th tb)
-      = checkRows n rhc th' th && checkRows n rhc tb' tb
+      = rowsSubset th' th && checkRows n rhc tb' tb
 
 p_tableNormFootIsSubset :: Property
 p_tableNormFootIsSubset = normIsSubset normalizeTableFoot tfproj
@@ -570,20 +574,18 @@ t_tableNormExample = testCase "table normalization example" assertion
       ,[cl "c" 1 1]
       ]
     initialTB = tb 1
-      [[cl "e" 4 3,cl "f" 4 3]
+      [[]
+      ,[cl "g" (-7) 0,cl "h" 4 1]]
+      [[cl "e" 4 3   ,cl "f" 4 3]
       ,[]
       ,[emptyCell]
       ]
-      [[]
-      ,[cl "g" (-7) 0]]
     finalTB = tb 1
+      [[emptyCell,emptyCell,emptyCell]
+      ,[cl "g" 1 1,cl "h" 1 1,emptyCell]]
       [[cl "e" 3 1,cl "f" 3 2]
       ,[]
-      ,[]
-      ]
-      [[emptyCell,emptyCell,emptyCell]
-      ,[cl "g" 1 1,emptyCell,emptyCell]
-      ]
+      ,[]]
     spec = replicate 3 (AlignDefault, ColWidthDefault)
     expected = singleton $ Table nullAttr
                                  emptyCaption

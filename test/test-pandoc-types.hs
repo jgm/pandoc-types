@@ -6,8 +6,10 @@ import Text.Pandoc.Walk
 import Text.Pandoc.Builder (singleton, plain, text, simpleTable, table, emptyCell,
                             normalizeTableHead, normalizeTableBody, normalizeTableFoot,
                             emptyCaption)
+import qualified Text.Pandoc.Format as F
 import Data.Generics
 import Data.List (tails)
+import qualified Data.List as List
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
@@ -642,6 +644,31 @@ t_tableNormExample = testCase "table normalization example" assertion
                                  (tf finalHeads)
     generated = table emptyCaption spec (th initialHeads) [initialTB] (tf initialHeads)
 
+-- There are only 66 formats at the moment, so we can test properties
+-- against every example.
+allFormats :: [F.Format]
+allFormats = [minBound..maxBound]
+
+testExamples :: Show a => String -> (a -> Bool) -> [a] -> Assertion
+testExamples label prop l = case List.find (not . prop) l of
+  Just x -> assertFailure $ label ++ " fails with counterexample: " ++ show x
+  Nothing -> return ()
+
+-- Matching is reflexive
+p_matchRefl :: Assertion
+p_matchRefl = testExamples "match reflexivity" prop allFormats
+  where
+    prop x = x `F.matches` x
+
+-- Matching is transitive
+p_matchTrans :: Assertion
+p_matchTrans = testExamples "match transitivity" prop cube
+  where
+    prop (x, y, z)
+      | x `F.matches` y && y `F.matches` z = x `F.matches` z
+      | otherwise = True
+    cube = (,,) <$> allFormats <*> allFormats <*> allFormats
+
 tests :: [Test]
 tests =
   [ testGroup "Walk"
@@ -744,6 +771,10 @@ tests =
     ]
   , t_tableSan
   , t_tableNormExample
+  , testGroup "Formats"
+    [ testCase "p_matchRefl" p_matchRefl
+    , testCase "p_matchTrans" p_matchTrans
+    ]
   ]
 
 

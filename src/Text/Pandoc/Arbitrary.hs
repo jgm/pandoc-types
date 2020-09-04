@@ -6,10 +6,12 @@ where
 import Test.QuickCheck
 import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad (forM)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Pandoc.Definition
 import Text.Pandoc.Builder
+import qualified Text.Pandoc.Format as F
 
 realString :: Gen Text
 realString = fmap T.pack $ resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
@@ -398,3 +400,10 @@ instance Arbitrary ListNumberDelim where
                    2 -> return OneParen
                    3 -> return TwoParens
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
+
+instance Arbitrary F.Format where
+        arbitrary = arbitraryBoundedEnum
+
+instance Arbitrary F.Formats where
+        arbitrary = F.exactly <$> arbitrary
+        shrink (F.Formats s) = F.exactly <$> shrink (Set.toList s)

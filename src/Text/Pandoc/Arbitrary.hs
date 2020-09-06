@@ -401,9 +401,16 @@ instance Arbitrary ListNumberDelim where
                    3 -> return TwoParens
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
 
-instance Arbitrary F.Format where
+instance Arbitrary F.KnownFormat where
         arbitrary = arbitraryBoundedEnum
+
+instance Arbitrary F.Format where
+        arbitrary = frequency $ [(80, F.KnownFormat <$> arbitrary)
+                                ,(20, F.CustomFormat . T.pack <$> arbitrary)]
+        shrink F.KnownFormat{}    = []
+        shrink (F.CustomFormat t) = F.CustomFormat <$> shrinkText t
 
 instance Arbitrary F.Formats where
         arbitrary = F.exactly <$> arbitrary
-        shrink (F.Formats s) = F.exactly <$> shrink (Set.toList s)
+        shrink (F.OneOfFormats s) = F.exactly <$> shrink (Set.toList s)
+        shrink (F.NoneOfFormats s) = F.exactlyNone <$> shrink (Set.toList s)

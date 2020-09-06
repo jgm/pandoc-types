@@ -705,6 +705,16 @@ p_nothingNeutral p = p == (p `F.or` F.nothing) && p == (F.nothing `F.or` p)
 p_orAssoc :: F.Formats -> F.Formats -> F.Formats -> Bool
 p_orAssoc x y z = (x `F.or` (y `F.or` z)) == ((x `F.or` y) `F.or` z)
 
+-- and x y matches a format iff and x and and y both match the format
+p_andLawful :: F.Formats -> F.Formats -> F.Format -> Bool
+p_andLawful p q f = (F.matches f p && F.matches f q) == F.matches f (p `F.and` q)
+
+-- like p_andLawful, but checks against every known format
+p_knownAndLawful :: F.Formats -> F.Formats -> Bool
+p_knownAndLawful p q = isNothing $ List.find counter allKnownFormats
+  where
+    counter x = not $ p_andLawful p q x
+
 tests :: [Test]
 tests =
   [ testGroup "Walk"
@@ -816,6 +826,8 @@ tests =
     , testProperty "p_customIrrelevant" p_customIrrelevant
     , testProperty "p_nothingNeutral" p_nothingNeutral
     , testProperty "p_orAssoc" p_orAssoc
+    , testProperty "p_andLawful" p_andLawful
+    , testProperty "p_knownAndLawful" p_knownAndLawful
     ]
   ]
 

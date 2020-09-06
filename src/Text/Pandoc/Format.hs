@@ -19,9 +19,12 @@ imported qualified.
 -}
 
 module Text.Pandoc.Format
-  ( -- * The 'Format' type
+  ( -- * The 'Format' types
     Format(..)
   , castsTo
+  , ReaderFormat(..)
+  , KnownWriterFormat(..)
+  , WriterFormat(..)
 
   -- * 'Formats' patterns
   -- $formats
@@ -61,31 +64,31 @@ import           Prelude                 hiding ( not
                                                 , and
                                                 )
 
--- | An enumeration of the formats that Pandoc can recognize in some
--- way. The formats are listed with the string that will specify them
--- in input, output, or as the attribute of a
+-- | An enumeration of the formats that Pandoc can recognize in a
 -- 'Text.Pandoc.Definition.RawBlock' or
--- 'Text.Pandoc.Definition.RawInline' (when applicable).
+-- 'Text.Pandoc.Definition.RawInline', together with the string that
+-- specifies them in a raw attribute. These will be included in the
+-- `Writer`-prefixed versions in 'KnownWriterFormat', if they
+-- exist. Inclusions can happen at other times, which are discussed in
+-- [the manual](https://pandoc.org/MANUAL.html#generic-raw-attribute).
+--
+-- The "sub-format" relationships also apply, so a 'TeX' raw element
+-- will be included in any 'ConTeXt', 'LaTeX', or 'Beamer' output. See
+-- 'castsTo' and related functions for details.
 data Format
   = AsciiDoc -- ^ asciidoc
-  | AsciiDoctor -- ^ asciidoctor
   | Beamer -- ^ beamer
   | CommonMark -- ^ commonmark
-  | CommonMarkX -- ^ commonmark_x
   | ConTeXt -- ^ context
-  | Creole -- ^ creole
-  | Csv -- ^ csv
   | DocBook -- ^ docbook
   | DocBook4 -- ^ docbook4
   | DocBook5 -- ^ docbook5
-  | Docx -- ^ docx
   | DokuWiki -- ^ dokuwiki
   | Dzslides -- ^ dzslides
   | Epub -- ^ epub
   | Epub2 -- ^ epub2
   | Epub3 -- ^ epub3
   | FictionBook -- ^ fb2
-  | Gfm -- ^ gfm
   | Haddock -- ^ haddock
   | Html -- ^ html
   | Html4 -- ^ html4
@@ -96,44 +99,136 @@ data Format
   | JatsArticleAuthoring -- ^ jats_articleauthoring
   | JatsPublishing -- ^ jats_publishing
   | Jira -- ^ jira
-  | Json -- ^ json
-  | Jupyter -- ^ ipynb
   | LaTeX -- ^ latex
   | Man -- ^ man
   | Markdown -- ^ markdown
-  | MarkdownGithub -- ^ markdown_github (deprecated)
-  | MarkdownMmd -- ^ markdown_mmd
-  | MarkdownPhpExtra -- ^ markdown_phpextra
-  | MarkdownStrict -- ^ markdown_strict
   | MediaWiki -- ^ mediawiki
   | Ms -- ^ ms
   | Muse -- ^ muse
-  | Native -- ^ native
-  | Odt -- ^ odt
   | OpenDocument -- ^ opendocument
   | OpenXml -- ^ openxml
-  | Opml -- ^ opml
   | Org -- ^ org
-  | Pdf -- ^ pdf
-  | Plain -- ^ plain
-  | Pptx -- ^ pptx
   | RevealJS -- ^ revealjs
   | Rst -- ^ rst
   | Rtf -- ^ rtf
   | S5 -- ^ s5
   | Slideous -- ^ slideous
   | Slidy -- ^ slidy
-  | T2T -- ^ t2t
-  | TWiki -- ^ twiki
   | TeX -- ^ tex
   | Tei -- ^ tei
   | Texinfo -- ^ texinfo
   | Textile -- ^ textile
-  | TikiWiki -- ^ tikiwiki
-  | VimWiki -- ^ vimwiki
   | XWiki -- ^ xwiki
   | ZimWiki -- ^ zimwiki
   deriving (Eq, Ord, Read, Show, Enum, Bounded, Typeable, Data, Generic)
+
+-- | An enumeration of all of the input formats that Pandoc
+-- recognizes, together with the string that specifies them as an
+-- input.
+data ReaderFormat
+  = ReaderCommonMark -- ^ commonmark
+  | ReaderCommonMarkX -- ^ commonmark_x
+  | ReaderCreole -- ^ creole
+  | ReaderCsv -- ^ csv
+  | ReaderDocBook -- ^ docbook
+  | ReaderDocx -- ^ docx
+  | ReaderDokuWiki -- ^ dokuwiki
+  | ReaderEpub -- ^ epub
+  | ReaderFictionBook -- ^ fb2
+  | ReaderGfm -- ^ gfm
+  | ReaderHaddock -- ^ haddock
+  | ReaderHtml -- ^ html
+  | ReaderIpynb -- ^ ipynb
+  | ReaderJats -- ^ jats
+  | ReaderJira -- ^ jira
+  | ReaderJson -- ^ json
+  | ReaderLaTeX -- ^ latex
+  | ReaderMan -- ^ man
+  | ReaderMarkdown -- ^ markdown
+  | ReaderMarkdownGithub -- ^ markdown_github (deprecated)
+  | ReaderMarkdownMmd -- ^ markdown_mmd
+  | ReaderMarkdownPhpExtra -- ^ markdown_phpextra
+  | ReaderMarkdownStrict -- ^ markdown_strict
+  | ReaderMediaWiki -- ^ mediawiki
+  | ReaderMuse -- ^ muse
+  | ReaderNative -- ^ native
+  | ReaderOdt -- ^ odt
+  | ReaderOpml -- ^ opml
+  | ReaderOrg -- ^ org
+  | ReaderRst -- ^ rst
+  | ReaderT2T -- ^ t2t
+  | ReaderTWiki -- ^ twiki
+  | ReaderTikiWiki -- ^ tikiwiki
+  | ReaderVimWiki -- ^ vimwiki
+  deriving (Eq, Ord, Read, Show, Enum, Bounded, Typeable, Data, Generic)
+
+-- | An enumeration of the known output formats that Pandoc recognizes
+-- (see also 'WriterFormat'), together with the string that specifies
+-- them as an output.
+data KnownWriterFormat
+  = WriterAsciiDoc -- ^ asciidoc
+  | WriterAsciiDoctor -- ^ asciidoctor
+  | WriterBeamer -- ^ beamer
+  | WriterCommonMark -- ^ commonmark
+  | WriterCommonMarkX -- ^ commonmark_x
+  | WriterConTeXt -- ^ context
+  | WriterDocBook -- ^ docbook
+  | WriterDocBook4 -- ^ docbook4
+  | WriterDocBook5 -- ^ docbook5
+  | WriterDocx -- ^ docx
+  | WriterDokuWiki -- ^ dokuwiki
+  | WriterDzslides -- ^ dzslides
+  | WriterEpub -- ^ epub
+  | WriterEpub2 -- ^ epub2
+  | WriterEpub3 -- ^ epub3
+  | WriterFictionBook -- ^ fb2
+  | WriterGfm -- ^ gfm
+  | WriterHaddock -- ^ haddock
+  | WriterHtml -- ^ html
+  | WriterHtml4 -- ^ html4
+  | WriterHtml5 -- ^ html5
+  | WriterIcml -- ^ icml
+  | WriterIpynb -- ^ ipynb
+  | WriterJats -- ^ jats
+  | WriterJatsArchiving -- ^ jats_archiving
+  | WriterJatsArticleAuthoring -- ^ jats_articleauthoring
+  | WriterJatsPublishing -- ^ jats_publishing
+  | WriterJira -- ^ jira
+  | WriterJson -- ^ json
+  | WriterLaTeX -- ^ latex
+  | WriterMan -- ^ man
+  | WriterMarkdown -- ^ markdown
+  | WriterMarkdownGithub -- ^ markdown_github (deprecated)
+  | WriterMarkdownMmd -- ^ markdown_mmd
+  | WriterMarkdownPhpExtra -- ^ markdown_phpextra
+  | WriterMarkdownStrict -- ^ markdown_strict
+  | WriterMediaWiki -- ^ mediawiki
+  | WriterMs -- ^ ms
+  | WriterMuse -- ^ muse
+  | WriterNative -- ^ native
+  | WriterOdt -- ^ odt
+  | WriterOpenDocument -- ^ opendocument
+  | WriterOpml -- ^ opml
+  | WriterOrg -- ^ org
+  | WriterPdf -- ^ pdf
+  | WriterPptx -- ^ pptx
+  | WriterRevealJS -- ^ revealjs
+  | WriterRst -- ^ rst
+  | WriterRtf -- ^ rtf
+  | WriterS5 -- ^ s5
+  | WriterSlideous -- ^ slideous
+  | WriterSlidy -- ^ slidy
+  | WriterTei -- ^ tei
+  | WriterTexinfo -- ^ texinfo
+  | WriterTextile -- ^ textile
+  | WriterXWiki -- ^ xwiki
+  | WriterZimWiki -- ^ zimwiki
+  deriving (Eq, Ord, Read, Show, Enum, Bounded, Typeable, Data, Generic)
+
+-- | Pandoc will recognize a 'KnownWriterFormat' or a path to a
+-- 'CustomLuaWriter' as a 'WriterFormat'.
+data WriterFormat = KnownWriterFormat KnownWriterFormat | CustomLuaWriter FilePath
+  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 -- | The expression @x \`castsTo\` f@ is @True@ when a format @x@ can
 -- always be included, without modification, in a context of format
@@ -176,9 +271,9 @@ castsTo x y = y `matches` x
 --
 -- > f `matches` TeX      -- True when f is [TeX, LaTeX, ConTeXt, Beamer]
 -- > f `matches` LaTeX    -- True when f is [TeX, LaTeX, Beamer]
--- > f `matches` Markdown -- True when f is any Markdown
+-- > f `matches` Html5    -- True when f is [Dzslides, Epub3, Html5, RevealJS]
 --
--- but the Boolean algebra operations on 'Formats' can construct more
+-- and the Boolean algebra operations on 'Formats' can construct more
 -- general patterns. Some concrete examples:
 --
 -- > TeX `matches` TeX = True
@@ -305,85 +400,71 @@ matches f p = f `Set.member` s where Formats s = toFormats p
 -- Some examples:
 --
 -- @
--- 'listSubformats' 'TeX'      = 'exactly' ['Beamer', 'ConTeXt', 'LaTeX', 'TeX']
--- 'listSubformats' 'LaTeX'    = 'exactly' ['LaTeX', 'Beamer']
--- 'listSubformats' 'ConTeXt'  = 'exactly' ['ConTeXt']
--- 'listSubformats' 'Epub'     = 'exactly' ['Epub', 'Epub2', 'Epub3']
--- 'listSubformats' 'Markdown' = 'exactly'
---   ['Markdown', 'MarkdownGithub', 'MarkdownMmd', 'MarkdownPhpExtra', 'MarkdownStrict']
+-- 'listSubformats' 'TeX'     = 'exactly' ['Beamer', 'ConTeXt', 'LaTeX', 'TeX']
+-- 'listSubformats' 'LaTeX'   = 'exactly' ['LaTeX', 'Beamer']
+-- 'listSubformats' 'ConTeXt' = 'exactly' ['ConTeXt']
+-- 'listSubformats' 'Html4'   = 'exactly' ['Epub2', 'Html4', 'S5', 'Slideous', 'Slidy']
 -- @
 listSubformats :: Format -> Formats
-listSubformats AsciiDoc             = exactly [AsciiDoc]
-listSubformats AsciiDoctor          = exactly [AsciiDoctor]
-listSubformats Beamer               = exactly [Beamer]
-listSubformats CommonMark           = exactly [CommonMark]
-listSubformats CommonMarkX          = exactly [CommonMarkX]
-listSubformats ConTeXt              = exactly [ConTeXt]
-listSubformats Creole               = exactly [Creole]
-listSubformats Csv                  = exactly [Csv]
-listSubformats DocBook              = exactly [DocBook]
-listSubformats DocBook4             = exactly [DocBook4]
-listSubformats DocBook5             = exactly [DocBook5]
-listSubformats Docx                 = exactly [Docx]
-listSubformats DokuWiki             = exactly [DokuWiki]
-listSubformats Dzslides             = exactly [Dzslides]
-listSubformats Epub                 = exactly [Epub, Epub2, Epub3]
-listSubformats Epub2                = exactly [Epub2]
-listSubformats Epub3                = exactly [Epub3]
-listSubformats FictionBook          = exactly [FictionBook]
-listSubformats Gfm                  = exactly [Gfm]
-listSubformats Haddock              = exactly [Haddock]
-listSubformats Html = exactly [Epub, Epub2, Epub3, Html, Html4, Html5]
-listSubformats Html4                = exactly [Epub2, Html4]
-listSubformats Html5                = exactly [Epub3, Html5]
-listSubformats Icml                 = exactly [Icml]
-listSubformats Jats                 = exactly [Jats]
-listSubformats JatsArchiving        = exactly [JatsArchiving]
-listSubformats JatsArticleAuthoring = exactly [JatsArticleAuthoring]
-listSubformats JatsPublishing       = exactly [JatsPublishing]
-listSubformats Jira                 = exactly [Jira]
-listSubformats Json                 = exactly [Json]
-listSubformats Jupyter              = exactly [Jupyter]
-listSubformats LaTeX                = exactly [Beamer, LaTeX]
-listSubformats Man                  = exactly [Man]
-listSubformats Markdown             = exactly
-  [Markdown, MarkdownGithub, MarkdownMmd, MarkdownPhpExtra, MarkdownStrict]
-listSubformats MarkdownGithub = exactly
-  [Markdown, MarkdownGithub, MarkdownMmd, MarkdownPhpExtra, MarkdownStrict]
-listSubformats MarkdownMmd = exactly
-  [Markdown, MarkdownGithub, MarkdownMmd, MarkdownPhpExtra, MarkdownStrict]
-listSubformats MarkdownPhpExtra = exactly
-  [Markdown, MarkdownGithub, MarkdownMmd, MarkdownPhpExtra, MarkdownStrict]
-listSubformats MarkdownStrict = exactly
-  [Markdown, MarkdownGithub, MarkdownMmd, MarkdownPhpExtra, MarkdownStrict]
-listSubformats MediaWiki    = exactly [MediaWiki]
-listSubformats Ms           = exactly [Ms]
-listSubformats Muse         = exactly [Muse]
-listSubformats Native       = exactly [Native]
-listSubformats Odt          = exactly [Odt]
-listSubformats OpenDocument = exactly [OpenDocument]
-listSubformats OpenXml      = exactly [OpenXml]
-listSubformats Opml         = exactly [Opml]
-listSubformats Org          = exactly [Org]
-listSubformats Pdf          = exactly [Pdf]
-listSubformats Plain        = exactly [Plain]
-listSubformats Pptx         = exactly [Pptx]
-listSubformats RevealJS     = exactly [RevealJS]
-listSubformats Rst          = exactly [Rst]
-listSubformats Rtf          = exactly [Rtf]
-listSubformats S5           = exactly [S5]
-listSubformats Slideous     = exactly [Slideous]
-listSubformats Slidy        = exactly [Slidy]
-listSubformats T2T          = exactly [T2T]
-listSubformats TWiki        = exactly [TWiki]
-listSubformats TeX          = exactly [Beamer, ConTeXt, LaTeX, TeX]
-listSubformats Tei          = exactly [Tei]
-listSubformats Texinfo      = exactly [Texinfo]
-listSubformats Textile      = exactly [Textile]
-listSubformats TikiWiki     = exactly [TikiWiki]
-listSubformats VimWiki      = exactly [VimWiki]
-listSubformats XWiki        = exactly [XWiki]
-listSubformats ZimWiki      = exactly [ZimWiki]
+listSubformats AsciiDoc    = exactly [AsciiDoc]
+listSubformats Beamer      = exactly [Beamer]
+listSubformats CommonMark  = exactly [CommonMark, Markdown]
+listSubformats ConTeXt     = exactly [ConTeXt]
+listSubformats DocBook     = exactly [DocBook, DocBook4, DocBook5]
+listSubformats DocBook4    = exactly [DocBook4]
+listSubformats DocBook5    = exactly [DocBook5]
+listSubformats Dzslides    = exactly [Dzslides]
+listSubformats DokuWiki    = exactly [DokuWiki]
+listSubformats Epub        = exactly [Epub, Epub2, Epub3]
+listSubformats Epub2       = exactly [Epub2]
+listSubformats Epub3       = exactly [Epub3]
+listSubformats FictionBook = exactly [FictionBook]
+listSubformats Haddock     = exactly [Haddock]
+listSubformats Html        = exactly
+  [ Dzslides
+  , Epub
+  , Epub2
+  , Epub3
+  , Html
+  , Html4
+  , Html5
+  , RevealJS
+  , S5
+  , Slideous
+  , Slidy
+  , Textile
+  ]
+listSubformats Html4 = exactly [Epub2, Html4, S5, Slideous, Slidy]
+listSubformats Html5 = exactly [Dzslides, Epub3, Html5, RevealJS]
+listSubformats Icml  = exactly [Icml]
+listSubformats Jats =
+  exactly [Jats, JatsArchiving, JatsArticleAuthoring, JatsPublishing]
+listSubformats JatsArchiving = exactly [JatsArchiving]
+listSubformats JatsArticleAuthoring =
+  exactly [JatsArchiving, JatsArticleAuthoring]
+listSubformats JatsPublishing = exactly [JatsArchiving, JatsPublishing]
+listSubformats Jira           = exactly [Jira]
+listSubformats LaTeX          = exactly [Beamer, LaTeX]
+listSubformats Man            = exactly [Man]
+listSubformats Markdown       = exactly [Markdown]
+listSubformats MediaWiki      = exactly [MediaWiki]
+listSubformats Ms             = exactly [Ms]
+listSubformats Muse           = exactly [Muse]
+listSubformats OpenDocument   = exactly [OpenDocument]
+listSubformats OpenXml        = exactly [OpenXml]
+listSubformats Org            = exactly [Org]
+listSubformats RevealJS       = exactly [RevealJS]
+listSubformats Rst            = exactly [Rst]
+listSubformats Rtf            = exactly [Rtf]
+listSubformats S5             = exactly [S5]
+listSubformats Slideous       = exactly [Slideous]
+listSubformats Slidy          = exactly [Slidy]
+listSubformats TeX            = exactly [Beamer, ConTeXt, LaTeX, TeX]
+listSubformats Tei            = exactly [Tei]
+listSubformats Texinfo        = exactly [Texinfo]
+listSubformats Textile        = exactly [Textile]
+listSubformats XWiki          = exactly [XWiki]
+listSubformats ZimWiki        = exactly [ZimWiki]
 
 -- | Convert a 'Formats' into its underlying list of successful
 -- matches.
@@ -391,4 +472,7 @@ toList :: Formats -> [Format]
 toList (Formats s) = Set.toList s
 
 instance NFData Format
+instance NFData ReaderFormat
+instance NFData KnownWriterFormat
+instance NFData WriterFormat
 instance NFData Formats

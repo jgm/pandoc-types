@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 {- |
    Module      : Text.Pandoc.Format
@@ -21,12 +22,11 @@ to have its functions imported qualified.
 module Text.Pandoc.Format
   ( -- * The 'Format' types
     Format(..)
+  , toKnownFormat
+  , fromKnownFormat
   , KnownFormat(..)
   , castsToKnown
   , castsTo
-  , ReaderFormat(..)
-  , KnownWriterFormat(..)
-  , WriterFormat(..)
 
   -- * 'Formats' patterns
   -- $formats
@@ -59,6 +59,7 @@ import           Data.Foldable                  ( foldl' )
 import           Data.Generics                  ( Data
                                                 , Typeable
                                                 )
+import qualified Data.Map                      as Map
 import           Data.Set                       ( Set )
 import qualified Data.Set                      as Set
 import           Data.Text                      ( Text )
@@ -72,14 +73,13 @@ import           Prelude                 hiding ( not
 -- | An enumeration of the formats that Pandoc can recognize in a
 -- 'Text.Pandoc.Definition.RawBlock' or
 -- 'Text.Pandoc.Definition.RawInline', together with the string that
--- specifies them in a raw attribute. These will be included when a
--- writer is writing the corresponding 'Writer'-prefixed version from
--- 'KnownWriterFormat', if it exists. Inclusions will also happen if
--- the 'Format' corresponds to a 'KnownWriterFormat' that exists to
--- specify default extensions but is otherwise identical to another
--- format, so 'AsciiDoc' will be included in 'WriterAsciiDoctor', for
--- example. Finally, inclusions can happen at other times that are
--- discussed in [the
+-- specifies them in a raw attribute. Raw elements with particular
+-- 'KnownFormat's will be included by writers targeting those
+-- formats. Inclusions will also happen if the 'Format' corresponds to
+-- an output format that exists to specify default extensions but is
+-- otherwise identical to another format, so 'AsciiDoc' will be
+-- included in @asciidoctor@ output, for example. Finally, inclusions
+-- can happen at other times that are discussed in [the
 -- manual](https://pandoc.org/MANUAL.html#generic-raw-attribute).
 --
 -- The "sub-format" relationships also apply, so a 'TeX' raw element
@@ -143,113 +143,111 @@ data KnownFormat
 data Format = KnownFormat KnownFormat | CustomFormat Text
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
--- | An enumeration of all of the input formats that Pandoc
--- recognizes, together with the string that specifies them as an
--- input.
-data ReaderFormat
-  = ReaderCommonMark -- ^ commonmark
-  | ReaderCommonMarkX -- ^ commonmark_x
-  | ReaderCreole -- ^ creole
-  | ReaderCsv -- ^ csv
-  | ReaderDocBook -- ^ docbook
-  | ReaderDocx -- ^ docx
-  | ReaderDokuWiki -- ^ dokuwiki
-  | ReaderEpub -- ^ epub
-  | ReaderFictionBook -- ^ fb2
-  | ReaderGfm -- ^ gfm
-  | ReaderHaddock -- ^ haddock
-  | ReaderHtml -- ^ html
-  | ReaderIpynb -- ^ ipynb
-  | ReaderJats -- ^ jats
-  | ReaderJira -- ^ jira
-  | ReaderJson -- ^ json
-  | ReaderLaTeX -- ^ latex
-  | ReaderMan -- ^ man
-  | ReaderMarkdown -- ^ markdown
-  | ReaderMarkdownGithub -- ^ markdown_github (deprecated)
-  | ReaderMarkdownMmd -- ^ markdown_mmd
-  | ReaderMarkdownPhpExtra -- ^ markdown_phpextra
-  | ReaderMarkdownStrict -- ^ markdown_strict
-  | ReaderMediaWiki -- ^ mediawiki
-  | ReaderMuse -- ^ muse
-  | ReaderNative -- ^ native
-  | ReaderOdt -- ^ odt
-  | ReaderOpml -- ^ opml
-  | ReaderOrg -- ^ org
-  | ReaderRst -- ^ rst
-  | ReaderT2T -- ^ t2t
-  | ReaderTWiki -- ^ twiki
-  | ReaderTikiWiki -- ^ tikiwiki
-  | ReaderVimWiki -- ^ vimwiki
-  deriving (Eq, Ord, Read, Show, Enum, Bounded, Typeable, Data, Generic)
+-- | Attempt to identify the specifying string of a known format.
+--
+-- > toKnownFormat "asciidoc" = Just AsciiDoc
+-- > toKnownFormat "jats_archiving" = Just JatsArchiving
+-- > toKnownFormat "custom" = Nothing
+toKnownFormat :: Text -> Maybe KnownFormat
+toKnownFormat = flip Map.lookup m
+ where
+  m = Map.fromList
+    [ ("asciidoc"             , AsciiDoc)
+    , ("beamer"               , Beamer)
+    , ("commonmark"           , CommonMark)
+    , ("context"              , ConTeXt)
+    , ("docbook"              , DocBook)
+    , ("docbook4"             , DocBook4)
+    , ("docbook5"             , DocBook5)
+    , ("dokuwiki"             , DokuWiki)
+    , ("dzslides"             , Dzslides)
+    , ("epub"                 , Epub)
+    , ("epub2"                , Epub2)
+    , ("epub3"                , Epub3)
+    , ("fb2"                  , FictionBook)
+    , ("haddock"              , Haddock)
+    , ("html"                 , Html)
+    , ("html4"                , Html4)
+    , ("html5"                , Html5)
+    , ("icml"                 , Icml)
+    , ("jats"                 , Jats)
+    , ("jats_archiving"       , JatsArchiving)
+    , ("jats_articleauthoring", JatsArticleAuthoring)
+    , ("jats_publishing"      , JatsPublishing)
+    , ("jira"                 , Jira)
+    , ("latex"                , LaTeX)
+    , ("man"                  , Man)
+    , ("markdown"             , Markdown)
+    , ("mediawiki"            , MediaWiki)
+    , ("ms"                   , Ms)
+    , ("muse"                 , Muse)
+    , ("opendocument"         , OpenDocument)
+    , ("openxml"              , OpenXml)
+    , ("org"                  , Org)
+    , ("revealjs"             , RevealJS)
+    , ("rst"                  , Rst)
+    , ("rtf"                  , Rtf)
+    , ("s5"                   , S5)
+    , ("slideous"             , Slideous)
+    , ("slidy"                , Slidy)
+    , ("tex"                  , TeX)
+    , ("tei"                  , Tei)
+    , ("texinfo"              , Texinfo)
+    , ("textile"              , Textile)
+    , ("xwiki"                , XWiki)
+    , ("zimwiki"              , ZimWiki)
+    ]
 
--- | An enumeration of the known output formats that Pandoc recognizes
--- (see also 'WriterFormat'), together with the string that specifies
--- them as an output.
-data KnownWriterFormat
-  = WriterAsciiDoc -- ^ asciidoc
-  | WriterAsciiDoctor -- ^ asciidoctor
-  | WriterBeamer -- ^ beamer
-  | WriterCommonMark -- ^ commonmark
-  | WriterCommonMarkX -- ^ commonmark_x
-  | WriterConTeXt -- ^ context
-  | WriterDocBook -- ^ docbook
-  | WriterDocBook4 -- ^ docbook4
-  | WriterDocBook5 -- ^ docbook5
-  | WriterDocx -- ^ docx
-  | WriterDokuWiki -- ^ dokuwiki
-  | WriterDzslides -- ^ dzslides
-  | WriterEpub -- ^ epub
-  | WriterEpub2 -- ^ epub2
-  | WriterEpub3 -- ^ epub3
-  | WriterFictionBook -- ^ fb2
-  | WriterGfm -- ^ gfm
-  | WriterHaddock -- ^ haddock
-  | WriterHtml -- ^ html
-  | WriterHtml4 -- ^ html4
-  | WriterHtml5 -- ^ html5
-  | WriterIcml -- ^ icml
-  | WriterIpynb -- ^ ipynb
-  | WriterJats -- ^ jats
-  | WriterJatsArchiving -- ^ jats_archiving
-  | WriterJatsArticleAuthoring -- ^ jats_articleauthoring
-  | WriterJatsPublishing -- ^ jats_publishing
-  | WriterJira -- ^ jira
-  | WriterJson -- ^ json
-  | WriterLaTeX -- ^ latex
-  | WriterMan -- ^ man
-  | WriterMarkdown -- ^ markdown
-  | WriterMarkdownGithub -- ^ markdown_github (deprecated)
-  | WriterMarkdownMmd -- ^ markdown_mmd
-  | WriterMarkdownPhpExtra -- ^ markdown_phpextra
-  | WriterMarkdownStrict -- ^ markdown_strict
-  | WriterMediaWiki -- ^ mediawiki
-  | WriterMs -- ^ ms
-  | WriterMuse -- ^ muse
-  | WriterNative -- ^ native
-  | WriterOdt -- ^ odt
-  | WriterOpenDocument -- ^ opendocument
-  | WriterOpml -- ^ opml
-  | WriterOrg -- ^ org
-  | WriterPdf -- ^ pdf
-  | WriterPptx -- ^ pptx
-  | WriterRevealJS -- ^ revealjs
-  | WriterRst -- ^ rst
-  | WriterRtf -- ^ rtf
-  | WriterS5 -- ^ s5
-  | WriterSlideous -- ^ slideous
-  | WriterSlidy -- ^ slidy
-  | WriterTei -- ^ tei
-  | WriterTexinfo -- ^ texinfo
-  | WriterTextile -- ^ textile
-  | WriterXWiki -- ^ xwiki
-  | WriterZimWiki -- ^ zimwiki
-  deriving (Eq, Ord, Read, Show, Enum, Bounded, Typeable, Data, Generic)
-
--- | Pandoc will recognize a 'KnownWriterFormat' or a path to a
--- 'CustomLuaWriter' as a 'WriterFormat'.
-data WriterFormat = KnownWriterFormat KnownWriterFormat | CustomLuaWriter FilePath
-  deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
+-- | Convert a known format to the string that specifies it as a
+-- format.
+--
+-- > fromKnownFormat AsciiDoc = "asciidoc"
+-- > fromKnownFormat JatsArchiving = "jats_archiving"
+fromKnownFormat :: KnownFormat -> Text
+fromKnownFormat AsciiDoc             = "asciidoc"
+fromKnownFormat Beamer               = "beamer"
+fromKnownFormat CommonMark           = "commonmark"
+fromKnownFormat ConTeXt              = "context"
+fromKnownFormat DocBook              = "docbook"
+fromKnownFormat DocBook4             = "docbook4"
+fromKnownFormat DocBook5             = "docbook5"
+fromKnownFormat DokuWiki             = "dokuwiki"
+fromKnownFormat Dzslides             = "dzslides"
+fromKnownFormat Epub                 = "epub"
+fromKnownFormat Epub2                = "epub2"
+fromKnownFormat Epub3                = "epub3"
+fromKnownFormat FictionBook          = "fb2"
+fromKnownFormat Haddock              = "haddock"
+fromKnownFormat Html                 = "html"
+fromKnownFormat Html4                = "html4"
+fromKnownFormat Html5                = "html5"
+fromKnownFormat Icml                 = "icml"
+fromKnownFormat Jats                 = "jats"
+fromKnownFormat JatsArchiving        = "jats_archiving"
+fromKnownFormat JatsArticleAuthoring = "jats_articleauthoring"
+fromKnownFormat JatsPublishing       = "jats_publishing"
+fromKnownFormat Jira                 = "jira"
+fromKnownFormat LaTeX                = "latex"
+fromKnownFormat Man                  = "man"
+fromKnownFormat Markdown             = "markdown"
+fromKnownFormat MediaWiki            = "mediawiki"
+fromKnownFormat Ms                   = "ms"
+fromKnownFormat Muse                 = "muse"
+fromKnownFormat OpenDocument         = "opendocument"
+fromKnownFormat OpenXml              = "openxml"
+fromKnownFormat Org                  = "org"
+fromKnownFormat RevealJS             = "revealjs"
+fromKnownFormat Rst                  = "rst"
+fromKnownFormat Rtf                  = "rtf"
+fromKnownFormat S5                   = "s5"
+fromKnownFormat Slideous             = "slideous"
+fromKnownFormat Slidy                = "slidy"
+fromKnownFormat TeX                  = "tex"
+fromKnownFormat Tei                  = "tei"
+fromKnownFormat Texinfo              = "texinfo"
+fromKnownFormat Textile              = "textile"
+fromKnownFormat XWiki                = "xwiki"
+fromKnownFormat ZimWiki              = "zimwiki"
 
 -- | The expression @x \`castsTo\` f@ is @True@ when a format @x@ can
 -- always be included, without modification, in a context of format
@@ -535,7 +533,4 @@ listSubformats ZimWiki        = exactlyKnown [ZimWiki]
 
 instance NFData KnownFormat
 instance NFData Format
-instance NFData ReaderFormat
-instance NFData KnownWriterFormat
-instance NFData WriterFormat
 instance NFData Formats

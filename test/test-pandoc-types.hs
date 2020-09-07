@@ -715,6 +715,12 @@ p_knownAndLawful p q = isNothing $ List.find counter allKnownFormats
   where
     counter x = not $ p_andLawful p q x
 
+p_fromToKnown :: Assertion
+p_fromToKnown = testExamples "from/to known round trip" prop allKnownFormats'
+  where
+    allKnownFormats' = [minBound..maxBound]
+    prop f = F.toKnownFormat (F.fromKnownFormat f) == Just f
+
 tests :: [Test]
 tests =
   [ testGroup "Walk"
@@ -818,7 +824,8 @@ tests =
   , t_tableSan
   , t_tableNormExample
   , testGroup "Formats"
-    [ testCase "p_matchKnownRefl" p_matchKnownRefl
+    [ testCase "p_fromToKnown" p_fromToKnown
+    , testCase "p_matchKnownRefl" p_matchKnownRefl
     , testCase "p_matchKnownTrans" p_matchKnownTrans
     , testProperty "p_matchRefl" p_matchRefl
     , testProperty "p_matchTrans" p_matchTrans
@@ -828,6 +835,7 @@ tests =
     , testProperty "p_orAssoc" p_orAssoc
     , testProperty "p_andLawful" p_andLawful
     , testProperty "p_knownAndLawful" p_knownAndLawful
+
     ]
   ]
 

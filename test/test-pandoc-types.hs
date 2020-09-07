@@ -688,14 +688,14 @@ p_customNeverMatchesKnown x
 
 -- Custom formats in a pattern do not affect matching a known format
 p_customIrrelevant :: F.Formats -> Bool
-p_customIrrelevant x
-  = prop x == prop (removeCustom x)
+p_customIrrelevant x = isNothing $ List.find counter allKnownFormats
   where
     isKnown F.KnownFormat{}  = True
     isKnown _                = False
     removeCustom (F.OneOfFormats y) = F.OneOfFormats $ Set.filter isKnown y
     removeCustom (F.NoneOfFormats y) = F.OneOfFormats $ Set.filter isKnown y
-    prop y = isNothing $ List.find (`F.matches` y) allKnownFormats
+    x' = removeCustom x
+    counter f = F.matches f x /= F.matches f x'
 
 -- nothing is the neutral element for or
 p_nothingNeutral :: F.Formats -> Bool

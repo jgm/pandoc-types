@@ -63,6 +63,7 @@ import qualified Data.Map                      as Map
 import           Data.Set                       ( Set )
 import qualified Data.Set                      as Set
 import           Data.Text                      ( Text )
+import qualified Data.Text                     as Text
 import           GHC.Generics                   ( Generic )
 import           Prelude                 hiding ( not
                                                 , any
@@ -143,13 +144,16 @@ data KnownFormat
 data Format = KnownFormat KnownFormat | CustomFormat Text
   deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
--- | Attempt to identify the specifying string of a known format.
+-- | Attempt to identify the specifying string of a known
+-- format. Ignores case.
 --
 -- > toKnownFormat "asciidoc" = Just AsciiDoc
 -- > toKnownFormat "jats_archiving" = Just JatsArchiving
+-- > toKnownFormat "latex" = Just LaTeX
+-- > toKnownFormat "lAtEx" = Just LaTeX
 -- > toKnownFormat "custom" = Nothing
 toKnownFormat :: Text -> Maybe KnownFormat
-toKnownFormat = flip Map.lookup m
+toKnownFormat = flip Map.lookup m . Text.toLower
  where
   m = Map.fromList
     [ ("asciidoc"             , AsciiDoc)

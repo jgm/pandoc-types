@@ -42,7 +42,7 @@ p_queryList f d = everything mappend (mempty `mkQ` f) d ==
 
 inlineTrans :: Inline -> Inline
 inlineTrans (Str xs) = Str $ T.toUpper xs
-inlineTrans (Emph xs) = Strong xs
+inlineTrans (Emph a xs) = Strong a xs
 inlineTrans x = x
 
 inlinesTrans :: [Inline] -> [Inline]
@@ -56,13 +56,13 @@ inlinesTrans ys | all whitespaceInline ys = []
 inlinesTrans ys = ys
 
 blockTrans :: Block -> Block
-blockTrans (Plain xs) = Para xs
-blockTrans (BlockQuote xs) = Div ("",["special"],[]) xs
+blockTrans (Plain xs) = Para (toAttr "" ["special"] []) xs
+blockTrans (BlockQuote _ xs) = Div (toAttr "" ["special"] []) xs
 blockTrans x = x
 
 blocksTrans :: [Block] -> [Block]
 blocksTrans [CodeBlock {}] = []
-blocksTrans [BlockQuote xs] = xs
+blocksTrans [BlockQuote _ xs] = xs
 blocksTrans [Div _ xs] = xs
 blocksTrans xs = xs
 
@@ -136,6 +136,9 @@ t_metainlines = ( MetaInlines [Space, SoftBreak]
 t_metablocks :: (MetaValue, ByteString)
 t_metablocks = ( MetaBlocks [Null,Null], [s|{"t":"MetaBlocks","c":[{"t":"Null"},{"t":"Null"}]}|])
 
+t_attr :: (Attr, ByteString)
+t_attr = ( Attr "id" ["kls"] (M.fromList [("k1", "v1"), ("k2", "v2")]), [s|["id",["kls"],{"k1":"v1","k2":"v2"}]|] )
+
 t_singlequote :: (QuoteType, ByteString)
 t_singlequote = (SingleQuote, [s|{"t":"SingleQuote"}|])
 
@@ -174,47 +177,55 @@ t_str = ( Str "Hello"
         )
 
 t_emph :: (Inline, ByteString)
-t_emph = ( Emph [Str "Hello"]
-         , [s|{"t":"Emph","c":[{"t":"Str","c":"Hello"}]}|]
+t_emph = ( Emph (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+         , [s|{"t":"Emph","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
          )
 
 t_underline :: (Inline, ByteString)
-t_underline = ( Underline [Str "Hello"]
-         , [s|{"t":"Underline","c":[{"t":"Str","c":"Hello"}]}|]
-         )
+t_underline =
+  ( Underline (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+  , [s|{"t":"Underline","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_strong :: (Inline, ByteString)
-t_strong = ( Strong [Str "Hello"]
-           , [s|{"t":"Strong","c":[{"t":"Str","c":"Hello"}]}|]
-           )
+t_strong =
+  ( Strong (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+  , [s|{"t":"Strong","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_strikeout :: (Inline, ByteString)
-t_strikeout = ( Strikeout [Str "Hello"]
-              , [s|{"t":"Strikeout","c":[{"t":"Str","c":"Hello"}]}|]
-              )
+t_strikeout =
+  ( Strikeout (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+  , [s|{"t":"Strikeout","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_superscript :: (Inline, ByteString)
-t_superscript = ( Superscript [Str "Hello"]
-                , [s|{"t":"Superscript","c":[{"t":"Str","c":"Hello"}]}|]
-                )
+t_superscript =
+  ( Superscript (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+  , [s|{"t":"Superscript","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_subscript :: (Inline, ByteString)
-t_subscript = ( Subscript [Str "Hello"]
-              , [s|{"t":"Subscript","c":[{"t":"Str","c":"Hello"}]}|]
-              )
+t_subscript =
+  ( Subscript (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+  , [s|{"t":"Subscript","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_smallcaps :: (Inline, ByteString)
-t_smallcaps = ( SmallCaps [Str "Hello"]
-              , [s|{"t":"SmallCaps","c":[{"t":"Str","c":"Hello"}]}|]
-              )
+t_smallcaps =
+  ( SmallCaps (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+  , [s|{"t":"SmallCaps","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_quoted :: (Inline, ByteString)
-t_quoted = ( Quoted SingleQuote [Str "Hello"]
-           , [s|{"t":"Quoted","c":[{"t":"SingleQuote"},[{"t":"Str","c":"Hello"}]]}|]
-           )
+t_quoted =
+  ( Quoted (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) SingleQuote [Str "Hello"]
+  , [s|{"t":"Quoted","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],{"t":"SingleQuote"},[{"t":"Str","c":"Hello"}]]}|]
+  )
 
 t_cite :: (Inline, ByteString)
-t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
+t_cite = ( Cite (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+                [Citation { citationId = "jameson:unconscious"
                           , citationPrefix = [Str "cf"]
                           , citationSuffix = [Space,Str "12"]
                           , citationMode = NormalCitation
@@ -225,12 +236,12 @@ t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
                 , Str "@jameson:unconscious"
                 , Space
                 , Str "12]"]
-         ,[s|{"t":"Cite","c":[[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
-             )
+         ,[s|{"t":"Cite","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
+         )
 
 t_code :: (Inline, ByteString)
-t_code = ( Code ("", [], [("language", "haskell")]) "foo bar"
-         , [s|{"t":"Code","c":[["",[],[["language","haskell"]]],"foo bar"]}|]
+t_code = ( Code (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) "foo bar"
+         , [s|{"t":"Code","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],"foo bar"]}|]
          )
 
 t_space :: (Inline, ByteString)
@@ -243,32 +254,33 @@ t_linebreak :: (Inline, ByteString)
 t_linebreak = ( LineBreak, [s|{"t":"LineBreak"}|] )
 
 t_rawinline :: (Inline, ByteString)
-t_rawinline = ( RawInline (Format "tex") "\\foo{bar}"
-              , [s|{"t":"RawInline","c":["tex","\\foo{bar}"]}|]
-              )
+t_rawinline =
+  ( RawInline (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) (Format "tex") "\\foo{bar}"
+  , [s|{"t":"RawInline","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],"tex","\\foo{bar}"]}|]
+  )
 
 t_link :: (Inline, ByteString)
-t_link = ( Link ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+t_link = ( Link (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
            [ Str "a", Space, Str "famous", Space, Str "site"]
            ("https://www.google.com","google")
-         , [s|{"t":"Link","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"site"}],["https://www.google.com","google"]]}|]
+         , [s|{"t":"Link","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"site"}],["https://www.google.com","google"]]}|]
          )
 
 t_image :: (Inline, ByteString)
-t_image = ( Image ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+t_image = ( Image (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
            [ Str "a", Space, Str "famous", Space, Str "image"]
            ("my_img.png","image")
-         , [s|{"t":"Image","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"image"}],["my_img.png","image"]]}|]
+         , [s|{"t":"Image","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"a"},{"t":"Space"},{"t":"Str","c":"famous"},{"t":"Space"},{"t":"Str","c":"image"}],["my_img.png","image"]]}|]
          )
 
 t_note :: (Inline, ByteString)
-t_note = ( Note [Para [Str "Hello"]]
-         , [s|{"t":"Note","c":[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]}|]
+t_note = ( Note (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Para nullAttr [Str "Hello"]]
+         , [s|{"t":"Note","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"Hello"}]]}]]}|]
          )
 
 t_span :: (Inline, ByteString)
-t_span = ( Span ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
-         , [s|{"t":"Span","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Hello"}]]}|]
+t_span = ( Span (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+         , [s|{"t":"Span","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
          )
 
 t_plain :: (Block, ByteString)
@@ -277,87 +289,154 @@ t_plain = ( Plain [Str "Hello"]
           )
 
 t_para :: (Block, ByteString)
-t_para = ( Para [Str "Hello"]
-          , [s|{"t":"Para","c":[{"t":"Str","c":"Hello"}]}|]
+t_para = ( Para (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Hello"]
+          , [s|{"t":"Para","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Hello"}]]}|]
           )
 
 t_lineblock :: (Block, ByteString)
-t_lineblock = ( LineBlock [[Str "Hello"], [Str "Moin"]]
-              , [s|{"t":"LineBlock","c":[[{"t":"Str","c":"Hello"}],[{"t":"Str","c":"Moin"}]]}|]
+t_lineblock = ( LineBlock
+                (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+                [[Str "Hello"], [Str "Moin"]]
+              , [s|{"t":"LineBlock","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[[{"t":"Str","c":"Hello"}],[{"t":"Str","c":"Moin"}]]]}|]
               )
 
 t_codeblock :: (Block, ByteString)
-t_codeblock = ( CodeBlock ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) "Foo Bar"
-              , [s|{"t":"CodeBlock","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],"Foo Bar"]}|]
+t_codeblock = ( CodeBlock (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) "Foo Bar"
+              , [s|{"t":"CodeBlock","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],"Foo Bar"]}|]
               )
 
 t_rawblock :: (Block, ByteString)
-t_rawblock = ( RawBlock (Format "tex") "\\foo{bar}"
-              , [s|{"t":"RawBlock","c":["tex","\\foo{bar}"]}|]
+t_rawblock = ( RawBlock
+               (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+               (Format "tex")
+               "\\foo{bar}"
+              , [s|{"t":"RawBlock","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],"tex","\\foo{bar}"]}|]
               )
 
 t_blockquote :: (Block, ByteString)
-t_blockquote = ( BlockQuote [Para [Str "Hello"]]
-         , [s|{"t":"BlockQuote","c":[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]}|]
-         )
+t_blockquote =
+  ( BlockQuote (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Para nullAttr [Str "Hello"]]
+  , [s|{"t":"BlockQuote","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"Hello"}]]}]]}|]
+  )
 
 t_orderedlist :: (Block, ByteString)
-t_orderedlist = (OrderedList (1,Decimal,Period)
-                 [[Para [Str "foo"]]
-                 ,[Para [Str "bar"]]]
-                , [s|{"t":"OrderedList","c":[[1,{"t":"Decimal"},{"t":"Period"}],[[{"t":"Para","c":[{"t":"Str","c":"foo"}]}],[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]]}|]
+t_orderedlist = (OrderedList (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) (1,Decimal,Period)
+                 [[Para nullAttr [Str "foo"]]
+                 ,[Para nullAttr [Str "bar"]]]
+                , [s|{"t":"OrderedList","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[1,{"t":"Decimal"},{"t":"Period"}],[[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"foo"}]]}],[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"bar"}]]}]]]}|]
                     )
 
 t_bulletlist :: (Block, ByteString)
-t_bulletlist = (BulletList
-                 [[Para [Str "foo"]]
-                 ,[Para [Str "bar"]]]
-               , [s|{"t":"BulletList","c":[[{"t":"Para","c":[{"t":"Str","c":"foo"}]}],[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]}|]
-                   )
+t_bulletlist = (BulletList (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+                 [[Para nullAttr [Str "foo"]]
+                 ,[Para nullAttr [Str "bar"]]]
+               , [s|{"t":"BulletList","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"foo"}]]}],[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"bar"}]]}]]]}|]
+               )
 
 t_definitionlist :: (Block, ByteString)
-t_definitionlist = (DefinitionList
+t_definitionlist = (DefinitionList (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
                     [([Str "foo"],
-                      [[Para [Str "bar"]]])
+                      [[Para nullAttr [Str "bar"]]])
                     ,([Str "fizz"],
-                      [[Para [Str "pop"]]])]
-                   , [s|{"t":"DefinitionList","c":[[[{"t":"Str","c":"foo"}],[[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]],[[{"t":"Str","c":"fizz"}],[[{"t":"Para","c":[{"t":"Str","c":"pop"}]}]]]]}|]
-                    )
+                      [[Para nullAttr [Str "pop"]]])]
+                   , [s|{"t":"DefinitionList","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[[[{"t":"Str","c":"foo"}],[[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"bar"}]]}]]],[[{"t":"Str","c":"fizz"}],[[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"pop"}]]}]]]]]}|]
+                   )
 
 t_header :: (Block, ByteString)
-t_header = ( Header 2 ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Head"]
-           , [s|{"t":"Header","c":[2,["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Head"}]]}|]
-           )
+t_header =
+  ( Header 2 (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Str "Head"]
+  , [s|{"t":"Header","c":[2,["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"Head"}]]}|]
+  )
 
 t_row :: (Row, ByteString)
-t_row = (Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
-         [Cell ("", [], []) AlignRight 2 3 [Para [Str "bar"]]]
-        ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["",[],[]],{"t":"AlignRight"},2,3,[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]]]|])
+t_row = (Row (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+         [Cell nullAttr AlignRight 2 3 [Para nullAttr [Str "bar"]]]
+        ,[s|[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["",[],{}],{"t":"AlignRight"},2,3,[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"bar"}]]}]]]]|])
 
 t_caption :: (Caption, ByteString)
-t_caption = (Caption (Just [Str "foo"]) [Para [Str "bar"]]
-            ,[s|[[{"t":"Str","c":"foo"}],[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]|])
+t_caption =
+  ( Caption (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+    (Just [Str "short"])
+    [Para nullAttr [Str "Demonstration"
+                   ,Space
+                   ,Str "of"
+                   ,Space
+                   ,Str "simple"
+                   ,Space
+                   ,Str "table"
+                   ,Space
+                   ,Str "syntax."]]
+  , [s|[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Str","c":"short"}],[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"Demonstration"},{"t":"Space"},{"t":"Str","c":"of"},{"t":"Space"},{"t":"Str","c":"simple"},{"t":"Space"},{"t":"Str","c":"table"},{"t":"Space"},{"t":"Str","c":"syntax."}]]}]]|]
+  )
 
 t_tablehead :: (TableHead, ByteString)
-t_tablehead = (TableHead ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
-               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
-              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+t_tablehead =
+  ( TableHead (toAttr "idh" ["klsh"] [("k1h", "v1h"), ("k2h", "v2h")])
+    [tRow
+      [tCell [Str "Head"]
+      ,tCell [Str "Right"]
+      ,tCell [Str "Left"]
+      ,tCell [Str "Center"]
+      ,tCell [Str "Default"]]]
+  , [s|[["idh",["klsh"],{"k1h":"v1h","k2h":"v2h"}],[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Head"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Right"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Left"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Center"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Default"}]}]]]]]]|]
+  )
+  where
+    tCell i = Cell (toAttr "a" ["b"] [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
+    tRow = Row (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
 
 t_tablebody :: (TableBody, ByteString)
-t_tablebody = (TableBody ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) 3
-               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
-               [Row ("id'",["kls'"],[("k1", "v1"), ("k2", "v2")]) []]
-              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],3,[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]],[[["id'",["kls'"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+t_tablebody =
+  ( TableBody (toAttr "idb" ["klsb"] [("k1b", "v1b"), ("k2b", "v2b")]) 1
+    [tRow
+      [tCell [Str "ihead12"]
+      ,tCell [Str "i12"]
+      ,tCell [Str "i12"]
+      ,tCell [Str "i12"]
+      ,tCell [Str "i12"]]]
+    [tRow
+      [tCell [Str "head12"]
+      ,tCell' [Str "12"]
+      ,tCell [Str "12"]
+      ,tCell' [Str "12"]
+      ,tCell [Str "12"]]
+    ,tRow
+      [tCell [Str "head123"]
+      ,tCell [Str "123"]
+      ,tCell [Str "123"]
+      ,tCell [Str "123"]
+      ,tCell [Str "123"]]
+    ,tRow
+      [tCell [Str "head1"]
+      ,tCell [Str "1"]
+      ,tCell [Str "1"]
+      ,tCell [Str "1"]
+      ,tCell [Str "1"]]]
+  , [s|[["idb",["klsb"],{"k1b":"v1b","k2b":"v2b"}],1,[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"ihead12"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]]]],[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]],[["id",["kls"],{"k1":"v1","k2":"v2"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["id",["kls"],{"k1":"v1","k2":"v2"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]]],[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]]],[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head1"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]]]]]|]
+  )
+  where
+    tCell i = Cell (toAttr "a" ["b"] [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
+    tCell' i = Cell (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) AlignDefault 1 1 [Plain i]
+    tRow = Row (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
 
 t_tablefoot :: (TableFoot, ByteString)
-t_tablefoot = (TableFoot ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
-               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
-              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+t_tablefoot =
+  ( TableFoot (toAttr "idf" ["klsf"] [("k1f", "v1f"), ("k2f", "v2f")])
+    [tRow
+      [tCell [Str "foot"]
+      ,tCell [Str "footright"]
+      ,tCell [Str "footleft"]
+      ,tCell [Str "footcenter"]
+      ,tCell [Str "footdefault"]]]
+  , [s|[["idf",["klsf"],{"k1f":"v1f","k2f":"v2f"}],[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"foot"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footright"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footleft"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footcenter"}]}]],[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footdefault"}]}]]]]]]|]
+  )
+  where
+    tCell i = Cell (toAttr "a" ["b"] [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
+    tRow = Row (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
 
 t_cell :: (Cell, ByteString)
-t_cell = (Cell ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) AlignLeft 1 1
-          [Para [Str "bar"]]
-         ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignLeft"},1,1,[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]|])
+t_cell = (Cell (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) AlignLeft 1 1
+          [Para nullAttr [Str "bar"]]
+         ,[s|[["id",["kls"],{"k1":"v1","k2":"v2"}],{"t":"AlignLeft"},1,1,[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"bar"}]]}]]|])
 
 t_rowheadcolumns :: (RowHeadColumns, ByteString)
 t_rowheadcolumns = (1
@@ -373,72 +452,37 @@ t_colspan = (1
 
 t_table :: (Block, ByteString)
 t_table = ( Table
-            ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
-            (Caption
-             (Just [Str "short"])
-             [Para [Str "Demonstration"
-                   ,Space
-                   ,Str "of"
-                   ,Space
-                   ,Str "simple"
-                   ,Space
-                   ,Str "table"
-                   ,Space
-                   ,Str "syntax."]])
+            (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
+            (Caption nullAttr Nothing [Plain [Str "cap"]])
             [(AlignDefault,ColWidthDefault)
             ,(AlignRight,ColWidthDefault)
             ,(AlignLeft,ColWidthDefault)
             ,(AlignCenter,ColWidthDefault)
             ,(AlignDefault,ColWidthDefault)]
-            (TableHead ("idh", ["klsh"], [("k1h", "v1h"), ("k2h", "v2h")])
+            (TableHead (toAttr "idh" ["klsh"] [("k1h", "v1h"), ("k2h", "v2h")])
              [tRow
-              [tCell [Str "Head"]
-              ,tCell [Str "Right"]
-              ,tCell [Str "Left"]
-              ,tCell [Str "Center"]
-              ,tCell [Str "Default"]]])
-            [TableBody ("idb", ["klsb"], [("k1b", "v1b"), ("k2b", "v2b")]) 1
+              [tCell [Str "one"]]])
+            [TableBody (toAttr "idb" ["klsh"] [("k1h", "v1h"), ("k2h", "v2h")]) 1
              [tRow
-              [tCell [Str "ihead12"]
-              ,tCell [Str "i12"]
-              ,tCell [Str "i12"]
-              ,tCell [Str "i12"]
-              ,tCell [Str "i12"]]]
+              [tCell [Str "ihead12"]]]
              [tRow
-              [tCell [Str "head12"]
-              ,tCell' [Str "12"]
-              ,tCell [Str "12"]
-              ,tCell' [Str "12"]
-              ,tCell [Str "12"]]
-            ,tRow
-              [tCell [Str "head123"]
-              ,tCell [Str "123"]
-              ,tCell [Str "123"]
-              ,tCell [Str "123"]
-              ,tCell [Str "123"]]
-            ,tRow
-              [tCell [Str "head1"]
-              ,tCell [Str "1"]
-              ,tCell [Str "1"]
-              ,tCell [Str "1"]
-              ,tCell [Str "1"]]]]
-            (TableFoot ("idf", ["klsf"], [("k1f", "v1f"), ("k2f", "v2f")])
+              [tCell [Str "head12"]]
+             ,tRow
+              [tCell [Str "head123"]]
+             ,tRow
+              [tCell [Str "1"]]]]
+            (TableFoot (toAttr "idf" ["klsh"] [("k1h", "v1h"), ("k2h", "v2h")])
              [tRow
-              [tCell [Str "foot"]
-              ,tCell [Str "footright"]
-              ,tCell [Str "footleft"]
-              ,tCell [Str "footcenter"]
-              ,tCell [Str "footdefault"]]])
-          ,[s|{"t":"Table","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[{"t":"Str","c":"short"}],[{"t":"Para","c":[{"t":"Str","c":"Demonstration"},{"t":"Space"},{"t":"Str","c":"of"},{"t":"Space"},{"t":"Str","c":"simple"},{"t":"Space"},{"t":"Str","c":"table"},{"t":"Space"},{"t":"Str","c":"syntax."}]}]],[[{"t":"AlignDefault"},{"t":"ColWidthDefault"}],[{"t":"AlignRight"},{"t":"ColWidthDefault"}],[{"t":"AlignLeft"},{"t":"ColWidthDefault"}],[{"t":"AlignCenter"},{"t":"ColWidthDefault"}],[{"t":"AlignDefault"},{"t":"ColWidthDefault"}]],[["idh",["klsh"],[["k1h","v1h"],["k2h","v2h"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Head"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Right"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Left"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Center"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Default"}]}]]]]]],[[["idb",["klsb"],[["k1b","v1b"],["k2b","v2b"]]],1,[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"ihead12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]]]]]],[["idf",["klsf"],[["k1f","v1f"],["k2f","v2f"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"foot"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footright"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footleft"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footcenter"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footdefault"}]}]]]]]]]}|]
+              [tCell [Str "three"]]])
+          ,[s|{"t":"Table","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[["",[],{}],null,[{"t":"Plain","c":[{"t":"Str","c":"cap"}]}]],[[{"t":"AlignDefault"},{"t":"ColWidthDefault"}],[{"t":"AlignRight"},{"t":"ColWidthDefault"}],[{"t":"AlignLeft"},{"t":"ColWidthDefault"}],[{"t":"AlignCenter"},{"t":"ColWidthDefault"}],[{"t":"AlignDefault"},{"t":"ColWidthDefault"}]],[["idh",["klsh"],{"k1h":"v1h","k2h":"v2h"}],[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"one"}]}]]]]]],[[["idb",["klsh"],{"k1h":"v1h","k2h":"v2h"}],1,[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"ihead12"}]}]]]]],[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]]]],[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]]]],[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]]]]]],[["idf",["klsh"],{"k1h":"v1h","k2h":"v2h"}],[[["id",["kls"],{"k1":"v1","k2":"v2"}],[[["a",["b"],{"c":"d","e":"f"}],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"three"}]}]]]]]]]}|]
               )
   where
-    tCell i = Cell ("a", ["b"], [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
-    tCell' i = Cell ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) AlignDefault 1 1 [Plain i]
-    tRow = Row ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
+    tCell i = Cell (toAttr "a" ["b"] [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
+    tRow = Row (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")])
 
 t_div :: (Block, ByteString)
-t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
-         , [s|{"t":"Div","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
+t_div = ( Div (toAttr "id" ["kls"] [("k1", "v1"), ("k2", "v2")]) [Para nullAttr [Str "Hello"]]
+         , [s|{"t":"Div","c":[["id",["kls"],{"k1":"v1","k2":"v2"}],[{"t":"Para","c":[["",[],{}],[{"t":"Str","c":"Hello"}]]}]]}|]
          )
 
 t_null :: (Block, ByteString)
@@ -450,29 +494,30 @@ t_null = (Null, [s|{"t":"Null"}|])
 -- This may change as the table representation changes.
 t_tableSan :: Test
 t_tableSan = testCase "table sanitisation" assertion
-             where assertion = assertEqual err expected generated
-                   err = "sanitisation error"
-                   generated = simpleTable
-                                  [plain (text "foo"), plain (text "bar")]
-                                  [[mempty]
-                                  ,[]]
-                   tCell i = Cell nullAttr AlignDefault 1 1 [Plain [Str i]]
-                   emptyRow = Row nullAttr $ replicate 2 emptyCell
-                   expected = singleton (Table
-                                          nullAttr
-                                          (Caption Nothing [])
-                                          [(AlignDefault,ColWidthDefault)
-                                          ,(AlignDefault,ColWidthDefault)]
-                                          (TableHead nullAttr
-                                           [Row nullAttr
-                                            [tCell "foo"
-                                            ,tCell "bar"]])
-                                          [TableBody nullAttr 0
-                                           []
-                                           [emptyRow
-                                           ,emptyRow]]
-                                         (TableFoot nullAttr
-                                          []))
+  where assertion = assertEqual err expected generated
+        err = "sanitisation error"
+        generated = simpleTable
+                       [plain (text "foo"), plain (text "bar")]
+                       [[mempty]
+                       ,[]]
+        tCell i = Cell nullAttr AlignDefault 1 1 [Plain [Str i]]
+        emptyRow = Row nullAttr $ replicate 2 emptyCell
+        expected = singleton (Table
+                               nullAttr
+                               (Caption nullAttr
+                                        Nothing [])
+                               [(AlignDefault,ColWidthDefault)
+                               ,(AlignDefault,ColWidthDefault)]
+                               (TableHead nullAttr
+                                [Row nullAttr
+                                 [tCell "foo"
+                                 ,tCell "bar"]])
+                               [TableBody nullAttr 0
+                                []
+                                [emptyRow
+                                ,emptyRow]]
+                              (TableFoot nullAttr
+                               []))
 
 withWidth :: Testable prop => (Int -> prop) -> Property
 withWidth = forAll $ choose (2 :: Int, 16)
@@ -607,7 +652,7 @@ t_tableNormExample :: Test
 t_tableNormExample = testCase "table normalization example" assertion
   where
     assertion = assertEqual "normalization error" expected generated
-    cl a h w = Cell (a, [], []) AlignDefault h w []
+    cl a h w = Cell (toAttr a [] []) AlignDefault h w []
     rws = map $ Row nullAttr
     th = TableHead nullAttr . rws
     tb n x y = TableBody nullAttr n (rws x) (rws y)
@@ -668,6 +713,7 @@ tests =
         , testEncodeDecode "MetaInlines" t_metainlines
         , testEncodeDecode "MetaBlocks" t_metablocks
         ]
+      , testEncodeDecode "Attr" t_attr
       , testGroup "QuoteType"
         [ testEncodeDecode "SingleQuote" t_singlequote
         , testEncodeDecode "DoubleQuote" t_doublequote
@@ -714,6 +760,10 @@ tests =
         , testEncodeDecode "BulletList" t_bulletlist
         , testEncodeDecode "DefinitionList" t_definitionlist
         , testEncodeDecode "Header" t_header
+        , testEncodeDecode "Caption" t_caption
+        , testEncodeDecode "TableHead" t_tablehead
+        , testEncodeDecode "TableBody" t_tablebody
+        , testEncodeDecode "TableFoot" t_tablefoot
         , testEncodeDecode "Table" t_table
         , testEncodeDecode "Div" t_div
         , testEncodeDecode "Null" t_null

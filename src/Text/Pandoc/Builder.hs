@@ -229,18 +229,27 @@ instance Semigroup Inlines where
                           (Space, SoftBreak) -> xs' |> SoftBreak
                           (SoftBreak, Space) -> xs' |> SoftBreak
                           (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
-                          (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
-                          (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
-                          (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
-                          (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
-                          (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
-                          (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
+                          (Emph a1 i1, Emph a2 i2)
+                            | null' a1 && null' a2 -> xs' |> Emph nullAttr (i1 <> i2)
+                          (Underline a1 i1, Underline a2 i2)
+                            | null' a1 && null' a2 -> xs' |> Underline nullAttr (i1 <> i2)
+                          (Strong a1 i1, Strong a2 i2)
+                            | null' a1 && null' a2 -> xs' |> Strong nullAttr (i1 <> i2)
+                          (Subscript a1 i1, Subscript a2 i2)
+                            | null' a1 && null' a2 -> xs' |> Subscript nullAttr (i1 <> i2)
+                          (Superscript a1 i1, Superscript a2 i2)
+                            | null' a1 && null' a2 -> xs' |> Superscript nullAttr (i1 <> i2)
+                          (Strikeout a1 i1, Strikeout a2 i2)
+                            | null' a1 && null' a2 -> xs' |> Strikeout nullAttr (i1 <> i2)
                           (Space, LineBreak) -> xs' |> LineBreak
                           (LineBreak, Space) -> xs' |> LineBreak
                           (SoftBreak, LineBreak) -> xs' |> LineBreak
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
+              null' (Attr "" [] m) = M.null m
+              null' _              = False
+
 instance Monoid Inlines where
   mempty = Many mempty
   mappend = (<>)
@@ -348,25 +357,46 @@ str :: Text -> Inlines
 str = singleton . Str
 
 emph :: Inlines -> Inlines
-emph = singleton . Emph . toList
+emph = emphWith nullAttr
+
+emphWith :: Attr -> Inlines -> Inlines
+emphWith a = singleton . Emph a . toList
 
 underline :: Inlines -> Inlines
-underline = singleton . Underline . toList
+underline = underlineWith nullAttr
+
+underlineWith :: Attr -> Inlines -> Inlines
+underlineWith a = singleton . Underline a . toList
 
 strong :: Inlines -> Inlines
-strong = singleton . Strong . toList
+strong = strongWith nullAttr
+
+strongWith :: Attr -> Inlines -> Inlines
+strongWith a = singleton . Strong a . toList
 
 strikeout :: Inlines -> Inlines
-strikeout = singleton . Strikeout . toList
+strikeout = strikeoutWith nullAttr
+
+strikeoutWith :: Attr -> Inlines -> Inlines
+strikeoutWith a = singleton . Strikeout a . toList
 
 superscript :: Inlines -> Inlines
-superscript = singleton . Superscript . toList
+superscript = superscriptWith nullAttr
+
+superscriptWith :: Attr -> Inlines -> Inlines
+superscriptWith a = singleton . Superscript a . toList
 
 subscript :: Inlines -> Inlines
-subscript = singleton . Subscript . toList
+subscript = subscriptWith nullAttr
+
+subscriptWith :: Attr -> Inlines -> Inlines
+subscriptWith a = singleton . Subscript a . toList
 
 smallcaps :: Inlines -> Inlines
-smallcaps = singleton . SmallCaps . toList
+smallcaps = smallcapsWith nullAttr
+
+smallcapsWith :: Attr -> Inlines -> Inlines
+smallcapsWith a = singleton . SmallCaps a . toList
 
 singleQuoted :: Inlines -> Inlines
 singleQuoted = quoted SingleQuote
@@ -375,10 +405,16 @@ doubleQuoted :: Inlines -> Inlines
 doubleQuoted = quoted DoubleQuote
 
 quoted :: QuoteType -> Inlines -> Inlines
-quoted qt = singleton . Quoted qt . toList
+quoted = quotedWith nullAttr
+
+quotedWith :: Attr -> QuoteType -> Inlines -> Inlines
+quotedWith a qt = singleton . Quoted a qt . toList
 
 cite :: [Citation] -> Inlines -> Inlines
-cite cts = singleton . Cite cts . toList
+cite = citeWith nullAttr
+
+citeWith :: Attr -> [Citation] -> Inlines -> Inlines
+citeWith a cts = singleton . Cite a cts . toList
 
 -- | Inline code with attributes.
 codeWith :: Attr -> Text -> Inlines
@@ -399,14 +435,25 @@ linebreak = singleton LineBreak
 
 -- | Inline math
 math :: Text -> Inlines
-math = singleton . Math InlineMath
+math = mathWith nullAttr
+
+-- | Inline math
+mathWith :: Attr -> Text -> Inlines
+mathWith a = singleton . Math a InlineMath
 
 -- | Display math
 displayMath :: Text -> Inlines
-displayMath = singleton . Math DisplayMath
+displayMath = displayMathWith nullAttr
+
+-- | Display math
+displayMathWith :: Attr -> Text -> Inlines
+displayMathWith a = singleton . Math a DisplayMath
 
 rawInline :: Text -> Text -> Inlines
-rawInline format = singleton . RawInline (Format format)
+rawInline = rawInlineWith nullAttr
+
+rawInlineWith :: Attr -> Text -> Text -> Inlines
+rawInlineWith a format = singleton . RawInline a (Format format)
 
 link :: Text  -- ^ URL
      -> Text  -- ^ Title
@@ -435,7 +482,10 @@ imageWith :: Attr -- ^ Attributes
 imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
 
 note :: Blocks -> Inlines
-note = singleton . Note . toList
+note = noteWith nullAttr
+
+noteWith :: Attr -> Blocks -> Inlines
+noteWith a = singleton . Note a . toList
 
 spanWith :: Attr -> Inlines -> Inlines
 spanWith attr = singleton . Span attr . toList
@@ -443,7 +493,10 @@ spanWith attr = singleton . Span attr . toList
 -- Block list builders
 
 para :: Inlines -> Blocks
-para = singleton . Para . toList
+para = paraWith nullAttr
+
+paraWith :: Attr -> Inlines -> Blocks
+paraWith a = singleton . Para a . toList
 
 plain :: Inlines -> Blocks
 plain ils = if isNull ils
@@ -451,7 +504,10 @@ plain ils = if isNull ils
                else singleton . Plain . toList $ ils
 
 lineBlock :: [Inlines] -> Blocks
-lineBlock = singleton . LineBlock . map toList
+lineBlock = lineBlockWith nullAttr
+
+lineBlockWith :: Attr -> [Inlines] -> Blocks
+lineBlockWith a = singleton . LineBlock a . map toList
 
 -- | A code block with attributes.
 codeBlockWith :: Attr -> Text -> Blocks
@@ -462,24 +518,36 @@ codeBlock :: Text -> Blocks
 codeBlock = codeBlockWith nullAttr
 
 rawBlock :: Text -> Text -> Blocks
-rawBlock format = singleton . RawBlock (Format format)
+rawBlock = rawBlockWith nullAttr
+
+rawBlockWith :: Attr -> Text -> Text -> Blocks
+rawBlockWith a format = singleton . RawBlock a (Format format)
 
 blockQuote :: Blocks -> Blocks
-blockQuote = singleton . BlockQuote . toList
+blockQuote = blockQuoteWith nullAttr
+
+blockQuoteWith :: Attr -> Blocks -> Blocks
+blockQuoteWith a = singleton . BlockQuote a . toList
 
 -- | Ordered list with attributes.
-orderedListWith :: ListAttributes -> [Blocks] -> Blocks
-orderedListWith attrs = singleton . OrderedList attrs .  map toList
+orderedListWith :: Attr -> ListAttributes -> [Blocks] -> Blocks
+orderedListWith a la = singleton . OrderedList a la .  map toList
 
 -- | Ordered list with default attributes.
 orderedList :: [Blocks] -> Blocks
-orderedList = orderedListWith (1, DefaultStyle, DefaultDelim)
+orderedList = orderedListWith nullAttr (1, DefaultStyle, DefaultDelim)
 
 bulletList :: [Blocks] -> Blocks
-bulletList = singleton . BulletList . map toList
+bulletList = bulletListWith nullAttr
+
+bulletListWith :: Attr -> [Blocks] -> Blocks
+bulletListWith a = singleton . BulletList a . map toList
 
 definitionList :: [(Inlines, [Blocks])] -> Blocks
-definitionList = singleton . DefinitionList .  map (toList *** map toList)
+definitionList = definitionListWith nullAttr
+
+definitionListWith :: Attr -> [(Inlines, [Blocks])] -> Blocks
+definitionListWith a = singleton . DefinitionList a .  map (toList *** map toList)
 
 header :: Int  -- ^ Level
        -> Inlines
@@ -490,7 +558,10 @@ headerWith :: Attr -> Int -> Inlines -> Blocks
 headerWith attr level = singleton . Header level attr . toList
 
 horizontalRule :: Blocks
-horizontalRule = singleton HorizontalRule
+horizontalRule = horizontalRuleWith nullAttr
+
+horizontalRuleWith :: Attr -> Blocks
+horizontalRuleWith = singleton . HorizontalRule
 
 cellWith :: Attr
          -> Alignment
@@ -558,10 +629,13 @@ simpleTable headers rows =
         tf = TableFoot nullAttr []
 
 caption :: Maybe ShortCaption -> Blocks -> Caption
-caption x = Caption x . toList
+caption = captionWith nullAttr
 
 simpleCaption :: Blocks -> Caption
 simpleCaption = caption Nothing
+
+captionWith :: Attr -> Maybe ShortCaption -> Blocks -> Caption
+captionWith a x = Caption a x . toList
 
 emptyCaption :: Caption
 emptyCaption = simpleCaption mempty

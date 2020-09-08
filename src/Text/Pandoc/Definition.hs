@@ -62,7 +62,10 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
                               , Format(..)
-                              , Attr
+                              , Attr(..)
+                              , lookupKey
+                              , toAttr
+                              , fromAttr
                               , nullAttr
                               , Caption(..)
                               , ShortCaption
@@ -146,11 +149,11 @@ lookupMeta key (Meta m) = M.lookup key m
 docTitle :: Meta -> [Inline]
 docTitle meta =
   case lookupMeta "title" meta of
-         Just (MetaString s)           -> [Str s]
-         Just (MetaInlines ils)        -> ils
-         Just (MetaBlocks [Plain ils]) -> ils
-         Just (MetaBlocks [Para ils])  -> ils
-         _                             -> []
+         Just (MetaString s)             -> [Str s]
+         Just (MetaInlines ils)          -> ils
+         Just (MetaBlocks [Plain ils])   -> ils
+         Just (MetaBlocks [Para _ ils])  -> ils
+         _                               -> []
 
 -- | Extract document authors from metadata; works just like the old
 -- @docAuthors@.
@@ -161,7 +164,7 @@ docAuthors meta =
         Just (MetaInlines ils) -> [ils]
         Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms] ++
                                   [ils | MetaBlocks [Plain ils] <- ms] ++
-                                  [ils | MetaBlocks [Para ils]  <- ms] ++
+                                  [ils | MetaBlocks [Para _ ils]  <- ms] ++
                                   [[Str x] | MetaString x <- ms]
         _                      -> []
 
@@ -169,11 +172,11 @@ docAuthors meta =
 docDate :: Meta -> [Inline]
 docDate meta =
   case lookupMeta "date" meta of
-         Just (MetaString s)           -> [Str s]
-         Just (MetaInlines ils)        -> ils
-         Just (MetaBlocks [Plain ils]) -> ils
-         Just (MetaBlocks [Para ils])  -> ils
-         _                             -> []
+         Just (MetaString s)            -> [Str s]
+         Just (MetaInlines ils)         -> ils
+         Just (MetaBlocks [Plain ils])  -> ils
+         Just (MetaBlocks [Para _ ils]) -> ils
+         _                              -> []
 
 -- | List attributes.  The first element of the triple is the
 -- start number of the list.
@@ -195,10 +198,22 @@ data ListNumberDelim = DefaultDelim
                      | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | Attributes: identifier, classes, key-value pairs
-type Attr = (Text, [Text], [(Text, Text)])
+data Attr = Attr Text [Text] (M.Map Text Text)
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+toAttr :: Text -> [Text] -> [(Text, Text)] -> Attr
+toAttr x y = Attr x y . M.fromList
+
+fromAttr :: Attr -> (Text, [Text], [(Text, Text)])
+fromAttr (Attr x y z) = (x, y, M.toList z)
+
+-- | Retrieve the value associated to a @key@ in the key-value pairs
+-- of an 'Attr'.
+lookupKey :: Text -> Attr -> Maybe Text
+lookupKey k (Attr _ _ z) = M.lookup k z
 
 nullAttr :: Attr
-nullAttr = ("",[],[])
+nullAttr = Attr "" [] mempty
 
 -- | Formats for raw blocks
 newtype Format = Format Text
@@ -254,7 +269,7 @@ data TableFoot = TableFoot Attr [Row]
 type ShortCaption = [Inline]
 
 -- | The caption of a table, with an optional short caption.
-data Caption = Caption (Maybe ShortCaption) [Block]
+data Caption = Caption Attr (Maybe ShortCaption) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | A table cell.
@@ -274,28 +289,28 @@ data Block
     -- | Plain text, not a paragraph
     = Plain [Inline]
     -- | Paragraph
-    | Para [Inline]
+    | Para Attr [Inline]
     -- | Multiple non-breaking lines
-    | LineBlock [[Inline]]
+    | LineBlock Attr [[Inline]]
     -- | Code block (literal) with attributes
     | CodeBlock Attr Text
     -- | Raw block
-    | RawBlock Format Text
+    | RawBlock Attr Format Text
     -- | Block quote (list of blocks)
-    | BlockQuote [Block]
+    | BlockQuote Attr [Block]
     -- | Ordered list (attributes and a list of items, each a list of
     -- blocks)
-    | OrderedList ListAttributes [[Block]]
+    | OrderedList Attr ListAttributes [[Block]]
     -- | Bullet list (list of items, each a list of blocks)
-    | BulletList [[Block]]
+    | BulletList Attr [[Block]]
     -- | Definition list. Each list item is a pair consisting of a
     -- term (a list of inlines) and one or more definitions (each a
     -- list of blocks)
-    | DefinitionList [([Inline],[[Block]])]
+    | DefinitionList Attr [([Inline],[[Block]])]
     -- | Header - level (integer) and text (inlines)
     | Header Int Attr [Inline]
     -- | Horizontal rule
-    | HorizontalRule
+    | HorizontalRule Attr
     -- | Table, with attributes, caption, optional short caption,
     -- column alignments and widths (required), table head, table
     -- bodies, and table foot
@@ -318,24 +333,24 @@ data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable
 -- | Inline elements.
 data Inline
     = Str Text            -- ^ Text (string)
-    | Emph [Inline]         -- ^ Emphasized text (list of inlines)
-    | Underline [Inline]    -- ^  Underlined text (list of inlines)
-    | Strong [Inline]       -- ^ Strongly emphasized text (list of inlines)
-    | Strikeout [Inline]    -- ^ Strikeout text (list of inlines)
-    | Superscript [Inline]  -- ^ Superscripted text (list of inlines)
-    | Subscript [Inline]    -- ^ Subscripted text (list of inlines)
-    | SmallCaps [Inline]    -- ^ Small caps text (list of inlines)
-    | Quoted QuoteType [Inline] -- ^ Quoted text (list of inlines)
-    | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
+    | Emph Attr [Inline]         -- ^ Emphasized text (list of inlines)
+    | Underline Attr [Inline]    -- ^  Underlined text (list of inlines)
+    | Strong Attr [Inline]       -- ^ Strongly emphasized text (list of inlines)
+    | Strikeout Attr [Inline]    -- ^ Strikeout text (list of inlines)
+    | Superscript Attr [Inline]  -- ^ Superscripted text (list of inlines)
+    | Subscript Attr [Inline]    -- ^ Subscripted text (list of inlines)
+    | SmallCaps Attr [Inline]    -- ^ Small caps text (list of inlines)
+    | Quoted Attr QuoteType [Inline] -- ^ Quoted text (list of inlines)
+    | Cite Attr [Citation]  [Inline] -- ^ Citation (list of inlines)
     | Code Attr Text      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
-    | Math MathType Text  -- ^ TeX math (literal)
-    | RawInline Format Text -- ^ Raw inline
+    | Math Attr MathType Text  -- ^ TeX math (literal)
+    | RawInline Attr Format Text -- ^ Raw inline
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
-    | Note [Block]          -- ^ Footnote or endnote
+    | Note Attr [Block]          -- ^ Footnote or endnote
     | Span Attr [Inline]    -- ^ Generic inline container with attributes
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
@@ -354,7 +369,6 @@ instance Ord Citation where
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
-
 -- ToJSON/FromJSON instances. Some are defined by hand so that we have
 -- more control over the format.
 
@@ -364,6 +378,7 @@ $(let jsonOpts = defaultOptions
         }
   in fmap concat $ traverse (deriveJSON jsonOpts)
      [ ''MetaValue
+     , ''Attr
      , ''CitationMode
      , ''Citation
      , ''QuoteType
@@ -421,6 +436,7 @@ instance ToJSON Pandoc where
 -- Instances for deepseq
 instance NFData MetaValue
 instance NFData Meta
+instance NFData Attr
 instance NFData Citation
 instance NFData Alignment
 instance NFData RowSpan

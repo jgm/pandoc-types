@@ -82,6 +82,9 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , MathType(..)
                               , Citation(..)
                               , CitationMode(..)
+                              , Reference(..)
+                              , ReferenceMode(..)
+                              , RefType(..)
                               , pandocTypesVersion
                               ) where
 
@@ -327,6 +330,7 @@ data Inline
     | SmallCaps [Inline]    -- ^ Small caps text (list of inlines)
     | Quoted QuoteType [Inline] -- ^ Quoted text (list of inlines)
     | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
+    | Ref Attr RefType [Reference] [Inline] -- ^ Reference (list of inlines)
     | Code Attr Text      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
@@ -354,6 +358,29 @@ instance Ord Citation where
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
+data Reference = Reference
+  { referenceId     :: Text
+  , referencePrefix :: [Inline]
+  , referenceSuffix :: [Inline]
+  , referenceMode   :: ReferenceMode
+  , referenceHash   :: Int
+  } deriving (Show, Eq, Read, Typeable, Data, Generic)
+
+instance Ord Reference where
+  compare = comparing referenceHash
+
+data ReferenceMode
+  = UpperCasePrefix
+  | LowerCasePrefix
+  | SuppressPrefix
+  | NormalReference
+  deriving (Show, Eq, Read, Enum, Bounded, Typeable, Data, Generic)
+
+data RefType
+  = NumberRef
+  | PageRef
+  | RefTypeDefault
+  deriving (Show, Eq, Ord, Read, Enum, Bounded, Typeable, Data, Generic)
 
 -- ToJSON/FromJSON instances. Some are defined by hand so that we have
 -- more control over the format.
@@ -366,6 +393,9 @@ $(let jsonOpts = defaultOptions
      [ ''MetaValue
      , ''CitationMode
      , ''Citation
+     , ''ReferenceMode
+     , ''RefType
+     , ''Reference
      , ''QuoteType
      , ''MathType
      , ''ListNumberStyle
@@ -422,6 +452,7 @@ instance ToJSON Pandoc where
 instance NFData MetaValue
 instance NFData Meta
 instance NFData Citation
+instance NFData Reference
 instance NFData Alignment
 instance NFData RowSpan
 instance NFData ColSpan
@@ -435,6 +466,8 @@ instance NFData Inline
 instance NFData MathType
 instance NFData Format
 instance NFData CitationMode
+instance NFData ReferenceMode
+instance NFData RefType
 instance NFData QuoteType
 instance NFData ListNumberDelim
 instance NFData ListNumberStyle

@@ -52,6 +52,7 @@ instance Arbitrary Inlines where
           flattenInline (SmallCaps ils) = ils
           flattenInline (Quoted _ ils) = ils
           flattenInline (Cite _ ils) = ils
+          flattenInline (Ref _ _ _ ils) = ils
           flattenInline Code{} = []
           flattenInline Space = []
           flattenInline SoftBreak = []
@@ -125,6 +126,9 @@ instance Arbitrary Inline where
   shrink (Quoted qtype ils) = Quoted qtype <$> shrinkInlineList ils
   shrink (Cite cits ils) = (Cite cits <$> shrinkInlineList ils)
                         ++ (flip Cite ils <$> shrink cits)
+  shrink (Ref attr rt refs ils) = [Ref attr rt refs ils' | ils' <- shrinkInlineList ils]
+                               ++ [Ref attr rt refs' ils | refs' <- shrink refs]
+                               ++ [Ref attr' rt refs ils | attr' <- shrinkAttr attr]
   shrink (Code attr s) = (Code attr <$> shrinkText s)
                       ++ (flip Code s <$> shrinkAttr attr)
   shrink Space = []
@@ -173,6 +177,7 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                    , (10, Link <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (10, Image <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (2,  Cite <$> arbitrary <*> arbInlines 1)
+                   , (2,  Ref <$> arbAttr <*> arbitrary <*> arbitrary <*> arbInlines 1)
                    , (2,  Note <$> resize 3 (listOf1 $ arbBlock (n-1)))
                    ]
 
@@ -300,6 +305,22 @@ instance Arbitrary Citation where
                      <*> arbitrary
                      <*> arbitrary
                      <*> arbitrary
+
+instance Arbitrary ReferenceMode where
+        arbitrary
+          = arbitraryBoundedEnum
+
+instance Arbitrary RefType where
+        arbitrary
+          = arbitraryBoundedEnum
+
+instance Arbitrary Reference where
+        arbitrary
+          = Reference <$> fmap T.pack (listOf $ elements $ ['a'..'z'] ++ ['0'..'9'] ++ ['_'])
+                      <*> arbInlines 1
+                      <*> arbInlines 1
+                      <*> arbitrary
+                      <*> arbitrary
 
 instance Arbitrary Row where
   arbitrary = resize 3 $ arbRow 2

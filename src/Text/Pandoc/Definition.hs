@@ -197,9 +197,20 @@ data ListNumberDelim = DefaultDelim
                      | OneParen
                      | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
--- | Attributes: identifier, classes, key-value pairs
+-- | Attributes: identifier, classes, key-value pairs. The semigroup
+-- instance is left-biased in the identifier and attributes, and
+-- concatenates the classes.
 data Attr = Attr Text [Text] (M.Map Text Text)
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+instance Semigroup Attr where
+  (Attr i1 c1 k1) <> (Attr i2 c2 k2) = Attr i (c1 <> c2) (k1 <> k2)
+    where
+      i | T.null i1 = i2
+        | otherwise = i1
+
+instance Monoid Attr where
+  mempty = nullAttr
 
 toAttr :: Text -> [Text] -> [(Text, Text)] -> Attr
 toAttr x y = Attr x y . M.fromList

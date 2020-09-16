@@ -230,25 +230,23 @@ instance Semigroup Inlines where
                           (SoftBreak, Space) -> xs' |> SoftBreak
                           (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
                           (Emph a1 i1, Emph a2 i2)
-                            | null' a1 && null' a2 -> xs' |> Emph nullAttr (i1 <> i2)
+                            | a1 == a2 -> xs' |> Emph a1 (i1 <> i2)
                           (Underline a1 i1, Underline a2 i2)
-                            | null' a1 && null' a2 -> xs' |> Underline nullAttr (i1 <> i2)
+                            | a1 == a2 -> xs' |> Underline a1 (i1 <> i2)
                           (Strong a1 i1, Strong a2 i2)
-                            | null' a1 && null' a2 -> xs' |> Strong nullAttr (i1 <> i2)
+                            | a1 == a2 -> xs' |> Strong a1 (i1 <> i2)
                           (Subscript a1 i1, Subscript a2 i2)
-                            | null' a1 && null' a2 -> xs' |> Subscript nullAttr (i1 <> i2)
+                            | a1 == a2 -> xs' |> Subscript a1 (i1 <> i2)
                           (Superscript a1 i1, Superscript a2 i2)
-                            | null' a1 && null' a2 -> xs' |> Superscript nullAttr (i1 <> i2)
+                            | a1 == a2 -> xs' |> Superscript a1 (i1 <> i2)
                           (Strikeout a1 i1, Strikeout a2 i2)
-                            | null' a1 && null' a2 -> xs' |> Strikeout nullAttr (i1 <> i2)
+                            | a1 == a2 -> xs' |> Strikeout a1 (i1 <> i2)
                           (Space, LineBreak) -> xs' |> LineBreak
                           (LineBreak, Space) -> xs' |> LineBreak
                           (SoftBreak, LineBreak) -> xs' |> LineBreak
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
-              null' (Attr "" [] m) = M.null m
-              null' _              = False
 
 instance Monoid Inlines where
   mempty = Many mempty

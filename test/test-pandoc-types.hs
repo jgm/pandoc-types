@@ -158,7 +158,7 @@ t_citation = ( Citation { citationId = "jameson:unconscious",
                           citationMode = NormalCitation,
                           citationNoteNum = 0,
                           citationHash = 0}
-             , [s|{"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationNoteNum":0,"citationMode":{"t":"NormalCitation"},"citationPrefix":[{"t":"Str","c":"cf"}],"citationId":"jameson:unconscious","citationHash":0}|]
+             , [s|{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}|]
              )
 
 t_displaymath :: (MathType, ByteString)
@@ -225,7 +225,7 @@ t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
                 , Str "@jameson:unconscious"
                 , Space
                 , Str "12]"]
-         ,[s|{"t":"Cite","c":[[{"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationNoteNum":0,"citationMode":{"t":"NormalCitation"},"citationPrefix":[{"t":"Str","c":"cf"}],"citationId":"jameson:unconscious","citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
+         ,[s|{"t":"Cite","c":[[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
              )
 
 t_code :: (Inline, ByteString)

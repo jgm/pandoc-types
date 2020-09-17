@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
-    FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP #-}
+    FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
+    TemplateHaskell #-}
 
 {-
 Copyright (c) 2006-2019, John MacFarlane
@@ -87,6 +88,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
 import Data.Aeson hiding (Null)
+import Data.Aeson.TH (deriveJSON)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map as M
 import Data.Text (Text)
@@ -110,7 +112,7 @@ instance Monoid Pandoc where
 
 -- | Metadata for the document:  title, authors, date.
 newtype Meta = Meta { unMeta :: M.Map Text MetaValue }
-               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, ToJSON, FromJSON)
+               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 instance Semigroup Meta where
   (Meta m1) <> (Meta m2) = Meta (M.union m2 m1)
@@ -353,272 +355,38 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 
--- ToJSON/FromJSON instances. We do this by hand instead of deriving
--- from generics, so we can have more control over the format.
+-- ToJSON/FromJSON instances. Some are defined by hand so that we have
+-- more control over the format.
 
-taggedNoContent :: Text -> Value
-taggedNoContent x = object [ "t" .= x ]
+$(let jsonOpts = defaultOptions
+        { allNullaryToStringTag = False
+        , sumEncoding = TaggedObject { tagFieldName = "t", contentsFieldName = "c" }
+        }
+  in fmap concat $ traverse (deriveJSON jsonOpts)
+     [ ''MetaValue
+     , ''CitationMode
+     , ''Citation
+     , ''QuoteType
+     , ''MathType
+     , ''ListNumberStyle
+     , ''ListNumberDelim
+     , ''Alignment
+     , ''ColWidth
+     , ''Row
+     , ''Caption
+     , ''TableHead
+     , ''TableBody
+     , ''TableFoot
+     , ''Cell
+     , ''Inline
+     , ''Block
+     ])
 
-tagged :: ToJSON a => Text -> a -> Value
-tagged x y = object [ "t" .= x, "c" .= y ]
-
-instance FromJSON MetaValue where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "MetaMap"     -> MetaMap     <$> (v .: "c")
-      "MetaList"    -> MetaList    <$> (v .: "c")
-      "MetaBool"    -> MetaBool    <$> (v .: "c")
-      "MetaString"  -> MetaString  <$> (v .: "c")
-      "MetaInlines" -> MetaInlines <$> (v .: "c")
-      "MetaBlocks"  -> MetaBlocks  <$> (v .: "c")
-      _ -> mempty
-  parseJSON _ = mempty
-instance ToJSON MetaValue where
-  toJSON (MetaMap mp) = tagged "MetaMap" mp
-  toJSON (MetaList lst) = tagged "MetaList" lst
-  toJSON (MetaBool bool) = tagged "MetaBool" bool
-  toJSON (MetaString s) = tagged "MetaString" s
-  toJSON (MetaInlines ils) = tagged "MetaInlines" ils
-  toJSON (MetaBlocks blks) = tagged "MetaBlocks" blks
-
-instance FromJSON CitationMode where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "AuthorInText"   -> return AuthorInText
-      "SuppressAuthor" -> return SuppressAuthor
-      "NormalCitation" -> return NormalCitation
-      _ -> mempty
-  parseJSON _ = mempty
-instance ToJSON CitationMode where
-  toJSON cmode = taggedNoContent s
-    where s = case cmode of
-            AuthorInText   -> "AuthorInText"
-            SuppressAuthor -> "SuppressAuthor"
-            NormalCitation -> "NormalCitation"
-
-instance FromJSON Citation
-instance ToJSON Citation
-
-instance FromJSON QuoteType where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "SingleQuote" -> return SingleQuote
-      "DoubleQuote" -> return DoubleQuote
-      _                    -> mempty
-  parseJSON _ = mempty
-instance ToJSON QuoteType where
-  toJSON qtype = taggedNoContent s
-    where s = case qtype of
-            SingleQuote -> "SingleQuote"
-            DoubleQuote -> "DoubleQuote"
-
-
-instance FromJSON MathType where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "DisplayMath" -> return DisplayMath
-      "InlineMath"  -> return InlineMath
-      _                    -> mempty
-  parseJSON _ = mempty
-instance ToJSON MathType where
-  toJSON mtype = taggedNoContent s
-    where s = case mtype of
-            DisplayMath -> "DisplayMath"
-            InlineMath  -> "InlineMath"
-
-instance FromJSON ListNumberStyle where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "DefaultStyle" -> return DefaultStyle
-      "Example"      -> return Example
-      "Decimal"      -> return Decimal
-      "LowerRoman"   -> return LowerRoman
-      "UpperRoman"   -> return UpperRoman
-      "LowerAlpha"   -> return LowerAlpha
-      "UpperAlpha"   -> return UpperAlpha
-      _              -> mempty
-  parseJSON _ = mempty
-instance ToJSON ListNumberStyle where
-  toJSON lsty = taggedNoContent s
-    where s = case lsty of
-            DefaultStyle -> "DefaultStyle"
-            Example      -> "Example"
-            Decimal      -> "Decimal"
-            LowerRoman   -> "LowerRoman"
-            UpperRoman   -> "UpperRoman"
-            LowerAlpha   -> "LowerAlpha"
-            UpperAlpha   -> "UpperAlpha"
-
-instance FromJSON ListNumberDelim where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "DefaultDelim" -> return DefaultDelim
-      "Period"       -> return Period
-      "OneParen"     -> return OneParen
-      "TwoParens"    -> return TwoParens
-      _                     -> mempty
-  parseJSON _ = mempty
-instance ToJSON ListNumberDelim where
-  toJSON delim = taggedNoContent s
-    where s = case delim of
-            DefaultDelim -> "DefaultDelim"
-            Period       -> "Period"
-            OneParen     -> "OneParen"
-            TwoParens    -> "TwoParens"
-
-instance FromJSON Alignment where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "AlignLeft"    -> return AlignLeft
-      "AlignRight"   -> return AlignRight
-      "AlignCenter"  -> return AlignCenter
-      "AlignDefault" -> return AlignDefault
-      _                     -> mempty
-  parseJSON _ = mempty
-instance ToJSON Alignment where
-  toJSON delim = taggedNoContent s
-    where s = case delim of
-            AlignLeft    -> "AlignLeft"
-            AlignRight   -> "AlignRight"
-            AlignCenter  -> "AlignCenter"
-            AlignDefault -> "AlignDefault"
-
-instance FromJSON ColWidth where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "ColWidth"        -> ColWidth <$> v .: "c"
-      "ColWidthDefault" -> return ColWidthDefault
-      _     -> mempty
-  parseJSON _ = mempty
-instance ToJSON ColWidth where
-  toJSON (ColWidth ils)  = tagged "ColWidth" ils
-  toJSON ColWidthDefault = taggedNoContent "ColWidthDefault"
-
-instance FromJSON Row
-instance ToJSON Row
-
-instance FromJSON Caption
-instance ToJSON Caption
-
-instance FromJSON TableHead
-instance ToJSON TableHead
-
-instance FromJSON TableBody
-instance ToJSON TableBody
-
-instance FromJSON TableFoot
-instance ToJSON TableFoot
-
-instance FromJSON Cell
-instance ToJSON Cell
-
-instance FromJSON Inline where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "Str"         -> Str <$> v .: "c"
-      "Emph"        -> Emph <$> v .: "c"
-      "Underline"   -> Underline <$> v .: "c"
-      "Strong"      -> Strong <$> v .: "c"
-      "Strikeout"   -> Strikeout <$> v .: "c"
-      "Superscript" -> Superscript <$> v .: "c"
-      "Subscript"   -> Subscript <$> v .: "c"
-      "SmallCaps"   -> SmallCaps <$> v .: "c"
-      "Quoted"      -> do (qt, ils) <- v .: "c"
-                          return $ Quoted qt ils
-      "Cite"        -> do (cits, ils) <- v .: "c"
-                          return $ Cite cits ils
-      "Code"        -> do (attr, s) <- v .: "c"
-                          return $ Code attr s
-      "Space"       -> return Space
-      "SoftBreak"   -> return SoftBreak
-      "LineBreak"   -> return LineBreak
-      "Math"        -> do (mtype, s) <- v .: "c"
-                          return $ Math mtype s
-      "RawInline"   -> do (fmt, s) <- v .: "c"
-                          return $ RawInline fmt s
-      "Link"        -> do (attr, ils, tgt) <- v .: "c"
-                          return $ Link attr ils tgt
-      "Image"       -> do (attr, ils, tgt) <- v .: "c"
-                          return $ Image attr ils tgt
-      "Note"        -> Note <$> v .: "c"
-      "Span"        -> do (attr, ils) <- v .: "c"
-                          return $ Span attr ils
-      _ -> mempty
-  parseJSON _ = mempty
-
-instance ToJSON Inline where
-  toJSON (Str s) = tagged "Str" s
-  toJSON (Emph ils) = tagged "Emph" ils
-  toJSON (Underline ils) = tagged "Underline" ils
-  toJSON (Strong ils) = tagged "Strong" ils
-  toJSON (Strikeout ils) = tagged "Strikeout" ils
-  toJSON (Superscript ils) = tagged "Superscript" ils
-  toJSON (Subscript ils) = tagged "Subscript" ils
-  toJSON (SmallCaps ils) = tagged "SmallCaps" ils
-  toJSON (Quoted qtype ils) = tagged "Quoted" (qtype, ils)
-  toJSON (Cite cits ils) = tagged "Cite" (cits, ils)
-  toJSON (Code attr s) = tagged "Code" (attr, s)
-  toJSON Space = taggedNoContent "Space"
-  toJSON SoftBreak = taggedNoContent "SoftBreak"
-  toJSON LineBreak = taggedNoContent "LineBreak"
-  toJSON (Math mtype s) = tagged "Math" (mtype, s)
-  toJSON (RawInline fmt s) = tagged "RawInline" (fmt, s)
-  toJSON (Link attr ils target) = tagged "Link" (attr, ils, target)
-  toJSON (Image attr ils target) = tagged "Image" (attr, ils, target)
-  toJSON (Note blks) = tagged "Note" blks
-  toJSON (Span attr ils) = tagged "Span" (attr, ils)
-
-instance FromJSON Block where
-  parseJSON (Object v) = do
-    t <- v .: "t" :: Aeson.Parser Value
-    case t of
-      "Plain"          -> Plain <$> v .: "c"
-      "Para"           -> Para  <$> v .: "c"
-      "LineBlock"      -> LineBlock <$> v .: "c"
-      "CodeBlock"      -> do (attr, s) <- v .: "c"
-                             return $ CodeBlock attr s
-      "RawBlock"       -> do (fmt, s) <- v .: "c"
-                             return $ RawBlock fmt s
-      "BlockQuote"     -> BlockQuote <$> v .: "c"
-      "OrderedList"    -> do (attr, items) <- v .: "c"
-                             return $ OrderedList attr items
-      "BulletList"     -> BulletList <$> v .: "c"
-      "DefinitionList" -> DefinitionList <$> v .: "c"
-      "Header"         -> do (n, attr, ils) <- v .: "c"
-                             return $ Header n attr ils
-      "HorizontalRule" -> return HorizontalRule
-      "Table"          -> do (attr, cpt, align, hdr, body, foot) <- v .: "c"
-                             return $ Table attr cpt align hdr body foot
-      "Div"            -> do (attr, blks) <- v .: "c"
-                             return $ Div attr blks
-      "Null"           -> return Null
-      _                -> mempty
-  parseJSON _ = mempty
-instance ToJSON Block where
-  toJSON (Plain ils) = tagged "Plain" ils
-  toJSON (Para ils) = tagged "Para" ils
-  toJSON (LineBlock lns) = tagged "LineBlock" lns
-  toJSON (CodeBlock attr s) = tagged "CodeBlock" (attr, s)
-  toJSON (RawBlock fmt s) = tagged "RawBlock" (fmt, s)
-  toJSON (BlockQuote blks) = tagged "BlockQuote" blks
-  toJSON (OrderedList listAttrs blksList) = tagged "OrderedList" (listAttrs, blksList)
-  toJSON (BulletList blksList) = tagged "BulletList" blksList
-  toJSON (DefinitionList defs) = tagged "DefinitionList" defs
-  toJSON (Header n attr ils) = tagged "Header" (n, attr, ils)
-  toJSON HorizontalRule = taggedNoContent "HorizontalRule"
-  toJSON (Table attr caption aligns hd body foot) =
-    tagged "Table" (attr, caption, aligns, hd, body, foot)
-  toJSON (Div attr blks) = tagged "Div" (attr, blks)
-  toJSON Null = taggedNoContent "Null"
+instance FromJSON Meta where
+  parseJSON = fmap Meta . parseJSON
+instance ToJSON Meta where
+  toJSON (Meta m) = toJSON m
+  toEncoding (Meta m) = toEncoding m
 
 instance FromJSON Pandoc where
   parseJSON (Object v) = do
@@ -644,6 +412,11 @@ instance ToJSON Pandoc where
            , "meta"               .= meta
            , "blocks"             .= blks
            ]
+  toEncoding (Pandoc meta blks) =
+    pairs $ mconcat [ "pandoc-api-version" .= versionBranch pandocTypesVersion
+                    , "meta"               .= meta
+                    , "blocks"             .= blks
+                    ]
 
 -- Instances for deepseq
 instance NFData MetaValue

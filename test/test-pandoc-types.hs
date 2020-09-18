@@ -760,10 +760,6 @@ tests =
         , testEncodeDecode "BulletList" t_bulletlist
         , testEncodeDecode "DefinitionList" t_definitionlist
         , testEncodeDecode "Header" t_header
-        , testEncodeDecode "Caption" t_caption
-        , testEncodeDecode "TableHead" t_tablehead
-        , testEncodeDecode "TableBody" t_tablebody
-        , testEncodeDecode "TableFoot" t_tablefoot
         , testEncodeDecode "Table" t_table
         , testEncodeDecode "Div" t_div
         , testEncodeDecode "Null" t_null

@@ -106,6 +106,11 @@ testEncodeDecode msg pair = testGroup msg [ testCase "Encoding" $ testEncode pai
                                           , testCase "Decoding" $ testDecode pair
                                           ]
 
+t_meta :: (Meta, ByteString)
+t_meta = ( Meta $ M.fromList [("foo", MetaBool True)]
+         , [s|{"foo":{"t":"MetaBool","c":true}}|]
+         )
+
 t_metamap :: (MetaValue, ByteString)
 t_metamap = ( MetaMap $
               M.fromList [("foo", MetaBool True)]
@@ -153,7 +158,7 @@ t_citation = ( Citation { citationId = "jameson:unconscious",
                           citationMode = NormalCitation,
                           citationNoteNum = 0,
                           citationHash = 0}
-             , [s|{"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationNoteNum":0,"citationMode":{"t":"NormalCitation"},"citationPrefix":[{"t":"Str","c":"cf"}],"citationId":"jameson:unconscious","citationHash":0}|]
+             , [s|{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}|]
              )
 
 t_displaymath :: (MathType, ByteString)
@@ -220,7 +225,7 @@ t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
                 , Str "@jameson:unconscious"
                 , Space
                 , Str "12]"]
-         ,[s|{"t":"Cite","c":[[{"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationNoteNum":0,"citationMode":{"t":"NormalCitation"},"citationPrefix":[{"t":"Str","c":"cf"}],"citationId":"jameson:unconscious","citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
+         ,[s|{"t":"Cite","c":[[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
              )
 
 t_code :: (Inline, ByteString)
@@ -324,6 +329,48 @@ t_header = ( Header 2 ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Str "Head"]
            , [s|{"t":"Header","c":[2,["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Str","c":"Head"}]]}|]
            )
 
+t_row :: (Row, ByteString)
+t_row = (Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+         [Cell ("", [], []) AlignRight 2 3 [Para [Str "bar"]]]
+        ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["",[],[]],{"t":"AlignRight"},2,3,[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]]]|])
+
+t_caption :: (Caption, ByteString)
+t_caption = (Caption (Just [Str "foo"]) [Para [Str "bar"]]
+            ,[s|[[{"t":"Str","c":"foo"}],[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]|])
+
+t_tablehead :: (TableHead, ByteString)
+t_tablehead = (TableHead ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
+              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+
+t_tablebody :: (TableBody, ByteString)
+t_tablebody = (TableBody ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) 3
+               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
+               [Row ("id'",["kls'"],[("k1", "v1"), ("k2", "v2")]) []]
+              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],3,[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]],[[["id'",["kls'"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+
+t_tablefoot :: (TableFoot, ByteString)
+t_tablefoot = (TableFoot ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
+               [Row ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) []]
+              ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[]]]]|])
+
+t_cell :: (Cell, ByteString)
+t_cell = (Cell ("id",["kls"],[("k1", "v1"), ("k2", "v2")]) AlignLeft 1 1
+          [Para [Str "bar"]]
+         ,[s|[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignLeft"},1,1,[{"t":"Para","c":[{"t":"Str","c":"bar"}]}]]|])
+
+t_rowheadcolumns :: (RowHeadColumns, ByteString)
+t_rowheadcolumns = (1
+                   ,[s|1|])
+
+t_rowspan :: (RowSpan, ByteString)
+t_rowspan = (1
+            ,[s|1|])
+
+t_colspan :: (ColSpan, ByteString)
+t_colspan = (1
+            ,[s|1|])
+
 t_table :: (Block, ByteString)
 t_table = ( Table
             ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
@@ -382,7 +429,7 @@ t_table = ( Table
               ,tCell [Str "footleft"]
               ,tCell [Str "footcenter"]
               ,tCell [Str "footdefault"]]])
-          ,[s|{"t":"Table","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"Caption","c":[[{"t":"Str","c":"short"}],[{"t":"Para","c":[{"t":"Str","c":"Demonstration"},{"t":"Space"},{"t":"Str","c":"of"},{"t":"Space"},{"t":"Str","c":"simple"},{"t":"Space"},{"t":"Str","c":"table"},{"t":"Space"},{"t":"Str","c":"syntax."}]}]]},[[{"t":"AlignDefault"},{"t":"ColWidthDefault"}],[{"t":"AlignRight"},{"t":"ColWidthDefault"}],[{"t":"AlignLeft"},{"t":"ColWidthDefault"}],[{"t":"AlignCenter"},{"t":"ColWidthDefault"}],[{"t":"AlignDefault"},{"t":"ColWidthDefault"}]],{"t":"TableHead","c":[["idh",["klsh"],[["k1h","v1h"],["k2h","v2h"]]],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Head"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Right"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Left"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Center"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"Default"}]}]]}]]}]]},[{"t":"TableBody","c":[["idb",["klsb"],[["k1b","v1b"],["k2b","v2b"]]],{"t":"RowHeadColumns","c":1},[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"ihead12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]}]]}],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]]},{"t":"Cell","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]}]]},{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]}]]},{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"head1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]}]]}]]}],{"t":"TableFoot","c":[["idf",["klsf"],[["k1f","v1f"],["k2f","v2f"]]],[{"t":"Row","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"foot"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footright"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footleft"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footcenter"}]}]]},{"t":"Cell","c":[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},{"t":"RowSpan","c":1},{"t":"ColSpan","c":1},[{"t":"Plain","c":[{"t":"Str","c":"footdefault"}]}]]}]]}]]}]}|]
+          ,[s|{"t":"Table","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[{"t":"Str","c":"short"}],[{"t":"Para","c":[{"t":"Str","c":"Demonstration"},{"t":"Space"},{"t":"Str","c":"of"},{"t":"Space"},{"t":"Str","c":"simple"},{"t":"Space"},{"t":"Str","c":"table"},{"t":"Space"},{"t":"Str","c":"syntax."}]}]],[[{"t":"AlignDefault"},{"t":"ColWidthDefault"}],[{"t":"AlignRight"},{"t":"ColWidthDefault"}],[{"t":"AlignLeft"},{"t":"ColWidthDefault"}],[{"t":"AlignCenter"},{"t":"ColWidthDefault"}],[{"t":"AlignDefault"},{"t":"ColWidthDefault"}]],[["idh",["klsh"],[["k1h","v1h"],["k2h","v2h"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Head"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Right"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Left"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Center"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"Default"}]}]]]]]],[[["idb",["klsb"],[["k1b","v1b"],["k2b","v2b"]]],1,[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"ihead12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"i12"}]}]]]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head12"}]}]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"12"}]}]]]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"123"}]}]]]],[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"head1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"1"}]}]]]]]]],[["idf",["klsf"],[["k1f","v1f"],["k2f","v2f"]]],[[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"foot"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footright"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footleft"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footcenter"}]}]],[["a",["b"],[["c","d"],["e","f"]]],{"t":"AlignDefault"},1,1,[{"t":"Plain","c":[{"t":"Str","c":"footdefault"}]}]]]]]]]}|]
               )
   where
     tCell i = Cell ("a", ["b"], [("c", "d"), ("e", "f")]) AlignDefault 1 1 [Plain i]
@@ -613,7 +660,8 @@ tests =
       ]
     , testGroup "JSON encoding/decoding"
       [ testGroup "Meta"
-        [ testEncodeDecode "MetaMap" t_metamap
+        [ testEncodeDecode "Meta" t_meta
+        , testEncodeDecode "MetaMap" t_metamap
         , testEncodeDecode "MetaList" t_metalist
         , testEncodeDecode "MetaBool" t_metabool
         , testEncodeDecode "MetaString" t_metastring
@@ -670,6 +718,17 @@ tests =
         , testEncodeDecode "Div" t_div
         , testEncodeDecode "Null" t_null
         ]
+      , testGroup "Table"
+        [ testEncodeDecode "Row" t_row
+        , testEncodeDecode "Caption" t_caption
+        , testEncodeDecode "TableHead" t_tablehead
+        , testEncodeDecode "TableBody" t_tablebody
+        , testEncodeDecode "TableFoot" t_tablefoot
+        , testEncodeDecode "Cell" t_cell
+        , testEncodeDecode "RowHeadColumns" t_rowheadcolumns
+        , testEncodeDecode "RowSpan" t_rowspan
+        , testEncodeDecode "ColSpan" t_colspan
+        ]
       ]
     ]
   , testGroup "Table normalization"
@@ -690,3 +749,4 @@ tests =
 
 main :: IO ()
 main = defaultMain tests
+

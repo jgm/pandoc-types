@@ -1,3 +1,47 @@
+[1.22]
+
+  * Deprecate isNull from Builder:  null can serve just as well (#67).
+
+  * Use untagged JSON encoding for single-constructor types (#75, #76,
+    Christian Despres).  All of the single constructor types related
+    to Table are now represented in JSON either as arrays (for
+    multi-argument constructors) or as the representation of the
+    inner type (for single argument constructors). This behaviour
+    for newtype-defined and multi-argument non-record types is now
+    consistent across the entire JSON interface, with the exception
+    of Pandoc itself (which is represented as a JSON object with
+    additional metadata). Multi-argument records (of which Citation
+    is the only example) are still represented as objects with the
+    record accessors as keys.
+
+  * The Meta and Citation types now use derived JSON serialization (newtype
+    and generic, respectively). The format remains the same as before
+    (Christian Despres).
+
+  * New serialization tests now test that Meta and the Table types are
+    encoded properly in JSON (Christian Despres).
+
+  * Use TH To/FromJSON instances (Christian Despres).
+
+  * Remove unused Legacy modules (#80, Despres).
+    They are not exported, and are not used internally.
+
+  * Change the table builder to permit looser intermediate table heads (#77,
+    Christian Despres).
+
+    The table builder (and the normalizeTableBody function) now permit
+    cells in the intermediate head of a TableBody to extend past the
+    RowHeadColumns. This allows for intermediate tables to have
+    subheadings that extend across the entire table.
+
+    Formerly the table builder would treat the intermediate head like the
+    intermediate body, and clip or drop cells that extended past the row
+    head.
+
+  * Update QuickCheck lower bound.
+
+  * Fix redundant pattern match.
+
 [1.21]
 
   * Add Underline constructor (#68, Vaibhav Sagar).

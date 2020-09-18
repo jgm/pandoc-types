@@ -208,6 +208,7 @@ singleton = Many . Seq.singleton
 fromList :: [a] -> Many a
 fromList = Many . Seq.fromList
 
+{-# DEPRECATED isNull "Use null instead" #-}
 isNull :: Many a -> Bool
 isNull = Seq.null . unMany
 

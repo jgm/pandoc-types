@@ -359,7 +359,7 @@ instance Arbitrary QuoteType where
 instance Arbitrary Meta where
         arbitrary
           = do (x1 :: Inlines) <- arbitrary
-               (x2 :: [Inlines]) <- filter (not . isNull) <$> arbitrary
+               (x2 :: [Inlines]) <- filter (not . null) <$> arbitrary
                (x3 :: Inlines) <- arbitrary
                return $ setMeta "title" x1
                       $ setMeta "author" x2

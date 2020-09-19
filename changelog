@@ -1,6 +1,7 @@
 [1.22]
 
   * Deprecate isNull from Builder:  null can serve just as well (#67).
+    Use null instead of isNull in Arbitrary (Christian Despres, #84).
 
   * Use untagged JSON encoding for single-constructor types (#75, #76,
     Christian Despres).  All of the single constructor types related

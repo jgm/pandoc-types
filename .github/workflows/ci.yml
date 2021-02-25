@@ -25,22 +25,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    # need to install older cabal/ghc versions from ppa repository
-
-    - name: Install recent cabal/ghc
-      run: |
-         if [[ ! -d /opt/ghc/${{ matrix.versions.ghc }} ]] || [[ ! -d /opt/ghc/${{ matrix.versions.cabal }} ]]
-         then
-           sudo add-apt-repository ppa:hvr/ghc
-           sudo apt-get update
-           sudo apt-get install ghc-${{ matrix.versions.ghc }} cabal-install-${{ matrix.versions.cabal }}
-         fi
-         # Use a GitHub workflow command to add folders to PATH.
-         echo "::add-path::/opt/ghc/${{ matrix.versions.ghc }}/bin"
-         echo "::add-path::/opt/cabal/${{ matrix.versions.cabal }}/bin"
-
     - name: Install dependencies
       run: |
+          export PATH=/opt/cabal/${{ matrix.versions.cabal }}/bin:/opt/ghc/${{ matrix.versions.ghc }}/bin:$PATH
           cabal v2-update
           cabal v2-build --dependencies-only --enable-tests --enable-benchmarks --disable-optimization -fexecutable all
     - name: Build and test

@@ -1,6 +1,14 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable,
-    GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
-    DeriveTraversable, OverloadedStrings, PatternGuards #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE TypeFamilies #-}
 {-
 Copyright (C) 2010-2019 John MacFarlane
 
@@ -193,20 +201,20 @@ import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
 import Data.Semigroup (Semigroup(..))
+import GHC.Exts (IsList(..))
 
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
 
 deriving instance Generic (Many a)
 
-toList :: Many a -> [a]
-toList = F.toList
+instance IsList (Many a) where
+  type Item (Many a) = a
+  fromList = Many. Seq.fromList
+  toList = F.toList
 
 singleton :: a -> Many a
 singleton = Many . Seq.singleton
-
-fromList :: [a] -> Many a
-fromList = Many . Seq.fromList
 
 {-# DEPRECATED isNull "Use null instead" #-}
 isNull :: Many a -> Bool

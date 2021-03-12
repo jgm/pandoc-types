@@ -101,20 +101,16 @@ instance Arbitrary Blocks where
           flattenCell (Cell _ _ _ _ blks) = blks
 
 shrinkInlineList :: [Inline] -> [[Inline]]
-shrinkInlineList =
-  fmap toList . (shrink :: Inlines -> [Inlines]) . fromList
+shrinkInlineList = fmap toList . shrink . fromList
 
 shrinkInlinesList :: [[Inline]] -> [[[Inline]]]
-shrinkInlinesList =
-  fmap (fmap toList) . (shrink :: [Inlines] -> [[Inlines]]) . fmap fromList
+shrinkInlinesList = fmap (fmap toList) . shrink . fmap fromList
 
 shrinkBlockList :: [Block] -> [[Block]]
-shrinkBlockList =
-  fmap toList . (shrink :: Blocks -> [Blocks]) . fromList
+shrinkBlockList = fmap toList . shrink . fromList
 
 shrinkBlocksList :: [[Block]] -> [[[Block]]]
-shrinkBlocksList =
-  fmap (fmap toList) . (shrink :: [Blocks] -> [[Blocks]]) . fmap fromList
+shrinkBlocksList = fmap (fmap toList) . shrink . fmap fromList
 
 instance Arbitrary Inline where
   arbitrary = resize 3 $ arbInline 2

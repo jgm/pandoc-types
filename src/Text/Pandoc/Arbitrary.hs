@@ -82,15 +82,15 @@ instance Arbitrary Blocks where
           flattenBlock (DefinitionList defs) = concat [Para ils:concat blks | (ils, blks) <- defs]
           flattenBlock (Header _ _ ils) = [Para ils]
           flattenBlock HorizontalRule = []
-          flattenBlock (Table _ capt _ hd bd ft) = flattenCaption capt <>
-                                                   flattenTableHead hd <>
-                                                   concatMap flattenTableBody bd <>
-                                                   flattenTableFoot ft
+          flattenBlock (Table _ _ hd bd ft) = flattenTableHead hd <>
+                                              concatMap flattenTableBody bd <>
+                                              flattenTableFoot ft
+          flattenBlock (Figure _ _ capt blks) = flattenCaption capt <> blks
           flattenBlock (Div _ blks) = blks
           flattenBlock Null = []
 
-          flattenCaption (Caption Nothing body)    = body
-          flattenCaption (Caption (Just ils) body) = Para ils : body
+          flattenCaption (Caption _ Nothing body)    = body
+          flattenCaption (Caption _ (Just ils) body) = Para ils : body
 
           flattenTableHead (TableHead _ body) = flattenRows body
           flattenTableBody (TableBody _ _ hd bd) = flattenRows hd <> flattenRows bd
@@ -197,13 +197,16 @@ instance Arbitrary Block where
   shrink (Header n attr ils) = (Header n attr <$> shrinkInlineList ils)
                             ++ (flip (Header n) ils <$> shrinkAttr attr)
   shrink HorizontalRule = []
-  shrink (Table attr capt specs thead tbody tfoot) =
+  shrink (Table attr specs thead tbody tfoot) =
     -- TODO: shrink number of columns
-    [Table attr' capt specs thead tbody tfoot | attr' <- shrinkAttr attr] ++
-    [Table attr capt specs thead' tbody tfoot | thead' <- shrink thead] ++
-    [Table attr capt specs thead tbody' tfoot | tbody' <- shrink tbody] ++
-    [Table attr capt specs thead tbody tfoot' | tfoot' <- shrink tfoot] ++
-    [Table attr capt' specs thead tbody tfoot | capt' <- shrink capt]
+    [Table attr' specs thead tbody tfoot | attr' <- shrinkAttr attr] ++
+    [Table attr specs thead' tbody tfoot | thead' <- shrink thead] ++
+    [Table attr specs thead tbody' tfoot | tbody' <- shrink tbody] ++
+    [Table attr specs thead tbody tfoot' | tfoot' <- shrink tfoot]
+  shrink (Figure attr cp capt blks) =
+    [Figure attr cp capt blks' | blks' <- shrinkBlockList blks] ++
+    [Figure attr cp capt' blks | capt' <- shrink capt] ++
+    [Figure attr' cp capt blks | attr' <- shrinkAttr attr]
   shrink (Div attr blks) = (Div attr <$> shrinkBlockList blks)
                         ++ (flip Div blks <$> shrinkAttr attr)
   shrink Null = []
@@ -238,7 +241,6 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                    , (2, do cs <- choose (1 :: Int, 6)
                             bs <- choose (0 :: Int, 2)
                             Table <$> arbAttr
-                                  <*> arbitrary
                                   <*> vectorOf cs ((,) <$> arbitrary
                                                        <*> elements [ ColWidthDefault
                                                                     , ColWidth (1/3)
@@ -246,6 +248,10 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                   <*> arbTableHead (n-1)
                                   <*> vectorOf bs (arbTableBody (n-1))
                                   <*> arbTableFoot (n-1))
+                   , (2, Figure <$> arbAttr
+                                <*> arbitrary
+                                <*> arbitrary
+                                <*> listOf1 (arbBlock (n-1)))
                    ]
 
 arbRow :: Int -> Gen Row
@@ -335,10 +341,15 @@ instance Arbitrary Cell where
       [Cell attr malign' h w body | malign' <- shrink malign]
 
 instance Arbitrary Caption where
-  arbitrary = Caption <$> arbitrary <*> arbitrary
-  shrink (Caption mshort body)
-    = [Caption mshort' body | mshort' <- shrink mshort] ++
-      [Caption mshort body' | body' <- shrinkBlockList body]
+  arbitrary = Caption <$> arbAttr <*> arbitrary <*> arbitrary
+  shrink (Caption attr mshort body)
+    = [Caption attr mshort' body | mshort' <- shrink mshort] ++
+      [Caption attr mshort body' | body' <- shrinkBlockList body] ++
+      [Caption attr' mshort body | attr' <- shrinkAttr attr]
+
+instance Arbitrary CaptionPos where
+        arbitrary
+          = arbitraryBoundedEnum
 
 instance Arbitrary MathType where
         arbitrary

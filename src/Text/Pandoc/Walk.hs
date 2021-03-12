@@ -466,12 +466,15 @@ walkBlockM _ x@CodeBlock {}           = return x
 walkBlockM _ x@RawBlock {}            = return x
 walkBlockM _ HorizontalRule           = return HorizontalRule
 walkBlockM _ Null                     = return Null
-walkBlockM f (Table attr capt as hs bs fs)
-  = do capt' <- walkM f capt
-       hs' <- walkM f hs
+walkBlockM f (Table attr as hs bs fs)
+  = do hs' <- walkM f hs
        bs' <- walkM f bs
        fs' <- walkM f fs
-       return $ Table attr capt' as hs' bs' fs'
+       return $ Table attr as hs' bs' fs'
+walkBlockM f (Figure attr cp capt blks)
+  = do capt' <- walkM f capt
+       blks' <- walkM f blks
+       return $ Figure attr cp capt' blks'
 
 -- | Perform a query on elements nested below a @'Block'@ element by
 -- querying all directly nested lists of @Inline@s or @Block@s.
@@ -490,11 +493,13 @@ queryBlock f (BulletList cs)          = query f cs
 queryBlock f (DefinitionList xs)      = query f xs
 queryBlock f (Header _ _ xs)          = query f xs
 queryBlock _ HorizontalRule           = mempty
-queryBlock f (Table _ capt _ hs bs fs)
-  = query f capt <>
-    query f hs <>
+queryBlock f (Table _ _ hs bs fs)
+  = query f hs <>
     query f bs <>
     query f fs
+queryBlock f (Figure _ _ capt blks)
+  = query f capt <>
+    query f blks
 queryBlock f (Div _ bs)               = query f bs
 queryBlock _ Null                     = mempty
 
@@ -605,12 +610,12 @@ queryCell f (Cell _ _ _ _ content) = query f content
 -- nodes.
 walkCaptionM :: (Walkable a [Block], Walkable a [Inline], Monad m, Walkable a ShortCaption)
           => (a -> m a) -> Caption -> m Caption
-walkCaptionM f (Caption mshort body) = Caption <$> walkM f mshort <*> walkM f body
+walkCaptionM f (Caption attr mshort body) = Caption attr <$> walkM f mshort <*> walkM f body
 
 -- | Query the elements below a 'Cell' element.
 queryCaption :: (Walkable a [Block], Walkable a [Inline], Walkable a ShortCaption, Monoid c)
           => (a -> c) -> Caption -> c
-queryCaption f (Caption mshort body) = query f mshort <> query f body
+queryCaption f (Caption _ mshort body) = query f mshort <> query f body
 
 -- | Helper method to walk the components of a Pandoc element.
 walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m,

@@ -113,10 +113,9 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , Many(..)
                            , Inlines
                            , Blocks
+                           , IsList(..)
                            , (<>)
                            , singleton
-                           , toList
-                           , fromList
                            , isNull
                            -- * Document builders
                            , doc

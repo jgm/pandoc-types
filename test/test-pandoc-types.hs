@@ -161,6 +161,37 @@ t_citation = ( Citation { citationId = "jameson:unconscious",
              , [s|{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}|]
              )
 
+t_uppercaseprefix :: (ReferenceMode, ByteString)
+t_uppercaseprefix = (UpperCasePrefix, [s|{"t":"UpperCasePrefix"}|])
+
+t_lowercaseprefix :: (ReferenceMode, ByteString)
+t_lowercaseprefix = (LowerCasePrefix, [s|{"t":"LowerCasePrefix"}|])
+
+t_suppressprefix :: (ReferenceMode, ByteString)
+t_suppressprefix = (SuppressPrefix, [s|{"t":"SuppressPrefix"}|])
+
+t_normalreference :: (ReferenceMode, ByteString)
+t_normalreference = (NormalReference, [s|{"t":"NormalReference"}|])
+
+t_numberref :: (RefType, ByteString)
+t_numberref = (NumberRef, [s|{"t":"NumberRef"}|])
+
+t_pageref :: (RefType, ByteString)
+t_pageref = (PageRef, [s|{"t":"PageRef"}|])
+
+t_reftypedefault :: (RefType, ByteString)
+t_reftypedefault = (RefTypeDefault, [s|{"t":"RefTypeDefault"}|])
+
+t_reference :: (Reference, ByteString)
+t_reference
+  = ( Reference { referenceId = "fig:demonstration"
+                , referencePrefix = [Str "cf"]
+                , referenceSuffix = [Space,Str "123"]
+                , referenceMode = NormalReference
+                , referenceHash = 0 }
+    , [s|{"referenceId":"fig:demonstration","referencePrefix":[{"t":"Str","c":"cf"}],"referenceSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"referenceMode":{"t":"NormalReference"},"referenceHash":0}|]
+    )
+
 t_displaymath :: (MathType, ByteString)
 t_displaymath = ( DisplayMath, [s|{"t":"DisplayMath"}|])
 
@@ -678,6 +709,18 @@ tests =
         , testEncodeDecode "NormalCitation" t_normalcitation
         ]
       , testEncodeDecode "Citation" t_citation
+      , testGroup "ReferenceMode"
+        [ testEncodeDecode "UpperCasePrefix" t_uppercaseprefix
+        , testEncodeDecode "LowerCasePrefix" t_lowercaseprefix
+        , testEncodeDecode "SuppressPrefix" t_suppressprefix
+        , testEncodeDecode "NormalReference" t_normalreference
+        ]
+      , testGroup "RefType"
+        [ testEncodeDecode "NumberRef" t_numberref
+        , testEncodeDecode "PageRef" t_pageref
+        , testEncodeDecode "RefTypeDefault" t_reftypedefault
+        ]
+      , testEncodeDecode "Reference" t_reference
       , testGroup "MathType"
         [ testEncodeDecode "DisplayMath" t_displaymath
         , testEncodeDecode "InlineMath" t_inlinemath

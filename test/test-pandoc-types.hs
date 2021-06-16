@@ -5,7 +5,8 @@ import Text.Pandoc.Definition
 import Text.Pandoc.Walk
 import Text.Pandoc.Builder (singleton, plain, text, simpleTable, table, emptyCell,
                             normalizeTableHead, normalizeTableBody, normalizeTableFoot,
-                            emptyCaption)
+                            emptyCaption, simpleFigureWith)
+import qualified Text.Pandoc.Builder as Builder
 import Data.Generics
 import Data.List (tails)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
@@ -13,7 +14,7 @@ import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.Providers.HUnit (testCase)
-import Test.QuickCheck (forAll, choose, Property, Arbitrary, Testable)
+import Test.QuickCheck (forAll, choose, Property, Arbitrary, Testable, arbitrary, Gen)
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -642,6 +643,17 @@ t_tableNormExample = testCase "table normalization example" assertion
                                  (tf finalHeads)
     generated = table emptyCaption spec (th initialHeads) [initialTB] (tf initialHeads)
 
+p_figureRepresentation :: Property
+p_figureRepresentation = forAll (arbitrary :: Gen [Inline]) (\figureCaption ->
+  simpleFigureWith
+      ("", [], [])
+      (Builder.fromList figureCaption)
+      "url"
+      "title" ==
+      Builder.fromList
+          [Para [Image ("", [], []) figureCaption ("url", "fig:title") ]]
+  )
+
 tests :: [Test]
 tests =
   [ testGroup "Walk"
@@ -744,6 +756,8 @@ tests =
     ]
   , t_tableSan
   , t_tableNormExample
+  , testGroup "Figure"
+    [ testProperty "p_figureRepresentation figure representation" p_figureRepresentation ]
   ]
 
 

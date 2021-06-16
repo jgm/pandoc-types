@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
-    TemplateHaskell #-}
+    TemplateHaskell , PatternSynonyms, ViewPatterns #-}
 
 {-
 Copyright (c) 2006-2019, John MacFarlane
@@ -57,6 +57,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , docAuthors
                               , docDate
                               , Block(..)
+                              , pattern SimpleFigure
                               , Inline(..)
                               , ListAttributes
                               , ListNumberStyle(..)
@@ -99,6 +100,7 @@ import Control.DeepSeq
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
 import Data.Semigroup (Semigroup(..))
+import Control.Arrow (second)
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -310,6 +312,34 @@ data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeab
 
 -- | Link target (URL, title).
 type Target = (Text, Text)
+
+isFigureTarget :: Target -> Maybe Target
+isFigureTarget tgt
+  | (src, Just tit) <- second (T.stripPrefix "fig:") tgt = Just (src, tit)
+  | otherwise = Nothing
+
+-- | Bidirectional patter synonym
+--
+-- It can pass as a Block constructor
+--
+-- >>> SimpleFigure nullAttr [] (T.pack "", T.pack "title")
+-- Para [Image ("",[],[]) [] ("","fig:title")]
+--
+--
+-- It can be used to pattern match
+-- >>> let img = Para [Image undefined undefined (undefined, T.pack "title")]
+-- >>> case img of { SimpleFigure _ _ _ -> True; _ -> False }
+-- False
+-- >>> let fig = Para [Image undefined undefined (undefined, T.pack "fig:title")]
+-- >>> case fig of { SimpleFigure _ _ tit -> snd tit; _ -> T.pack "" }
+-- "title"
+pattern SimpleFigure :: Attr -> [Inline] -> Target -> Block
+pattern SimpleFigure attr figureCaption tgt <-
+    Para [Image attr figureCaption
+        (isFigureTarget -> Just tgt)]  where
+  SimpleFigure attr figureCaption tgt =
+    Para [Image attr figureCaption (second ("fig:" <>) tgt)]
+
 
 -- | Type of math element (display or inline).
 data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)

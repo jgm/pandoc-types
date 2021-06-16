@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable,
     GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
     DeriveTraversable, OverloadedStrings, PatternGuards #-}
+
 {-
 Copyright (C) 2010-2019 John MacFarlane
 

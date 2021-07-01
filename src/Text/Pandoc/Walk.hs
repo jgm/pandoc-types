@@ -471,10 +471,10 @@ walkBlockM f (Table attr as hs bs fs)
        bs' <- walkM f bs
        fs' <- walkM f fs
        return $ Table attr as hs' bs' fs'
-walkBlockM f (Figure attr cp capt blks)
+walkBlockM f (Figure attr capt blks)
   = do capt' <- walkM f capt
        blks' <- walkM f blks
-       return $ Figure attr cp capt' blks'
+       return $ Figure attr capt' blks'
 
 -- | Perform a query on elements nested below a @'Block'@ element by
 -- querying all directly nested lists of @Inline@s or @Block@s.
@@ -497,7 +497,7 @@ queryBlock f (Table _ _ hs bs fs)
   = query f hs <>
     query f bs <>
     query f fs
-queryBlock f (Figure _ _ capt blks)
+queryBlock f (Figure _ capt blks)
   = query f capt <>
     query f blks
 queryBlock f (Div _ bs)               = query f bs

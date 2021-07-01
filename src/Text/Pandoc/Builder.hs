@@ -560,11 +560,11 @@ simpleTable headers rows =
         tb = TableBody nullAttr 0 [] $ map toRow rows
         tf = TableFoot nullAttr []
 
-figure :: CaptionPos -> Caption -> Blocks -> Blocks
+figure :: Caption -> Blocks -> Blocks
 figure = figureWith nullAttr
 
-figureWith :: Attr -> CaptionPos -> Caption -> Blocks -> Blocks
-figureWith attr capt cp = singleton . Figure attr capt cp . toList
+figureWith :: Attr -> Caption -> Blocks -> Blocks
+figureWith attr capt = singleton . Figure attr capt . toList
 
 caption :: Maybe ShortCaption -> Blocks -> Caption
 caption = captionWith nullAttr

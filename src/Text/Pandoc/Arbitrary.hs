@@ -85,7 +85,7 @@ instance Arbitrary Blocks where
           flattenBlock (Table _ _ hd bd ft) = flattenTableHead hd <>
                                               concatMap flattenTableBody bd <>
                                               flattenTableFoot ft
-          flattenBlock (Figure _ _ capt blks) = flattenCaption capt <> blks
+          flattenBlock (Figure _ capt blks) = flattenCaption capt <> blks
           flattenBlock (Div _ blks) = blks
           flattenBlock Null = []
 
@@ -203,10 +203,10 @@ instance Arbitrary Block where
     [Table attr specs thead' tbody tfoot | thead' <- shrink thead] ++
     [Table attr specs thead tbody' tfoot | tbody' <- shrink tbody] ++
     [Table attr specs thead tbody tfoot' | tfoot' <- shrink tfoot]
-  shrink (Figure attr cp capt blks) =
-    [Figure attr cp capt blks' | blks' <- shrinkBlockList blks] ++
-    [Figure attr cp capt' blks | capt' <- shrink capt] ++
-    [Figure attr' cp capt blks | attr' <- shrinkAttr attr]
+  shrink (Figure attr capt blks) =
+    [Figure attr capt blks' | blks' <- shrinkBlockList blks] ++
+    [Figure attr capt' blks | capt' <- shrink capt] ++
+    [Figure attr' capt blks | attr' <- shrinkAttr attr]
   shrink (Div attr blks) = (Div attr <$> shrinkBlockList blks)
                         ++ (flip Div blks <$> shrinkAttr attr)
   shrink Null = []
@@ -249,7 +249,6 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                   <*> vectorOf bs (arbTableBody (n-1))
                                   <*> arbTableFoot (n-1))
                    , (2, Figure <$> arbAttr
-                                <*> arbitrary
                                 <*> arbitrary
                                 <*> listOf1 (arbBlock (n-1)))
                    ]
@@ -346,10 +345,6 @@ instance Arbitrary Caption where
     = [Caption attr mshort' body | mshort' <- shrink mshort] ++
       [Caption attr mshort body' | body' <- shrinkBlockList body] ++
       [Caption attr' mshort body | attr' <- shrinkAttr attr]
-
-instance Arbitrary CaptionPos where
-        arbitrary
-          = arbitraryBoundedEnum
 
 instance Arbitrary MathType where
         arbitrary

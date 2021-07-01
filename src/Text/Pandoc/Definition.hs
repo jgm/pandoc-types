@@ -67,7 +67,6 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , nullAttr
                               , Caption(..)
                               , ShortCaption
-                              , CaptionPos(..)
                               , RowHeadColumns(..)
                               , Alignment(..)
                               , ColWidth(..)
@@ -271,10 +270,6 @@ newtype RowSpan = RowSpan Int
 newtype ColSpan = ColSpan Int
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
 
--- | The position of a caption relative to the content of a figure.
-data CaptionPos = CaptionBefore | CaptionAfter
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Enum, Bounded)
-
 -- | Block element.
 data Block
     -- | Plain text, not a paragraph
@@ -307,7 +302,7 @@ data Block
     | Table Attr [ColSpec] TableHead [TableBody] TableFoot
     -- | Figure, with attributes, caption and caption position, width
     -- (optional), and content (list of blocks)
-    | Figure Attr CaptionPos Caption [Block]
+    | Figure Attr Caption [Block]
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing
@@ -410,7 +405,6 @@ $(let jsonOpts = defaultOptions
      , ''ColWidth
      , ''Row
      , ''Caption
-     , ''CaptionPos
      , ''TableHead
      , ''TableBody
      , ''TableFoot
@@ -477,7 +471,6 @@ instance NFData ListNumberDelim
 instance NFData ListNumberStyle
 instance NFData ColWidth
 instance NFData RowHeadColumns
-instance NFData CaptionPos
 instance NFData Block
 instance NFData Pandoc
 

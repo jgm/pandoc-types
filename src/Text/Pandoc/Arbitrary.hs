@@ -82,7 +82,8 @@ instance Arbitrary Blocks where
           flattenBlock (DefinitionList defs) = concat [Para ils:concat blks | (ils, blks) <- defs]
           flattenBlock (Header _ _ ils) = [Para ils]
           flattenBlock HorizontalRule = []
-          flattenBlock (Table _ _ hd bd ft) = flattenTableHead hd <>
+          flattenBlock (Table _ capt _ hd bd ft) = flattenCaption capt <>
+                                              flattenTableHead hd <>
                                               concatMap flattenTableBody bd <>
                                               flattenTableFoot ft
           flattenBlock (Figure _ capt blks) = flattenCaption capt <> blks
@@ -197,12 +198,12 @@ instance Arbitrary Block where
   shrink (Header n attr ils) = (Header n attr <$> shrinkInlineList ils)
                             ++ (flip (Header n) ils <$> shrinkAttr attr)
   shrink HorizontalRule = []
-  shrink (Table attr specs thead tbody tfoot) =
+  shrink (Table attr capt specs thead tbody tfoot) =
     -- TODO: shrink number of columns
-    [Table attr' specs thead tbody tfoot | attr' <- shrinkAttr attr] ++
-    [Table attr specs thead' tbody tfoot | thead' <- shrink thead] ++
-    [Table attr specs thead tbody' tfoot | tbody' <- shrink tbody] ++
-    [Table attr specs thead tbody tfoot' | tfoot' <- shrink tfoot]
+    [Table attr' capt specs thead tbody tfoot | attr' <- shrinkAttr attr] ++
+    [Table attr capt specs thead' tbody tfoot | thead' <- shrink thead] ++
+    [Table attr capt specs thead tbody' tfoot | tbody' <- shrink tbody] ++
+    [Table attr capt specs thead tbody tfoot' | tfoot' <- shrink tfoot]
   shrink (Figure attr capt blks) =
     [Figure attr capt blks' | blks' <- shrinkBlockList blks] ++
     [Figure attr capt' blks | capt' <- shrink capt] ++
@@ -241,6 +242,7 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                    , (2, do cs <- choose (1 :: Int, 6)
                             bs <- choose (0 :: Int, 2)
                             Table <$> arbAttr
+                                  <*> arbitrary
                                   <*> vectorOf cs ((,) <$> arbitrary
                                                        <*> elements [ ColWidthDefault
                                                                     , ColWidth (1/3)

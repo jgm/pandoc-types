@@ -299,7 +299,7 @@ data Block
     | HorizontalRule
     -- | Table, with attributes, column alignments and widths
     -- (required), table head, table bodies, and table foot
-    | Table Attr [ColSpec] TableHead [TableBody] TableFoot
+    | Table Attr Caption [ColSpec] TableHead [TableBody] TableFoot
     -- | Figure, with attributes, caption and caption position, width
     -- (optional), and content (list of blocks)
     | Figure Attr Caption [Block]

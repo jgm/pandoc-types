@@ -523,7 +523,8 @@ emptyCell = simpleCell mempty
 -- | Table builder. Performs normalization with 'normalizeTableHead',
 -- 'normalizeTableBody', and 'normalizeTableFoot'. The number of table
 -- columns is given by the length of @['ColSpec']@.
-table :: [ColSpec]
+table :: Caption
+      -> [ColSpec]
       -> TableHead
       -> [TableBody]
       -> TableFoot
@@ -531,13 +532,14 @@ table :: [ColSpec]
 table = tableWith nullAttr
 
 tableWith :: Attr
+          -> Caption
           -> [ColSpec]
           -> TableHead
           -> [TableBody]
           -> TableFoot
           -> Blocks
-tableWith attr specs th tbs tf
-  = singleton $ Table attr specs th' tbs' tf'
+tableWith attr capt specs th tbs tf
+  = singleton $ Table attr capt specs th' tbs' tf'
   where
     twidth = length specs
     th'  = normalizeTableHead twidth th
@@ -549,7 +551,7 @@ simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
 simpleTable headers rows =
-  table (replicate numcols defaults) th [tb] tf
+  table emptyCaption (replicate numcols defaults) th [tb] tf
   where defaults = (AlignDefault, ColWidthDefault)
         numcols  = maximum (map length (headers:rows))
         toRow = Row nullAttr . map simpleCell

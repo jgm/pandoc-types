@@ -168,6 +168,8 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , table
                            , simpleTable
                            , tableWith
+                           , figure
+                           , figureWith
                            , caption
                            , simpleCaption
                            , emptyCaption
@@ -521,8 +523,7 @@ emptyCell = simpleCell mempty
 -- | Table builder. Performs normalization with 'normalizeTableHead',
 -- 'normalizeTableBody', and 'normalizeTableFoot'. The number of table
 -- columns is given by the length of @['ColSpec']@.
-table :: Caption
-      -> [ColSpec]
+table :: [ColSpec]
       -> TableHead
       -> [TableBody]
       -> TableFoot
@@ -530,14 +531,13 @@ table :: Caption
 table = tableWith nullAttr
 
 tableWith :: Attr
-          -> Caption
           -> [ColSpec]
           -> TableHead
           -> [TableBody]
           -> TableFoot
           -> Blocks
-tableWith attr capt specs th tbs tf
-  = singleton $ Table attr capt specs th' tbs' tf'
+tableWith attr specs th tbs tf
+  = singleton $ Table attr specs th' tbs' tf'
   where
     twidth = length specs
     th'  = normalizeTableHead twidth th
@@ -549,7 +549,7 @@ simpleTable :: [Blocks]   -- ^ Headers
             -> [[Blocks]] -- ^ Rows
             -> Blocks
 simpleTable headers rows =
-  table emptyCaption (replicate numcols defaults) th [tb] tf
+  table (replicate numcols defaults) th [tb] tf
   where defaults = (AlignDefault, ColWidthDefault)
         numcols  = maximum (map length (headers:rows))
         toRow = Row nullAttr . map simpleCell
@@ -560,8 +560,17 @@ simpleTable headers rows =
         tb = TableBody nullAttr 0 [] $ map toRow rows
         tf = TableFoot nullAttr []
 
+figure :: CaptionPos -> Caption -> Blocks -> Blocks
+figure = figureWith nullAttr
+
+figureWith :: Attr -> CaptionPos -> Caption -> Blocks -> Blocks
+figureWith attr capt cp = singleton . Figure attr capt cp . toList
+
 caption :: Maybe ShortCaption -> Blocks -> Caption
-caption x = Caption x . toList
+caption = captionWith nullAttr
+
+captionWith :: Attr -> Maybe ShortCaption -> Blocks -> Caption
+captionWith x y = Caption x y . toList
 
 simpleCaption :: Blocks -> Caption
 simpleCaption = caption Nothing

@@ -67,6 +67,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , nullAttr
                               , Caption(..)
                               , ShortCaption
+                              , CaptionPos(..)
                               , RowHeadColumns(..)
                               , Alignment(..)
                               , ColWidth(..)
@@ -254,8 +255,8 @@ data TableFoot = TableFoot Attr [Row]
 -- | A short caption, for use in, for instance, lists of figures.
 type ShortCaption = [Inline]
 
--- | The caption of a table, with an optional short caption.
-data Caption = Caption (Maybe ShortCaption) [Block]
+-- | The caption of a figure, with optional short caption.
+data Caption = Caption Attr (Maybe ShortCaption) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | A table cell.
@@ -269,6 +270,10 @@ newtype RowSpan = RowSpan Int
 -- | The number of columns occupied by a cell; the width of a cell.
 newtype ColSpan = ColSpan Int
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
+
+-- | The position of a caption relative to the content of a figure.
+data CaptionPos = CaptionBefore | CaptionAfter
+  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Enum, Bounded)
 
 -- | Block element.
 data Block
@@ -297,10 +302,12 @@ data Block
     | Header Int Attr [Inline]
     -- | Horizontal rule
     | HorizontalRule
-    -- | Table, with attributes, caption, optional short caption,
-    -- column alignments and widths (required), table head, table
-    -- bodies, and table foot
-    | Table Attr Caption [ColSpec] TableHead [TableBody] TableFoot
+    -- | Table, with attributes, column alignments and widths
+    -- (required), table head, table bodies, and table foot
+    | Table Attr [ColSpec] TableHead [TableBody] TableFoot
+    -- | Figure, with attributes, caption and caption position, width
+    -- (optional), and content (list of blocks)
+    | Figure Attr CaptionPos Caption [Block]
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing
@@ -403,6 +410,7 @@ $(let jsonOpts = defaultOptions
      , ''ColWidth
      , ''Row
      , ''Caption
+     , ''CaptionPos
      , ''TableHead
      , ''TableBody
      , ''TableFoot
@@ -469,6 +477,7 @@ instance NFData ListNumberDelim
 instance NFData ListNumberStyle
 instance NFData ColWidth
 instance NFData RowHeadColumns
+instance NFData CaptionPos
 instance NFData Block
 instance NFData Pandoc
 

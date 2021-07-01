@@ -432,7 +432,7 @@ t_figure = (Figure
             ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
             (Caption nullAttr (Just [Str "hello"]) [Para [Str "cap content"]])
             [Para [Str "fig content"]]
-           ,[s|{"t":"Figure","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],{"t":"CaptionBefore"},[["",[],[]],[{"t":"Str","c":"hello"}],[{"t":"Para","c":[{"t":"Str","c":"cap content"}]}]],[{"t":"Para","c":[{"t":"Str","c":"fig content"}]}]]}|]
+           ,[s|{"t":"Figure","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[["",[],[]],[{"t":"Str","c":"hello"}],[{"t":"Para","c":[{"t":"Str","c":"cap content"}]}]],[{"t":"Para","c":[{"t":"Str","c":"fig content"}]}]]}|]
            )
 
 t_div :: (Block, ByteString)

@@ -90,8 +90,8 @@ instance Arbitrary Blocks where
           flattenBlock (Div _ blks) = blks
           flattenBlock Null = []
 
-          flattenCaption (Caption _ Nothing body)    = body
-          flattenCaption (Caption _ (Just ils) body) = Para ils : body
+          flattenCaption (Caption Nothing body)    = body
+          flattenCaption (Caption (Just ils) body) = Para ils : body
 
           flattenTableHead (TableHead _ body) = flattenRows body
           flattenTableBody (TableBody _ _ hd bd) = flattenRows hd <> flattenRows bd
@@ -342,11 +342,10 @@ instance Arbitrary Cell where
       [Cell attr malign' h w body | malign' <- shrink malign]
 
 instance Arbitrary Caption where
-  arbitrary = Caption <$> arbAttr <*> arbitrary <*> arbitrary
-  shrink (Caption attr mshort body)
-    = [Caption attr mshort' body | mshort' <- shrink mshort] ++
-      [Caption attr mshort body' | body' <- shrinkBlockList body] ++
-      [Caption attr' mshort body | attr' <- shrinkAttr attr]
+  arbitrary = Caption <$> arbitrary <*> arbitrary
+  shrink (Caption mshort body)
+    = [Caption mshort' body | mshort' <- shrink mshort] ++
+      [Caption mshort body' | body' <- shrinkBlockList body]
 
 instance Arbitrary MathType where
         arbitrary

@@ -612,12 +612,12 @@ queryCell f (Cell _ _ _ _ content) = query f content
 -- nodes.
 walkCaptionM :: (Walkable a [Block], Walkable a [Inline], Monad m, Walkable a ShortCaption)
           => (a -> m a) -> Caption -> m Caption
-walkCaptionM f (Caption attr mshort body) = Caption attr <$> walkM f mshort <*> walkM f body
+walkCaptionM f (Caption mshort body) = Caption <$> walkM f mshort <*> walkM f body
 
 -- | Query the elements below a 'Cell' element.
 queryCaption :: (Walkable a [Block], Walkable a [Inline], Walkable a ShortCaption, Monoid c)
           => (a -> c) -> Caption -> c
-queryCaption f (Caption _ mshort body) = query f mshort <> query f body
+queryCaption f (Caption mshort body) = query f mshort <> query f body
 
 -- | Helper method to walk the components of a Pandoc element.
 walkPandocM :: (Walkable a Meta, Walkable a [Block], Monad m,

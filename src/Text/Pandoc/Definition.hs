@@ -255,7 +255,7 @@ data TableFoot = TableFoot Attr [Row]
 type ShortCaption = [Inline]
 
 -- | The caption of a figure, with optional short caption.
-data Caption = Caption Attr (Maybe ShortCaption) [Block]
+data Caption = Caption (Maybe ShortCaption) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | A table cell.

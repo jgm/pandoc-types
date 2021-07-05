@@ -569,10 +569,7 @@ figureWith :: Attr -> Caption -> Blocks -> Blocks
 figureWith attr capt = singleton . Figure attr capt . toList
 
 caption :: Maybe ShortCaption -> Blocks -> Caption
-caption = captionWith nullAttr
-
-captionWith :: Attr -> Maybe ShortCaption -> Blocks -> Caption
-captionWith x y = Caption x y . toList
+caption msc = Caption msc . toList
 
 simpleCaption :: Blocks -> Caption
 simpleCaption = caption Nothing

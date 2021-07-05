@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, DeriveDataTypeable,
     GeneralizedNewtypeDeriving, CPP, StandaloneDeriving, DeriveGeneric,
     DeriveTraversable, OverloadedStrings, PatternGuards #-}
+
 {-
 Copyright (C) 2010-2019 John MacFarlane
 
@@ -167,9 +168,13 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , table
                            , simpleTable
                            , tableWith
+                           , figure
+                           , figureWith
                            , caption
                            , simpleCaption
                            , emptyCaption
+                           , simpleFigureWith
+                           , simpleFigure
                            , divWith
                            -- * Table processing
                            , normalizeTableHead
@@ -557,14 +562,27 @@ simpleTable headers rows =
         tb = TableBody nullAttr 0 [] $ map toRow rows
         tf = TableFoot nullAttr []
 
+figure :: Caption -> Blocks -> Blocks
+figure = figureWith nullAttr
+
+figureWith :: Attr -> Caption -> Blocks -> Blocks
+figureWith attr capt = singleton . Figure attr capt . toList
+
 caption :: Maybe ShortCaption -> Blocks -> Caption
-caption x = Caption x . toList
+caption msc = Caption msc . toList
 
 simpleCaption :: Blocks -> Caption
 simpleCaption = caption Nothing
 
 emptyCaption :: Caption
 emptyCaption = simpleCaption mempty
+
+simpleFigureWith :: Attr -> Inlines -> Text -> Text -> Blocks
+simpleFigureWith attr figureCaption url title =
+  para $ imageWith attr url ("fig:" <> title) figureCaption
+
+simpleFigure :: Inlines -> Text -> Text -> Blocks
+simpleFigure = simpleFigureWith nullAttr
 
 divWith :: Attr -> Blocks -> Blocks
 divWith attr = singleton . Div attr . toList

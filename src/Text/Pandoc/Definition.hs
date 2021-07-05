@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
-    TemplateHaskell #-}
+    TemplateHaskell , PatternSynonyms, ViewPatterns #-}
 
 {-
 Copyright (c) 2006-2019, John MacFarlane
@@ -57,6 +57,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , docAuthors
                               , docDate
                               , Block(..)
+                              , pattern SimpleFigure
                               , Inline(..)
                               , ListAttributes
                               , ListNumberStyle(..)
@@ -99,6 +100,7 @@ import Control.DeepSeq
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
 import Data.Semigroup (Semigroup(..))
+import Control.Arrow (second)
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -252,7 +254,7 @@ data TableFoot = TableFoot Attr [Row]
 -- | A short caption, for use in, for instance, lists of figures.
 type ShortCaption = [Inline]
 
--- | The caption of a table, with an optional short caption.
+-- | The caption of a figure, with optional short caption.
 data Caption = Caption (Maybe ShortCaption) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
@@ -295,10 +297,12 @@ data Block
     | Header Int Attr [Inline]
     -- | Horizontal rule
     | HorizontalRule
-    -- | Table, with attributes, caption, optional short caption,
-    -- column alignments and widths (required), table head, table
-    -- bodies, and table foot
+    -- | Table, with attributes, column alignments and widths
+    -- (required), table head, table bodies, and table foot
     | Table Attr Caption [ColSpec] TableHead [TableBody] TableFoot
+    -- | Figure, with attributes, caption and caption position, width
+    -- (optional), and content (list of blocks)
+    | Figure Attr Caption [Block]
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing
@@ -310,6 +314,34 @@ data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeab
 
 -- | Link target (URL, title).
 type Target = (Text, Text)
+
+isFigureTarget :: Target -> Maybe Target
+isFigureTarget tgt
+  | (src, Just tit) <- second (T.stripPrefix "fig:") tgt = Just (src, tit)
+  | otherwise = Nothing
+
+-- | Bidirectional patter synonym
+--
+-- It can pass as a Block constructor
+--
+-- >>> SimpleFigure nullAttr [] (T.pack "", T.pack "title")
+-- Para [Image ("",[],[]) [] ("","fig:title")]
+--
+--
+-- It can be used to pattern match
+-- >>> let img = Para [Image undefined undefined (undefined, T.pack "title")]
+-- >>> case img of { SimpleFigure _ _ _ -> True; _ -> False }
+-- False
+-- >>> let fig = Para [Image undefined undefined (undefined, T.pack "fig:title")]
+-- >>> case fig of { SimpleFigure _ _ tit -> snd tit; _ -> T.pack "" }
+-- "title"
+pattern SimpleFigure :: Attr -> [Inline] -> Target -> Block
+pattern SimpleFigure attr figureCaption tgt <-
+    Para [Image attr figureCaption
+        (isFigureTarget -> Just tgt)]  where
+  SimpleFigure attr figureCaption tgt =
+    Para [Image attr figureCaption (second ("fig:" <>) tgt)]
+
 
 -- | Type of math element (display or inline).
 data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)

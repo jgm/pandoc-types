@@ -6,8 +6,11 @@ import Text.Pandoc.Walk
 import Text.Pandoc.Builder (singleton, plain, text, simpleTable, table, emptyCell,
                             normalizeTableHead, normalizeTableBody, normalizeTableFoot,
                             emptyCaption)
+import qualified Text.Pandoc.Format as F
 import Data.Generics
 import Data.List (tails)
+import qualified Data.List as List
+import Data.Maybe (isNothing)
 import Test.HUnit (Assertion, assertEqual, assertFailure)
 import Data.Aeson (FromJSON, ToJSON, encode, decode)
 import Test.Framework
@@ -15,6 +18,7 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.QuickCheck (forAll, choose, Property, Arbitrary, Testable)
 import qualified Data.Map as M
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.String.QQ
@@ -642,6 +646,81 @@ t_tableNormExample = testCase "table normalization example" assertion
                                  (tf finalHeads)
     generated = table emptyCaption spec (th initialHeads) [initialTB] (tf initialHeads)
 
+-- There are only 44 formats at the moment, so we can test properties
+-- against every example.
+allKnownFormats :: [F.Format]
+allKnownFormats = F.KnownFormat <$> [minBound..maxBound]
+
+testExamples :: Show a => String -> (a -> Bool) -> [a] -> Assertion
+testExamples label prop l = case List.find (not . prop) l of
+  Just x -> assertFailure $ label ++ " fails with counterexample: " ++ show x
+  Nothing -> return ()
+
+-- Known matching is reflexive
+p_matchKnownRefl :: Assertion
+p_matchKnownRefl = testExamples "known match reflexivity" prop allKnownFormats
+  where
+    prop x = x `F.matches` x
+
+-- Known matching is transitive
+p_matchKnownTrans :: Assertion
+p_matchKnownTrans = testExamples "known match transitivity" prop cube
+  where
+    prop (x, y, z) = p_matchTrans x y z
+    cube = (,,) <$> allKnownFormats <*> allKnownFormats <*> allKnownFormats
+
+-- Matching is reflexive
+p_matchRefl :: F.Format -> Bool
+p_matchRefl x = x `F.matches` x
+
+-- Matching is transitive
+p_matchTrans :: F.Format -> F.Format -> F.Format -> Bool
+p_matchTrans x y z
+  | x `F.matches` y
+  , y `F.matches` z
+  = x `F.matches` z
+  | otherwise = True
+
+-- A custom format never matches a known format
+p_customNeverMatchesKnown :: String -> Bool
+p_customNeverMatchesKnown x
+  = isNothing $ List.find (F.matches $ F.CustomFormat $ T.pack x) allKnownFormats
+
+-- Custom formats in a pattern do not affect matching a known format
+p_customIrrelevant :: F.Formats -> Bool
+p_customIrrelevant x = isNothing $ List.find counter allKnownFormats
+  where
+    isKnown F.KnownFormat{}  = True
+    isKnown _                = False
+    removeCustom (F.OneOfFormats y) = F.OneOfFormats $ Set.filter isKnown y
+    removeCustom (F.NoneOfFormats y) = F.OneOfFormats $ Set.filter isKnown y
+    x' = removeCustom x
+    counter f = F.matches f x /= F.matches f x'
+
+-- nothing is the neutral element for or
+p_nothingNeutral :: F.Formats -> Bool
+p_nothingNeutral p = p == (p `F.or` F.nothing) && p == (F.nothing `F.or` p)
+
+-- or is associative
+p_orAssoc :: F.Formats -> F.Formats -> F.Formats -> Bool
+p_orAssoc x y z = (x `F.or` (y `F.or` z)) == ((x `F.or` y) `F.or` z)
+
+-- and x y matches a format iff and x and and y both match the format
+p_andLawful :: F.Formats -> F.Formats -> F.Format -> Bool
+p_andLawful p q f = (F.matches f p && F.matches f q) == F.matches f (p `F.and` q)
+
+-- like p_andLawful, but checks against every known format
+p_knownAndLawful :: F.Formats -> F.Formats -> Bool
+p_knownAndLawful p q = isNothing $ List.find counter allKnownFormats
+  where
+    counter x = not $ p_andLawful p q x
+
+p_fromToKnown :: Assertion
+p_fromToKnown = testExamples "from/to known round trip" prop allKnownFormats'
+  where
+    allKnownFormats' = [minBound..maxBound]
+    prop f = F.toKnownFormat (F.fromKnownFormat f) == Just f
+
 tests :: [Test]
 tests =
   [ testGroup "Walk"
@@ -744,6 +823,20 @@ tests =
     ]
   , t_tableSan
   , t_tableNormExample
+  , testGroup "Formats"
+    [ testCase "p_fromToKnown" p_fromToKnown
+    , testCase "p_matchKnownRefl" p_matchKnownRefl
+    , testCase "p_matchKnownTrans" p_matchKnownTrans
+    , testProperty "p_matchRefl" p_matchRefl
+    , testProperty "p_matchTrans" p_matchTrans
+    , testProperty "p_customNeverMatchesKnown" p_customNeverMatchesKnown
+    , testProperty "p_customIrrelevant" p_customIrrelevant
+    , testProperty "p_nothingNeutral" p_nothingNeutral
+    , testProperty "p_orAssoc" p_orAssoc
+    , testProperty "p_andLawful" p_andLawful
+    , testProperty "p_knownAndLawful" p_knownAndLawful
+
+    ]
   ]
 
 

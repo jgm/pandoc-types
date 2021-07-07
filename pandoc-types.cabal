@@ -47,6 +47,7 @@ Library
                      Text.Pandoc.Builder
                      Text.Pandoc.JSON
                      Text.Pandoc.Arbitrary
+                     Text.Pandoc.Format
   Other-modules:     Paths_pandoc_types
   Autogen-modules:   Paths_pandoc_types
   Build-depends:     base >= 4.5 && < 5,

@@ -357,7 +357,6 @@ data Inline
     | Quoted QuoteType [Inline] -- ^ Quoted text (list of inlines)
     | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
     | Code Attr Text      -- ^ Inline code (literal)
-    | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
     | LineBreak             -- ^ Hard line break
     | Math MathType Text  -- ^ TeX math (literal)

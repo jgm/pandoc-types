@@ -66,15 +66,15 @@ Isn't that nicer than writing the following?
 >
 > myDoc :: Pandoc
 > myDoc = Pandoc (Meta {unMeta = fromList [("title",
->           MetaInlines [Str "My",Space,Str "title"])]})
->         [Para [Str "This",Space,Str "is",Space,Str "the",Space,Str "first",
->          Space,Str "paragraph"],Para [Str "And",Space,Emph [Str "another"],
+>           MetaInlines [Str "My title"])]})
+>         [Para [Str "This is the first paragraph"],
+>         ,Para [Str "And ",Emph [Str "another"],
 >          Str "."]
 >         ,BulletList [
->           [Para [Str "item",Space,Str "one"]
+>           [Para [Str "item one"]
 >           ,Para [Str "continuation"]]
->          ,[Plain [Str "item",Space,Str "two",Space,Str "and",Space,
->                   Str "a",Space,Link nullAttr [Str "link"] ("/url","go to url")]]]]
+>          ,[Plain [Str "item two and a ",
+>                   Link nullAttr [Str "link"] ("/url","go to url")]]]]
 
 And of course, you can use Haskell to define your own builders:
 
@@ -187,7 +187,7 @@ import Data.String
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
+import Data.Sequence (Seq, (|>), (<|), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
 import Data.Traversable (Traversable)
 import Data.Foldable (Foldable)
@@ -196,6 +196,7 @@ import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
 import Data.Semigroup (Semigroup(..))
+import Data.List (intersperse)
 
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
@@ -228,9 +229,6 @@ instance Semigroup Inlines where
       (_, EmptyL) -> Many xs
       (xs' :> x, y :< ys') -> Many (meld <> ys')
         where meld = case (x, y) of
-                          (Space, Space)     -> xs' |> Space
-                          (Space, SoftBreak) -> xs' |> SoftBreak
-                          (SoftBreak, Space) -> xs' |> SoftBreak
                           (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
                           (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
                           (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
@@ -238,8 +236,6 @@ instance Semigroup Inlines where
                           (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
                           (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
                           (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
-                          (Space, LineBreak) -> xs' |> LineBreak
-                          (LineBreak, Space) -> xs' |> LineBreak
                           (SoftBreak, LineBreak) -> xs' |> LineBreak
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
@@ -253,19 +249,24 @@ instance IsString Inlines where
 
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
 trimInlines :: Inlines -> Inlines
-#if MIN_VERSION_containers(0,4,0)
-trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
-                            Seq.dropWhileR isSp $ ils
-#else
--- for GHC 6.12, we need to workaround a bug in dropWhileR
--- see http://hackage.haskell.org/trac/ghc/ticket/4157
-trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
-                            Seq.reverse $ Seq.dropWhileL isSp $
-                            Seq.reverse ils
-#endif
-  where isSp Space = True
-        isSp SoftBreak = True
-        isSp _ = False
+trimInlines = trimlInlines . trimrInlines
+ where
+  trimlInlines (Many ils) =
+    case viewl ils of
+      Str t :< xs
+        | startsWithSpace t -> Many (Str (T.dropWhile (==' ') t) <| xs)
+      _ -> Many ils
+  trimrInlines (Many ils) =
+    case viewr ils of
+      (xs :> Str t)
+        | endsWithSpace t -> Many (xs |> Str (T.dropWhileEnd (==' ') t))
+      _ -> Many ils
+  startsWithSpace t = case T.uncons t of
+                        Just (' ',_) -> True
+                        _ -> False
+  endsWithSpace t = case T.unsnoc t of
+                        Just (_,' ') -> True
+                        _ -> False
 
 -- Document builders
 
@@ -327,25 +328,11 @@ setDate = setMeta "date"
 
 -- Inline list builders
 
--- | Convert a 'Text' to 'Inlines', treating interword spaces as 'Space's
+-- | Convert a 'Text' to 'Inlines', treating interword spaces as spaces
 -- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
 text :: Text -> Inlines
-text = fromList . map conv . breakBySpaces
-  where breakBySpaces = T.groupBy sameCategory
-        sameCategory x y = is_space x == is_space y
-        conv xs | T.all is_space xs =
-           if T.any is_newline xs
-              then SoftBreak
-              else Space
-        conv xs = Str xs
-        is_space ' '    = True
-        is_space '\r'   = True
-        is_space '\n'   = True
-        is_space '\t'   = True
-        is_space _      = False
-        is_newline '\r' = True
-        is_newline '\n' = True
-        is_newline _    = False
+text = fromList . intersperse SoftBreak . map conv . T.lines
+  where conv xs = Str xs
 
 str :: Text -> Inlines
 str = singleton . Str
@@ -392,7 +379,7 @@ code :: Text -> Inlines
 code = codeWith nullAttr
 
 space :: Inlines
-space = singleton Space
+space = singleton (Str " ")
 
 softbreak :: Inlines
 softbreak = singleton SoftBreak

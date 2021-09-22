@@ -68,28 +68,28 @@ bottom up. 'topDown' goes the other way. The difference between them can be
 seen from this example:
 
 > normal :: [Inline] -> [Inline]
-> normal (Space : Space : xs) = Space : xs
 > normal (Emph xs : Emph ys : zs) = Emph (xs ++ ys) : zs
+> normal (Str t) = Str $ T.replace "  " " "
 > normal xs = xs
 >
 > myDoc :: Pandoc
 > myDoc =  Pandoc nullMeta
->  [ Para [Str "Hi",Space,Emph [Str "world",Space],Emph [Space,Str "emphasized"]]]
+>  [ Para [Str "Hi ",Emph [Str "world "],Emph [Str " emphasized"]]]
 
 Here we want to use 'topDown' to lift @normal@ to @Pandoc -> Pandoc@.
 The top down strategy will collapse the two adjacent @Emph@s first, then
-collapse the resulting adjacent @Space@s, as desired. If we used 'bottomUp',
-we would end up with two adjacent @Space@s, since the contents of the
+collapse the resulting adjacent spaces, as desired. If we used 'bottomUp',
+we would end up with two adjacent spaces, since the contents of the
 two @Emph@ inlines would be processed before the @Emph@s were collapsed
 into one.
 
 > topDown normal myDoc ==
 >   Pandoc nullMeta
->    [Para [Str "Hi",Space,Emph [Str "world",Space,Str "emphasized"]]]
+>    [Para [Str "Hi ",Emph [Str "world emphasized"]]]
 >
 > bottomUp normal myDoc ==
 >   Pandoc nullMeta
->    [Para [Str "Hi",Space,Emph [Str "world",Space,Space,Str "emphasized"]]]
+>    [Para [Str "Hi ",Emph [Str "world  emphasized"]]]
 
 'bottomUpM' is a monadic version of 'bottomUp'.  It could be used,
 for example, to replace the contents of delimited code blocks with

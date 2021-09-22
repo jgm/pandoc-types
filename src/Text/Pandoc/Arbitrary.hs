@@ -13,6 +13,7 @@ import Text.Pandoc.Builder
 
 realString :: Gen Text
 realString = fmap T.pack $ resize 8 $ listOf $ frequency [ (9, elements [' '..'\127'])
+                                                         , (2, pure ' ')
                                                          , (1, elements ['\128'..'\9999']) ]
 
 shrinkText :: Text -> [Text]
@@ -53,7 +54,6 @@ instance Arbitrary Inlines where
           flattenInline (Quoted _ ils) = ils
           flattenInline (Cite _ ils) = ils
           flattenInline Code{} = []
-          flattenInline Space = []
           flattenInline SoftBreak = []
           flattenInline LineBreak = []
           flattenInline Math{} = []
@@ -127,7 +127,6 @@ instance Arbitrary Inline where
                         ++ (flip Cite ils <$> shrink cits)
   shrink (Code attr s) = (Code attr <$> shrinkText s)
                       ++ (flip Code s <$> shrinkAttr attr)
-  shrink Space = []
   shrink SoftBreak = []
   shrink LineBreak = []
   shrink (Math mtype s) = Math mtype <$> shrinkText s
@@ -144,7 +143,7 @@ instance Arbitrary Inline where
 
 arbInlines :: Int -> Gen [Inline]
 arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
-  where startsWithSpace (Space:_)     = True
+  where startsWithSpace (Str t:_)     = T.all (==' ') (T.take 1 t)
         startsWithSpace (SoftBreak:_) = True
         -- Note: no LineBreak, similarly to Text.Pandoc.Builder (trimInlines)
         startsWithSpace _             = False
@@ -153,7 +152,6 @@ arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
 -- bogged down in indefinitely large structures
 arbInline :: Int -> Gen Inline
 arbInline n = frequency $ [ (60, Str <$> realString)
-                          , (40, pure Space)
                           , (10, pure SoftBreak)
                           , (10, pure LineBreak)
                           , (10, Code <$> arbAttr <*> realString)

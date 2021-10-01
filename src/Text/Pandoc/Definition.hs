@@ -88,7 +88,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
 
 import Data.Generics (Data, Typeable)
 import Data.Ord (comparing)
-import Data.Aeson hiding (Null)
+import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map as M
@@ -305,8 +305,6 @@ data Block
     | Figure Attr Caption [Block]
     -- | Generic block container with attributes
     | Div Attr [Block]
-    -- | Nothing
-    | Null
     deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
 -- | Type of quotation marks to use in Quoted inline.

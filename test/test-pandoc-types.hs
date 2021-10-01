@@ -135,7 +135,7 @@ t_metainlines = ( MetaInlines [Space, SoftBreak]
                 )
 
 t_metablocks :: (MetaValue, ByteString)
-t_metablocks = ( MetaBlocks [Null,Null], [s|{"t":"MetaBlocks","c":[{"t":"Null"},{"t":"Null"}]}|])
+t_metablocks = ( MetaBlocks [HorizontalRule,HorizontalRule], [s|{"t":"MetaBlocks","c":[{"t":"HorizontalRule"},{"t":"HorizontalRule"}]}|])
 
 t_singlequote :: (QuoteType, ByteString)
 t_singlequote = (SingleQuote, [s|{"t":"SingleQuote"}|])
@@ -442,9 +442,6 @@ t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
          , [s|{"t":"Div","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
          )
 
-t_null :: (Block, ByteString)
-t_null = (Null, [s|{"t":"Null"}|])
-
 -- headers and rows are padded to a consistent number of
 -- cells in order to avoid syntax errors after conversion, see
 -- jgm/pandoc#4059.
@@ -728,7 +725,6 @@ tests =
         , testEncodeDecode "Header" t_header
         , testEncodeDecode "Table" t_table
         , testEncodeDecode "Div" t_div
-        , testEncodeDecode "Null" t_null
         ]
       , testGroup "Table"
         [ testEncodeDecode "Row" t_row

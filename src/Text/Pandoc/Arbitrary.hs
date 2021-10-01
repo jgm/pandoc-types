@@ -87,7 +87,6 @@ instance Arbitrary Blocks where
                                                    concatMap flattenTableBody bd <>
                                                    flattenTableFoot ft
           flattenBlock (Div _ blks) = blks
-          flattenBlock Null = []
 
           flattenCaption (Caption Nothing body)    = body
           flattenCaption (Caption (Just ils) body) = Para ils : body
@@ -206,7 +205,6 @@ instance Arbitrary Block where
     [Table attr capt' specs thead tbody tfoot | capt' <- shrink capt]
   shrink (Div attr blks) = (Div attr <$> shrinkBlockList blks)
                         ++ (flip Div blks <$> shrinkAttr attr)
-  shrink Null = []
 
 arbBlock :: Int -> Gen Block
 arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))

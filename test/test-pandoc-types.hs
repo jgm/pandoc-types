@@ -3,9 +3,12 @@
 import Text.Pandoc.Arbitrary ()
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
-import Text.Pandoc.Builder (singleton, plain, text, simpleTable, table, emptyCell,
-                            normalizeTableHead, normalizeTableBody, normalizeTableFoot,
-                            emptyCaption, simpleFigureWith)
+import Text.Pandoc.Builder (singleton, plain, text, str, Inlines,
+                            softbreak, linebreak,
+                            simpleTable, table, emptyCell,
+                            normalizeTableHead, normalizeTableBody,
+                            normalizeTableFoot,
+                            emptyCaption, simpleFigureWith, toList)
 import qualified Text.Pandoc.Builder as Builder
 import Data.Generics
 import Data.List (tails)
@@ -638,9 +641,27 @@ p_figureRepresentation = forAll (arbitrary :: Gen [Inline]) (\figureCaption ->
           [Para [Image ("", [], []) figureCaption ("url", "fig:title") ]]
   )
 
+builderTest :: String -> Inlines -> [Inline] -> Test
+builderTest name ils norm =
+  testCase name $ assertEqual "" norm (toList ils)
+
 tests :: [Test]
 tests =
-  [ testGroup "Walk"
+  [ testGroup "Builder"
+    [ builderTest "append collapses spaces"
+        (str "hi " <> str "  there")
+        [Str "hi there"]
+    , builderTest "append collapses spaces around soft break"
+        (str "hi " <> softbreak <> str "  there")
+        [Str "hi", SoftBreak, Str "there"]
+    , builderTest "append collapses spaces around line break"
+        (str "hi    " <> linebreak <> str "  there")
+        [Str "hi", LineBreak, Str "there"]
+    , builderTest "text collapses spaces"
+        (text " hi  \n  there  friend ")
+        [Str " hi", SoftBreak, Str "there friend "]
+    ]
+  , testGroup "Walk"
     [ testProperty "p_walk inlineTrans" (p_walk inlineTrans)
     , testProperty "p_walk blockTrans" (p_walk blockTrans)
     , testProperty "p_query inlineQuery" (p_query inlineQuery)

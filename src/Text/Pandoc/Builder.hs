@@ -230,7 +230,7 @@ instance Semigroup Inlines where
       (xs' :> x, y :< ys') -> Many (meld <> ys')
         where meld = case (x, y) of
                           (Str t1, Str t2)   -> xs' |>
-                             if T.null t1 || T.head t1 /= ' '
+                             if T.null t1 || T.last t1 /= ' '
                                 then Str (t1 <> t2)
                                 else Str (t1 <> T.dropWhile (==' ') t2)
                           (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
@@ -239,6 +239,14 @@ instance Semigroup Inlines where
                           (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
                           (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
                           (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
+                          (Str t, SoftBreak) -> xs' |>
+                            Str (T.dropWhileEnd (==' ') t) |> SoftBreak
+                          (Str t, LineBreak) -> xs' |>
+                            Str (T.dropWhileEnd (==' ') t) |> LineBreak
+                          (SoftBreak, Str t) -> xs' |> SoftBreak |>
+                            Str (T.dropWhile (==' ') t)
+                          (LineBreak, Str t) -> xs' |> LineBreak |>
+                            Str (T.dropWhile (==' ') t)
                           (SoftBreak, LineBreak) -> xs' |> LineBreak
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak

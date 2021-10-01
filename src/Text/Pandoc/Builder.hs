@@ -196,7 +196,7 @@ import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
 import Data.Semigroup (Semigroup(..))
-import Data.List (intersperse)
+import Data.List (foldl')
 
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
@@ -331,8 +331,19 @@ setDate = setMeta "date"
 -- | Convert a 'Text' to 'Inlines', treating interword spaces as spaces
 -- or 'SoftBreak's.  If you want a 'Str' with literal spaces, use 'str'.
 text :: Text -> Inlines
-text = fromList . intersperse SoftBreak . map conv . T.lines
-  where conv xs = Str xs
+text x = foldl' go mempty . T.groupBy f $ x
+ where
+  f a b = (isSp a && isSp b) || (not (isSp a) && not (isSp b))
+  isSp ' ' = True
+  isSp '\n' = True
+  isSp '\r' = True
+  isSp _ = False
+  go accum t
+    | Just (c, _) <- T.uncons t
+    , isSp c = if T.any (=='\n') t
+                  then accum <> softbreak
+                  else accum <> space
+    | otherwise = accum <> str t
 
 str :: Text -> Inlines
 str = singleton . Str

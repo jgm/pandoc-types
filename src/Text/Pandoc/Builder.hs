@@ -229,7 +229,10 @@ instance Semigroup Inlines where
       (_, EmptyL) -> Many xs
       (xs' :> x, y :< ys') -> Many (meld <> ys')
         where meld = case (x, y) of
-                          (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
+                          (Str t1, Str t2)   -> xs' |>
+                             if T.null t1 || T.head t1 /= ' '
+                                then Str (t1 <> t2)
+                                else Str (t1 <> T.dropWhile (==' ') t2)
                           (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
                           (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
                           (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)

@@ -229,28 +229,42 @@ instance Semigroup Inlines where
       (_, EmptyL) -> Many xs
       (xs' :> x, y :< ys') -> Many (meld <> ys')
         where meld = case (x, y) of
-                          (Str t1, Str t2)   -> xs' |>
-                             if T.null t1 || T.last t1 /= ' '
-                                then Str (t1 <> t2)
-                                else Str (t1 <> T.dropWhile (==' ') t2)
+                          (Str t1, Str t2)   ->
+                            let t' = if endsWithSpace t1 || startsWithSpace t2
+                                        then T.dropWhileEnd isSp t1 <>
+                                               " " <> T.dropWhile isSp t2
+                                        else t1 <> t2
+                            in if T.null t'
+                                  then xs'
+                                  else xs' |> Str t'
                           (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
                           (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
                           (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
                           (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
                           (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
                           (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
-                          (Str t, SoftBreak) -> xs' |>
-                            Str (T.dropWhileEnd (==' ') t) |> SoftBreak
-                          (Str t, LineBreak) -> xs' |>
-                            Str (T.dropWhileEnd (==' ') t) |> LineBreak
-                          (SoftBreak, Str t) -> xs' |> SoftBreak |>
-                            Str (T.dropWhile (==' ') t)
-                          (LineBreak, Str t) -> xs' |> LineBreak |>
-                            Str (T.dropWhile (==' ') t)
+                          (Str t, b) | b == SoftBreak || b == LineBreak ->
+                            let t' = T.dropWhileEnd isSp t
+                             in if T.null t'
+                                   then xs' |> b
+                                   else xs' |> Str t' |> b
+                          (b, Str t) | b == SoftBreak || b == LineBreak ->
+                            let t' = T.dropWhile isSp t
+                             in if T.null t'
+                                   then xs' |> b
+                                   else xs' |> b |> Str t'
                           (SoftBreak, LineBreak) -> xs' |> LineBreak
                           (LineBreak, SoftBreak) -> xs' |> LineBreak
                           (SoftBreak, SoftBreak) -> xs' |> SoftBreak
                           _                  -> xs' |> x |> y
+
+isSp :: Char -> Bool
+isSp ' ' = True
+isSp '\t' = True
+isSp '\n' = True
+isSp '\r' = True
+isSp _ = False
+
 instance Monoid Inlines where
   mempty = Many mempty
   mappend = (<>)
@@ -261,23 +275,38 @@ instance IsString Inlines where
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
 trimInlines :: Inlines -> Inlines
 trimInlines = trimlInlines . trimrInlines
- where
-  trimlInlines (Many ils) =
+
+trimlInlines :: Inlines -> Inlines
+trimlInlines (Many ils) =
     case viewl ils of
       Str t :< xs
-        | startsWithSpace t -> Many (Str (T.dropWhile (==' ') t) <| xs)
+        | startsWithSpace t -> Many $
+          let t' = T.dropWhile isSp t
+           in if T.null t'
+                 then xs
+                 else Str t' <| xs
       _ -> Many ils
-  trimrInlines (Many ils) =
+
+trimrInlines :: Inlines -> Inlines
+trimrInlines (Many ils) =
     case viewr ils of
       (xs :> Str t)
-        | endsWithSpace t -> Many (xs |> Str (T.dropWhileEnd (==' ') t))
+        | endsWithSpace t -> Many $
+          let t' = T.dropWhileEnd isSp t
+           in if T.null t'
+                 then xs
+                 else xs |> Str t'
       _ -> Many ils
-  startsWithSpace t = case T.uncons t of
-                        Just (' ',_) -> True
-                        _ -> False
-  endsWithSpace t = case T.unsnoc t of
-                        Just (_,' ') -> True
-                        _ -> False
+
+startsWithSpace :: Text -> Bool
+startsWithSpace t = case T.uncons t of
+                        Just (c,_) -> isSp c
+                        Nothing -> False
+
+endsWithSpace :: Text -> Bool
+endsWithSpace t = case T.unsnoc t of
+                        Just (_,c) -> isSp c
+                        Nothing -> False
 
 -- Document builders
 
@@ -345,13 +374,12 @@ text :: Text -> Inlines
 text x = foldl' go mempty . T.groupBy f $ x
  where
   f a b = (isSp a && isSp b) || (not (isSp a) && not (isSp b))
-  isSp ' ' = True
-  isSp '\n' = True
-  isSp '\r' = True
-  isSp _ = False
+  isNl '\n' = True
+  isNl '\r' = True
+  isNl _ = False
   go accum t
     | Just (c, _) <- T.uncons t
-    , isSp c = if T.any (=='\n') t
+    , isSp c = if T.any isNl t
                   then accum <> softbreak
                   else accum <> space
     | otherwise = accum <> str t

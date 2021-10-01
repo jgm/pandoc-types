@@ -274,29 +274,29 @@ instance IsString Inlines where
 
 -- | Trim leading and trailing spaces and softbreaks from an Inlines.
 trimInlines :: Inlines -> Inlines
-trimInlines = trimlInlines . trimrInlines
+trimInlines (Many ils) = Many . trimlInlines . trimrInlines $ ils
 
-trimlInlines :: Inlines -> Inlines
-trimlInlines (Many ils) =
+trimlInlines :: Seq Inline -> Seq Inline
+trimlInlines ils =
     case viewl ils of
-      Str t :< xs
-        | startsWithSpace t -> Many $
+      SoftBreak :< xs -> trimlInlines xs
+      Str t :< xs | startsWithSpace t ->
           let t' = T.dropWhile isSp t
            in if T.null t'
-                 then xs
+                 then trimlInlines xs
                  else Str t' <| xs
-      _ -> Many ils
+      _ -> ils
 
-trimrInlines :: Inlines -> Inlines
-trimrInlines (Many ils) =
+trimrInlines :: Seq Inline -> Seq Inline
+trimrInlines ils =
     case viewr ils of
-      (xs :> Str t)
-        | endsWithSpace t -> Many $
+      xs :> SoftBreak -> trimrInlines xs
+      xs :> Str t | endsWithSpace t ->
           let t' = T.dropWhileEnd isSp t
            in if T.null t'
-                 then xs
+                 then trimrInlines xs
                  else xs |> Str t'
-      _ -> Many ils
+      _ -> ils
 
 startsWithSpace :: Text -> Bool
 startsWithSpace t = case T.uncons t of

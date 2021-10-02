@@ -260,7 +260,6 @@ instance Semigroup Inlines where
 
 isSp :: Char -> Bool
 isSp ' ' = True
-isSp '\t' = True
 isSp _ = False
 
 isNl :: Char -> Bool

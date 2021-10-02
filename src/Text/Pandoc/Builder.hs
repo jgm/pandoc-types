@@ -261,9 +261,15 @@ instance Semigroup Inlines where
 isSp :: Char -> Bool
 isSp ' ' = True
 isSp '\t' = True
-isSp '\n' = True
-isSp '\r' = True
 isSp _ = False
+
+isNl :: Char -> Bool
+isNl '\n' = True
+isNl '\r' = True
+isNl _ = False
+
+isSpOrNl :: Char -> Bool
+isSpOrNl c = isSp c || isNl c
 
 instance Monoid Inlines where
   mempty = Many mempty
@@ -373,15 +379,12 @@ setDate = setMeta "date"
 text :: Text -> Inlines
 text x = foldl' go mempty . T.groupBy f $ x
  where
-  f a b = (isSp a && isSp b) || (not (isSp a) && not (isSp b))
-  isNl '\n' = True
-  isNl '\r' = True
-  isNl _ = False
+  f a b = (isSpOrNl a && isSpOrNl b) || (not (isSpOrNl a) && not (isSpOrNl b))
   go accum t
     | Just (c, _) <- T.uncons t
-    , isSp c = if T.any isNl t
-                  then accum <> softbreak
-                  else accum <> space
+    , isSpOrNl c = if T.any isNl t
+                      then accum <> softbreak
+                      else accum <> space
     | otherwise = accum <> str t
 
 str :: Text -> Inlines

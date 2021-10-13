@@ -465,6 +465,7 @@ walkBlockM f (Div attr bs')           = Div attr <$> walkM f bs'
 walkBlockM _ x@CodeBlock {}           = return x
 walkBlockM _ x@RawBlock {}            = return x
 walkBlockM _ HorizontalRule           = return HorizontalRule
+walkBlockM _ Null                     = return Null
 walkBlockM f (Table attr capt as hs bs fs)
   = do capt' <- walkM f capt
        hs' <- walkM f hs
@@ -495,6 +496,7 @@ queryBlock f (Table _ capt _ hs bs fs)
     query f bs <>
     query f fs
 queryBlock f (Div _ bs)               = query f bs
+queryBlock _ Null                     = mempty
 
 -- | Helper method to walk to elements nested below @'MetaValue'@ nodes.
 --

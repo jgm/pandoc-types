@@ -1,6 +1,6 @@
 cabal-version:       2.2
 Name:                pandoc-types
-version:             1.22
+version:             1.22.1
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent

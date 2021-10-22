@@ -1,3 +1,20 @@
+[1.22.1]
+
+  * Text.Pandoc.Builder: add simpleFigure, simpleFigureWith,
+    and the SimpleFigure bidirectional pattern synonym
+    (Aner Lucero) [API change].
+
+  * Allow bytestring 0.11 (Alexander Batischev).
+
+  * Update stack resolver to lts-18.10
+
+  * Allow aeson 2+.  Tested with aeson 2.0.1.0.
+
+  * Fix incorrect table ColWidth documentation (#85, Nils Carlson).
+    The documentation stated that the ColWidth represented the width
+    of the column as a fraction of the table width when in represents
+    a percentage of the text width.
+
 [1.22]
 
   * Deprecate isNull from Builder:  null can serve just as well (#67).

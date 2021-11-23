@@ -86,6 +86,7 @@ instance Arbitrary Blocks where
                                                    flattenTableHead hd <>
                                                    concatMap flattenTableBody bd <>
                                                    flattenTableFoot ft
+          flattenBlock (Figure _ capt blks) = flattenCaption capt <> blks
           flattenBlock (Div _ blks) = blks
           flattenBlock Null = []
 
@@ -204,6 +205,10 @@ instance Arbitrary Block where
     [Table attr capt specs thead tbody' tfoot | tbody' <- shrink tbody] ++
     [Table attr capt specs thead tbody tfoot' | tfoot' <- shrink tfoot] ++
     [Table attr capt' specs thead tbody tfoot | capt' <- shrink capt]
+  shrink (Figure attr capt blks) =
+    [Figure attr capt blks' | blks' <- shrinkBlockList blks] ++
+    [Figure attr capt' blks | capt' <- shrink capt] ++
+    [Figure attr' capt blks | attr' <- shrinkAttr attr]
   shrink (Div attr blks) = (Div attr <$> shrinkBlockList blks)
                         ++ (flip Div blks <$> shrinkAttr attr)
   shrink Null = []
@@ -246,6 +251,9 @@ arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
                                   <*> arbTableHead (n-1)
                                   <*> vectorOf bs (arbTableBody (n-1))
                                   <*> arbTableFoot (n-1))
+                   , (2, Figure <$> arbAttr
+                                <*> arbitrary
+                                <*> listOf1 (arbBlock (n-1)))
                    ]
 
 arbRow :: Int -> Gen Row

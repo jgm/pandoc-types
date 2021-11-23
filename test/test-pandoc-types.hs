@@ -451,6 +451,14 @@ t_table = ( Table
     tCell' i = Cell ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) AlignDefault 1 1 [Plain i]
     tRow = Row ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
 
+t_figure :: (Block, ByteString)
+t_figure = (Figure
+            ("id", ["kls"], [("k1", "v1"), ("k2", "v2")])
+            (Caption (Just [Str "hello"]) [Para [Str "cap content"]])
+            [Para [Str "fig content"]]
+           ,[s|{"t":"Figure","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[[{"t":"Str","c":"hello"}],[{"t":"Para","c":[{"t":"Str","c":"cap content"}]}]],[{"t":"Para","c":[{"t":"Str","c":"fig content"}]}]]}|]
+           )
+
 t_div :: (Block, ByteString)
 t_div = ( Div ("id", ["kls"], [("k1", "v1"), ("k2", "v2")]) [Para [Str "Hello"]]
          , [s|{"t":"Div","c":[["id",["kls"],[["k1","v1"],["k2","v2"]]],[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
@@ -658,15 +666,17 @@ t_tableNormExample = testCase "table normalization example" assertion
     generated = table emptyCaption spec (th initialHeads) [initialTB] (tf initialHeads)
 
 p_figureRepresentation :: Property
-p_figureRepresentation = forAll (arbitrary :: Gen [Inline]) (\figureCaption ->
+p_figureRepresentation = forAll (arbitrary :: Gen [Inline]) $ \figureCaption ->
   simpleFigureWith
-      ("", [], [])
+      ("test", [], [])
       (Builder.fromList figureCaption)
       "url"
       "title" ==
       Builder.fromList
-          [Para [Image ("", [], []) figureCaption ("url", "fig:title") ]]
-  )
+        [Figure
+         nullAttr
+         (Caption Nothing [Plain figureCaption | not (null figureCaption)])
+         [Plain [Image ("test", [], []) mempty ("url", "title") ]]]
 
 tests :: [Test]
 tests =
@@ -745,6 +755,7 @@ tests =
         , testEncodeDecode "DefinitionList" t_definitionlist
         , testEncodeDecode "Header" t_header
         , testEncodeDecode "Table" t_table
+        , testEncodeDecode "Figure" t_figure
         , testEncodeDecode "Div" t_div
         , testEncodeDecode "Null" t_null
         ]

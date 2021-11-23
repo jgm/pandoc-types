@@ -254,7 +254,7 @@ data TableFoot = TableFoot Attr [Row]
 -- | A short caption, for use in, for instance, lists of figures.
 type ShortCaption = [Inline]
 
--- | The caption of a table, with an optional short caption.
+-- | The caption of a table or figure, with optional short caption.
 data Caption = Caption (Maybe ShortCaption) [Block]
   deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
@@ -301,6 +301,8 @@ data Block
     -- column alignments and widths (required), table head, table
     -- bodies, and table foot
     | Table Attr Caption [ColSpec] TableHead [TableBody] TableFoot
+    -- | Figure, with attributes, caption, and content (list of blocks)
+    | Figure Attr Caption [Block]
     -- | Generic block container with attributes
     | Div Attr [Block]
     -- | Nothing

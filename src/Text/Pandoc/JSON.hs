@@ -86,7 +86,7 @@ import System.Environment (getArgs)
 -- to stdout.
 --
 -- For a straight transformation, use a function of type @a -> a@ or
--- @a -> IO a@ where @a@ = 'Block', 'Inline','Pandoc', 'Meta', or 'MetaValue'.
+-- @a -> IO a@ where @a@ = 'Block', 'Inline', or 'Pandoc'.
 --
 -- If your transformation needs to be sensitive to the script's arguments,
 -- use a function of type @[String] -> a -> a@ (with @a@ constrained as above).

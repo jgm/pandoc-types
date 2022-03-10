@@ -67,6 +67,14 @@ blocksTrans [BlockQuote xs] = xs
 blocksTrans [Div _ xs] = xs
 blocksTrans xs = xs
 
+metaValueTrans :: MetaValue -> MetaValue
+metaValueTrans (MetaBool x) = MetaBool $ not x
+metaValueTrans (MetaString xs) = MetaString $ T.toUpper xs
+metaValueTrans x = x
+
+metaTrans :: Meta -> Meta
+metaTrans (Meta metamap) = Meta $ M.mapKeys T.toUpper metamap
+
 inlineQuery :: Inline -> Text
 inlineQuery (Str xs) = xs
 inlineQuery _ = ""
@@ -81,6 +89,12 @@ blockQuery _ = []
 blocksQuery :: [Block] -> Monoid.Sum Int
 blocksQuery = Monoid.Sum . length
 
+metaValueQuery :: MetaValue -> Text
+metaValueQuery (MetaString xs) = xs
+metaValueQuery _ = ""
+
+metaQuery :: Meta -> Monoid.Sum Int
+metaQuery (Meta metamap) = Monoid.Sum $ M.size metamap
 
 prop_roundtrip :: Pandoc -> Bool
 prop_roundtrip doc = case decode $ encode doc :: (Maybe Pandoc) of
@@ -659,8 +673,12 @@ tests =
   [ testGroup "Walk"
     [ testProperty "p_walk inlineTrans" (p_walk inlineTrans)
     , testProperty "p_walk blockTrans" (p_walk blockTrans)
+    , testProperty "p_walk metaValueTrans" (p_walk metaValueTrans)
+    , testProperty "p_walk metaTrans" (p_walk metaTrans)
     , testProperty "p_query inlineQuery" (p_query inlineQuery)
     , testProperty "p_query blockQuery" (p_query blockQuery)
+    , testProperty "p_query metaValueQuery" (p_query metaValueQuery)
+    , testProperty "p_query metaQuery" (p_query metaQuery)
     , testProperty "p_walkList inlinesTrans"  (p_walkList inlinesTrans)
     , testProperty "p_queryList inlinesQuery" (p_queryList inlinesQuery)
     , testProperty "p_walkList blocksTrans"  (p_walkList blocksTrans)

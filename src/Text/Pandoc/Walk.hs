@@ -98,6 +98,7 @@ module Text.Pandoc.Walk
   , queryCitation
   , queryInline
   , queryMetaValue
+  , queryMetaValue'
   , queryPandoc
   , walkBlockM
   , walkCaptionM
@@ -109,12 +110,14 @@ module Text.Pandoc.Walk
   , walkCitationM
   , walkInlineM
   , walkMetaValueM
+  , walkMetaValueM'
   , walkPandocM
   )
 where
 import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
+import qualified Data.Map as M
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
 import Data.Traversable (Traversable)
@@ -209,6 +212,14 @@ instance Walkable [Inline] Pandoc where
   walkM = walkPandocM
   query = queryPandoc
 
+instance Walkable Meta Pandoc where
+  walkM f (Pandoc m bs) = Pandoc <$> f m <*> pure bs
+  query f (Pandoc m _) = f m
+
+instance Walkable MetaValue Pandoc where
+  walkM f (Pandoc m bs) = Pandoc <$> walkM f m <*> pure bs
+  query f (Pandoc m _) = query f m
+
 instance Walkable Pandoc Pandoc where
   walkM f = f
   query f = f
@@ -236,9 +247,18 @@ instance Walkable [Block] Meta where
   walkM f (Meta metamap) = Meta <$> walkM f metamap
   query f (Meta metamap) = query f metamap
 
+instance Walkable MetaValue Meta where
+  walkM f (Meta metamap) =
+    Meta . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList metamap)
+  query f (Meta metamap) = M.foldMapWithKey (const $ query f) metamap
+
 --
 -- Walk MetaValue
 --
+instance Walkable MetaValue MetaValue where
+  walkM f x = walkMetaValueM' f x >>= f
+  query f x = f x <> queryMetaValue' f x
+
 instance Walkable Inline MetaValue where
   walkM = walkMetaValueM
   query = queryMetaValue
@@ -513,6 +533,14 @@ walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
 walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
 walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
 
+-- | Helper method to walk @'MetaValue'@ nodes nested below @'MetaValue'@ nodes.
+walkMetaValueM' :: (Monad f, Applicative f, Functor f)
+                => (MetaValue -> f MetaValue) -> MetaValue -> f MetaValue
+walkMetaValueM' f (MetaMap m) =
+    MetaMap . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList m)
+walkMetaValueM' f (MetaList xs) = MetaList <$> mapM (walkM f) xs
+walkMetaValueM' _ x = return x
+
 -- | Perform a query on elements nested below a @'MetaValue'@ element by
 -- querying all directly nested lists of @Inline@s, list of @Block@s, or
 -- lists or maps of @MetaValue@s.
@@ -525,6 +553,14 @@ queryMetaValue _ (MetaString _)   = mempty
 queryMetaValue f (MetaInlines xs) = query f xs
 queryMetaValue f (MetaBlocks bs)  = query f bs
 queryMetaValue f (MetaMap m)      = query f m
+
+-- | Perform a query on @'MetaValue'@ elements nested below a @'MetaValue'@
+-- element
+queryMetaValue' :: Monoid c
+                => (MetaValue -> c) -> MetaValue -> c
+queryMetaValue' f (MetaMap m)   = M.foldMapWithKey (const $ query f) m
+queryMetaValue' f (MetaList xs) = mconcat $ map (query f) xs
+queryMetaValue' _ _             = mempty
 
 -- | Helper method to walk to elements nested below @'Citation'@ nodes.
 --

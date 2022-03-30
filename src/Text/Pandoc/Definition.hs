@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
-    TemplateHaskell , PatternSynonyms, ViewPatterns #-}
+    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData #-}
 
 {-
 Copyright (c) 2006-2019, John MacFarlane

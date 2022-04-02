@@ -20,20 +20,26 @@ jobs:
             cabal: '2.4'
           - ghc: '8.8.1'
             cabal: '3.0'
-          - ghc: '8.10.1'
+          - ghc: '8.10.7'
             cabal: '3.2'
+          - ghc: '9.0.1'
+            cabal: '3.4'
+          - ghc: '9.2.2'
+            cabal: '3.6'
     steps:
     - uses: actions/checkout@v1
+    - name: Install cabal/ghc
+      run: |
+        ghcup install ghc --set ${{ matrix.versions.ghc }}
+        ghcup install cabal --set ${{ matrix.versions.cabal }}
 
     - name: Install dependencies
       run: |
-          export PATH=/opt/cabal/${{ matrix.versions.cabal }}/bin:/opt/ghc/${{ matrix.versions.ghc }}/bin:$PATH
           cabal v2-update
-          cabal v2-build --dependencies-only --enable-tests --enable-benchmarks --disable-optimization -fexecutable all
+          cabal v2-build --dependencies-only --enable-tests --enable-benchmarks --disable-optimization all
     - name: Build and test
       run: |
-          export PATH=/opt/cabal/${{ matrix.versions.cabal }}/bin:/opt/ghc/${{ matrix.versions.ghc }}/bin:$PATH
-          cabal v2-build --enable-tests --enable-benchmarks --disable-optimization -fexecutable all
+          cabal v2-build --enable-tests --enable-benchmarks --disable-optimization all
           cabal v2-test --disable-optimization all
 
   windows:

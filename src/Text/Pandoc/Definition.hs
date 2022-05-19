@@ -52,6 +52,7 @@ of documents.
 module Text.Pandoc.Definition ( Pandoc(..)
                               , Meta(..)
                               , MetaValue(..)
+                              , MetaValueF(..)
                               , nullMeta
                               , isNullMeta
                               , lookupMeta
@@ -136,12 +137,17 @@ instance Monoid Meta where
   mempty = Meta M.empty
   mappend = (<>)
 
-data MetaValue = MetaMap (M.Map Text MetaValue)
-               | MetaList [MetaValue]
+newtype MetaValue = MetaValue
+  { unMetaValue :: MetaValueF Inline Block MetaValue }
+               deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+data MetaValueF inline block metaValue
+               = MetaMap (M.Map Text metaValue)
+               | MetaList [metaValue]
                | MetaBool Bool
                | MetaString Text
-               | MetaInlines [Inline]
-               | MetaBlocks [Block]
+               | MetaInlines [inline]
+               | MetaBlocks [block]
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 nullMeta :: Meta
@@ -159,7 +165,7 @@ lookupMeta key (Meta m) = M.lookup key m
 -- | Extract document title from metadata; works just like the old @docTitle@.
 docTitle :: Meta -> [Inline]
 docTitle meta =
-  case lookupMeta "title" meta of
+  case unMetaValue <$> lookupMeta "title" meta of
          Just (MetaString s)           -> [Inline $ Str s]
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Block (Plain ils)]) -> ils
@@ -170,19 +176,19 @@ docTitle meta =
 -- @docAuthors@.
 docAuthors :: Meta -> [[Inline]]
 docAuthors meta =
-  case lookupMeta "author" meta of
+  case unMetaValue <$> lookupMeta "author" meta of
         Just (MetaString s)    -> [[Inline $ Str s]]
         Just (MetaInlines ils) -> [ils]
-        Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms] ++
-                                  [ils | MetaBlocks [Block (Plain ils)] <- ms] ++
-                                  [ils | MetaBlocks [Block (Para ils)]  <- ms] ++
-                                  [[Inline $ Str x] | MetaString x <- ms]
+        Just (MetaList   ms)   -> [ils | MetaValue (MetaInlines ils) <- ms] ++
+                                  [ils | MetaValue (MetaBlocks [Block (Plain ils)]) <- ms] ++
+                                  [ils | MetaValue (MetaBlocks [Block (Para ils)])  <- ms] ++
+                                  [[Inline $ Str x] | MetaValue (MetaString x) <- ms]
         _                      -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
 docDate meta =
-  case lookupMeta "date" meta of
+  case unMetaValue <$> lookupMeta "date" meta of
          Just (MetaString s)           -> [Inline $ Str s]
          Just (MetaInlines ils)        -> ils
          Just (MetaBlocks [Block (Plain ils)]) -> ils
@@ -440,6 +446,7 @@ $(let jsonOpts = defaultOptions
         }
   in fmap concat $ traverse (deriveJSON jsonOpts)
      [ ''MetaValue
+     , ''MetaValueF
      , ''CitationMode
      , ''CitationF
      , ''QuoteType
@@ -497,8 +504,9 @@ instance ToJSON Pandoc where
                     ]
 
 -- Instances for deepseq
-instance NFData MetaValue
 instance NFData Meta
+instance NFData MetaValue
+instance (NFData block, NFData inline, NFData metaValue) => NFData (MetaValueF inline block metaValue)
 instance NFData inline => NFData (CitationF inline)
 instance NFData Alignment
 instance NFData RowSpan

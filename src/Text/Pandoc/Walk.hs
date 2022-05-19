@@ -555,20 +555,33 @@ queryBlockF _ Null                     = mempty
 walkMetaValueM :: (Walkable a MetaValue, Walkable a [Block],
                   Walkable a [Inline], Monad f, Applicative f, Functor f)
                => (a -> f a) -> MetaValue -> f MetaValue
-walkMetaValueM f (MetaList xs)    = MetaList <$> walkM f xs
-walkMetaValueM _ (MetaBool b)     = return $ MetaBool b
-walkMetaValueM _ (MetaString s)   = return $ MetaString s
-walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
-walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
-walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
+walkMetaValueM f (MetaValue b) = MetaValue <$> walkMetaValueFM f b
+
+walkMetaValueFM :: (Monad f, Walkable a metaValue,
+                    Walkable a [metaValue], Walkable a [inline], Walkable a [block])
+                => (a -> f a)
+                -> MetaValueF inline block metaValue
+                -> f (MetaValueF inline block metaValue)
+walkMetaValueFM f (MetaList xs)    = MetaList <$> walkM f xs
+walkMetaValueFM _ (MetaBool b)     = return $ MetaBool b
+walkMetaValueFM _ (MetaString s)   = return $ MetaString s
+walkMetaValueFM f (MetaInlines xs) = MetaInlines <$> walkM f xs
+walkMetaValueFM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
+walkMetaValueFM f (MetaMap m)      = MetaMap <$> walkM f m
 
 -- | Helper method to walk @'MetaValue'@ nodes nested below @'MetaValue'@ nodes.
 walkMetaValueM' :: (Monad f, Applicative f, Functor f)
                 => (MetaValue -> f MetaValue) -> MetaValue -> f MetaValue
-walkMetaValueM' f (MetaMap m) =
+walkMetaValueM' f (MetaValue b) = MetaValue <$> walkMetaValueFM' f b
+
+walkMetaValueFM' :: (Monad f, Walkable a metaValue)
+                 => (a -> f a)
+                 -> MetaValueF inline block metaValue
+                 -> f (MetaValueF inline block metaValue)
+walkMetaValueFM' f (MetaMap m) =
     MetaMap . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList m)
-walkMetaValueM' f (MetaList xs) = MetaList <$> mapM (walkM f) xs
-walkMetaValueM' _ x = return x
+walkMetaValueFM' f (MetaList xs) = MetaList <$> mapM (walkM f) xs
+walkMetaValueFM' _ x = return x
 
 -- | Perform a query on elements nested below a @'MetaValue'@ element by
 -- querying all directly nested lists of @Inline@s, list of @Block@s, or
@@ -576,20 +589,29 @@ walkMetaValueM' _ x = return x
 queryMetaValue :: (Walkable a MetaValue, Walkable a [Block],
                    Walkable a [Inline], Monoid c)
                => (a -> c) -> MetaValue -> c
-queryMetaValue f (MetaList xs)    = query f xs
-queryMetaValue _ (MetaBool _)     = mempty
-queryMetaValue _ (MetaString _)   = mempty
-queryMetaValue f (MetaInlines xs) = query f xs
-queryMetaValue f (MetaBlocks bs)  = query f bs
-queryMetaValue f (MetaMap m)      = query f m
+queryMetaValue f (MetaValue b) = queryMetaValueF f b
+
+queryMetaValueF :: (Monoid c, Walkable a metaValue,
+                    Walkable a [metaValue], Walkable a [inline], Walkable a [block])
+                => (a -> c) -> MetaValueF inline block metaValue -> c
+queryMetaValueF f (MetaList xs)    = query f xs
+queryMetaValueF _ (MetaBool _)     = mempty
+queryMetaValueF _ (MetaString _)   = mempty
+queryMetaValueF f (MetaInlines xs) = query f xs
+queryMetaValueF f (MetaBlocks bs)  = query f bs
+queryMetaValueF f (MetaMap m)      = query f m
 
 -- | Perform a query on @'MetaValue'@ elements nested below a @'MetaValue'@
 -- element
 queryMetaValue' :: Monoid c
                 => (MetaValue -> c) -> MetaValue -> c
-queryMetaValue' f (MetaMap m)   = M.foldMapWithKey (const $ query f) m
-queryMetaValue' f (MetaList xs) = mconcat $ map (query f) xs
-queryMetaValue' _ _             = mempty
+queryMetaValue' f (MetaValue b) = queryMetaValueF' f b
+
+queryMetaValueF' :: (Monoid c, Walkable a b)
+                 => (a -> c) -> MetaValueF inline block b -> c
+queryMetaValueF' f (MetaMap m)   = M.foldMapWithKey (const $ query f) m
+queryMetaValueF' f (MetaList xs) = mconcat $ map (query f) xs
+queryMetaValueF' _ _             = mempty
 
 -- | Helper method to walk to elements nested below @'Citation'@ nodes.
 --

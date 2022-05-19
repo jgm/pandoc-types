@@ -280,28 +280,28 @@ instance ToMetaValue MetaValue where
   toMetaValue = id
 
 instance ToMetaValue Blocks where
-  toMetaValue = MetaBlocks . toList
+  toMetaValue = MetaValue . MetaBlocks . toList
 
 instance ToMetaValue Inlines where
-  toMetaValue = MetaInlines . toList
+  toMetaValue = MetaValue . MetaInlines . toList
 
 instance ToMetaValue Bool where
-  toMetaValue = MetaBool
+  toMetaValue = MetaValue . MetaBool
 
 instance ToMetaValue Text where
-  toMetaValue = MetaString
+  toMetaValue = MetaValue . MetaString
 
 instance {-# OVERLAPPING #-} ToMetaValue String where
-  toMetaValue = MetaString . T.pack
+  toMetaValue = MetaValue . MetaString . T.pack
 
 instance ToMetaValue a => ToMetaValue [a] where
-  toMetaValue = MetaList . map toMetaValue
+  toMetaValue = MetaValue . MetaList . map toMetaValue
 
 instance ToMetaValue a => ToMetaValue (M.Map Text a) where
-  toMetaValue = MetaMap . M.map toMetaValue
+  toMetaValue = MetaValue . MetaMap . M.map toMetaValue
 
 instance ToMetaValue a => ToMetaValue (M.Map String a) where
-  toMetaValue = MetaMap . M.map toMetaValue . M.mapKeys T.pack
+  toMetaValue = MetaValue . MetaMap . M.map toMetaValue . M.mapKeys T.pack
 
 class HasMeta a where
   setMeta :: ToMetaValue b => Text -> b -> a -> a

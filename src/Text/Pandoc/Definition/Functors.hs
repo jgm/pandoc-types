@@ -89,12 +89,11 @@ import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
-import Data.String
 import Control.DeepSeq
-import Paths_pandoc_types (version)
-import Data.Version (Version)
 import Data.Semigroup ((<>))
 import Control.Arrow (second)
+
+import Text.Pandoc.Definition.Misc
 
 data MetaValueF inline block metaValue
                = MetaMap (M.Map Text metaValue)
@@ -104,62 +103,6 @@ data MetaValueF inline block metaValue
                | MetaInlines [inline]
                | MetaBlocks [block]
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | List attributes.  The first element of the triple is the
--- start number of the list.
-type ListAttributes = (Int, ListNumberStyle, ListNumberDelim)
-
--- | Style of list numbers.
-data ListNumberStyle = DefaultStyle
-                     | Example
-                     | Decimal
-                     | LowerRoman
-                     | UpperRoman
-                     | LowerAlpha
-                     | UpperAlpha deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | Delimiter of list numbers.
-data ListNumberDelim = DefaultDelim
-                     | Period
-                     | OneParen
-                     | TwoParens deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | Attributes: identifier, classes, key-value pairs
-type Attr = (Text, [Text], [(Text, Text)])
-
-nullAttr :: Attr
-nullAttr = ("",[],[])
-
--- | Formats for raw blocks
-newtype Format = Format Text
-               deriving (Read, Show, Typeable, Data, Generic, ToJSON, FromJSON)
-
-instance IsString Format where
-  fromString f = Format $ T.toCaseFold $ T.pack f
-
-instance Eq Format where
-  Format x == Format y = T.toCaseFold x == T.toCaseFold y
-
-instance Ord Format where
-  compare (Format x) (Format y) = compare (T.toCaseFold x) (T.toCaseFold y)
-
--- | The number of columns taken up by the row head of each row of a
--- 'TableBody'. The row body takes up the remaining columns.
-newtype RowHeadColumns = RowHeadColumns Int
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
-
--- | Alignment of a table column.
-data Alignment = AlignLeft
-               | AlignRight
-               | AlignCenter
-               | AlignDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | The width of a table column, as a percentage of the text width.
-data ColWidth = ColWidth Double
-              | ColWidthDefault deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
-
--- | The specification for a single table column.
-type ColSpec = (Alignment, ColWidth)
 
 -- | A table row.
 data RowF block = Row Attr [CellF block]
@@ -202,14 +145,6 @@ data CellF block = Cell Attr Alignment RowSpan ColSpan [block]
            , Functor, Foldable, Traversable
            )
 
--- | The number of rows occupied by a cell; the height of a cell.
-newtype RowSpan = RowSpan Int
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
-
--- | The number of columns occupied by a cell; the width of a cell.
-newtype ColSpan = ColSpan Int
-  deriving (Eq, Ord, Show, Read, Typeable, Data, Generic, Num, Enum, ToJSON, FromJSON)
-
 -- | Block element
 data BlockF inline block
     -- | Plain text, not a paragraph
@@ -249,12 +184,6 @@ data BlockF inline block
              , Functor, Foldable, Traversable
              )
 
--- | Type of quotation marks to use in Quoted inline.
-data QuoteType = SingleQuote | DoubleQuote deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
-
--- | Link target (URL, title).
-type Target = (Text, Text)
-
 isFigureTarget :: Target -> Maybe Target
 isFigureTarget tgt
   | (src, Just tit) <- second (T.stripPrefix "fig:") tgt = Just (src, tit)
@@ -282,9 +211,6 @@ pattern SimpleFigure attr figureCaption tgt <-
   SimpleFigure attr figureCaption tgt =
     Para [Image attr figureCaption (second ("fig:" <>) tgt)]
 
-
--- | Type of math element (display or inline).
-data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Inline elements.
 data InlineF block inline
@@ -327,9 +253,6 @@ data CitationF inline = Citation
 instance Eq inline => Ord (CitationF inline) where
     compare = comparing citationHash
 
-data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
-                    deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
-
 
 -- ToJSON/FromJSON instances. Some are defined by hand so that we have
 -- more control over the format.
@@ -340,14 +263,7 @@ $(let jsonOpts = defaultOptions
         }
   in fmap concat $ traverse (deriveJSON jsonOpts)
      [ ''MetaValueF
-     , ''CitationMode
      , ''CitationF
-     , ''QuoteType
-     , ''MathType
-     , ''ListNumberStyle
-     , ''ListNumberDelim
-     , ''Alignment
-     , ''ColWidth
      , ''RowF
      , ''CaptionF
      , ''TableHeadF
@@ -361,9 +277,6 @@ $(let jsonOpts = defaultOptions
 -- Instances for deepseq
 instance (NFData block, NFData inline, NFData metaValue) => NFData (MetaValueF inline block metaValue)
 instance NFData inline => NFData (CitationF inline)
-instance NFData Alignment
-instance NFData RowSpan
-instance NFData ColSpan
 instance NFData block => NFData (CellF block)
 instance NFData block => NFData (RowF block)
 instance NFData block => NFData (TableHeadF block)
@@ -371,15 +284,4 @@ instance NFData block => NFData (TableBodyF block)
 instance NFData block => NFData (TableFootF block)
 instance (NFData block, NFData inline) => NFData (CaptionF block inline)
 instance (NFData block, NFData inline) => NFData (InlineF block inline)
-instance NFData MathType
-instance NFData Format
-instance NFData CitationMode
-instance NFData QuoteType
-instance NFData ListNumberDelim
-instance NFData ListNumberStyle
-instance NFData ColWidth
-instance NFData RowHeadColumns
 instance (NFData inline, NFData block) => NFData (BlockF inline block)
-
-pandocTypesVersion :: Version
-pandocTypesVersion = version

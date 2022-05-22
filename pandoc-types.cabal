@@ -43,6 +43,7 @@ Source-repository    head
 Library
   hs-source-dirs:    src
   Exposed-modules:   Text.Pandoc.Definition
+                     Text.Pandoc.Definition.Functors
                      Text.Pandoc.Generic
                      Text.Pandoc.Walk
                      Text.Pandoc.Builder

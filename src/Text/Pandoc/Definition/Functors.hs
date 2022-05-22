@@ -50,33 +50,32 @@ Definition of 'Pandoc' data structure for format-neutral representation
 of documents.
 -}
 module Text.Pandoc.Definition.Functors
-  ( MetaValueF(..)
-  , BlockF(..)
-  , pattern SimpleFigure
-  , InlineF(..)
+  ( MetaValue(..)
+  , Block(..)
+  , Inline(..)
   , ListAttributes
   , ListNumberStyle(..)
   , ListNumberDelim(..)
   , Format(..)
   , Attr
   , nullAttr
-  , CaptionF(..)
-  , ShortCaptionF
+  , Caption(..)
+  , ShortCaption
   , RowHeadColumns(..)
   , Alignment(..)
   , ColWidth(..)
   , ColSpec
-  , RowF(..)
-  , TableHeadF(..)
-  , TableBodyF(..)
-  , TableFootF(..)
-  , CellF(..)
+  , Row(..)
+  , TableHead(..)
+  , TableBody(..)
+  , TableFoot(..)
+  , Cell(..)
   , RowSpan(..)
   , ColSpan(..)
   , QuoteType(..)
   , Target
   , MathType(..)
-  , CitationF(..)
+  , Citation(..)
   , CitationMode(..)
   , pandocTypesVersion
   ) where
@@ -87,15 +86,12 @@ import Data.Aeson hiding (Null)
 import Data.Aeson.TH (deriveJSON)
 import qualified Data.Map as M
 import Data.Text (Text)
-import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Control.DeepSeq
-import Data.Semigroup ((<>))
-import Control.Arrow (second)
 
 import Text.Pandoc.Definition.Misc
 
-data MetaValueF inline block metaValue
+data MetaValue inline block metaValue
                = MetaMap (M.Map Text metaValue)
                | MetaList [metaValue]
                | MetaBool Bool
@@ -105,13 +101,13 @@ data MetaValueF inline block metaValue
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 -- | A table row.
-data RowF block = Row Attr [CellF block]
+data Row block = Row Attr [Cell block]
   deriving ( Eq, Ord, Show, Read, Typeable, Data, Generic
            , Functor, Foldable, Traversable
            )
 
 -- | The head of a table.
-data TableHeadF block = TableHead Attr [RowF block]
+data TableHead block = TableHead Attr [Row block]
   deriving ( Eq, Ord, Show, Read, Typeable, Data, Generic
            , Functor, Foldable, Traversable
            )
@@ -119,34 +115,34 @@ data TableHeadF block = TableHead Attr [RowF block]
 -- | A body of a table, with an intermediate head, intermediate body,
 -- and the specified number of row header columns in the intermediate
 -- body.
-data TableBodyF block = TableBody Attr RowHeadColumns [RowF block] [RowF block]
+data TableBody block = TableBody Attr RowHeadColumns [Row block] [Row block]
   deriving ( Eq, Ord, Show, Read, Typeable, Data, Generic
            , Functor, Foldable, Traversable
            )
 
 -- | The foot of a table.
-data TableFootF block = TableFoot Attr [RowF block]
+data TableFoot block = TableFoot Attr [Row block]
   deriving ( Eq, Ord, Show, Read, Typeable, Data, Generic
            , Functor, Foldable, Traversable
            )
 
 -- | A short caption, for use in, for instance, lists of figures.
-type ShortCaptionF inline = [inline]
+type ShortCaption inline = [inline]
 
 -- | The caption of a table, with an optional short caption.
-data CaptionF inline block = Caption (Maybe (ShortCaptionF inline)) [block]
+data Caption inline block = Caption (Maybe (ShortCaption inline)) [block]
   deriving ( Eq, Ord, Show, Read, Typeable, Data, Generic
            , Functor, Foldable, Traversable
            )
 
 -- | A table cell.
-data CellF block = Cell Attr Alignment RowSpan ColSpan [block]
+data Cell block = Cell Attr Alignment RowSpan ColSpan [block]
   deriving ( Eq, Ord, Show, Read, Typeable, Data, Generic
            , Functor, Foldable, Traversable
            )
 
 -- | Block element
-data BlockF inline block
+data Block inline block
     -- | Plain text, not a paragraph
     = Plain [inline]
     -- | Paragraph
@@ -175,7 +171,7 @@ data BlockF inline block
     -- | Table, with attributes, caption, optional short caption,
     -- column alignments and widths (required), table head, table
     -- bodies, and table foot
-    | Table Attr (CaptionF inline block) [ColSpec] (TableHeadF block) [TableBodyF block] (TableFootF block)
+    | Table Attr (Caption inline block) [ColSpec] (TableHead block) [TableBody block] (TableFoot block)
     -- | Generic block container with attributes
     | Div Attr [block]
     -- | Nothing
@@ -184,36 +180,9 @@ data BlockF inline block
              , Functor, Foldable, Traversable
              )
 
-isFigureTarget :: Target -> Maybe Target
-isFigureTarget tgt
-  | (src, Just tit) <- second (T.stripPrefix "fig:") tgt = Just (src, tit)
-  | otherwise = Nothing
-
--- | Bidirectional patter synonym
---
--- It can pass as a Block constructor
---
--- >>> SimpleFigure nullAttr [] (T.pack "", T.pack "title")
--- Para [Image ("",[],[]) [] ("","fig:title")]
---
---
--- It can be used to pattern match
--- >>> let img = Para [Image undefined undefined (undefined, T.pack "title")]
--- >>> case img of { SimpleFigure _ _ _ -> True; _ -> False }
--- False
--- >>> let fig = Para [Image undefined undefined (undefined, T.pack "fig:title")]
--- >>> case fig of { SimpleFigure _ _ tit -> snd tit; _ -> T.pack "" }
--- "title"
-pattern SimpleFigure :: Attr -> [inline] -> Target -> BlockF (InlineF block inline) block
-pattern SimpleFigure attr figureCaption tgt <-
-     Para [Image attr figureCaption
-        (isFigureTarget -> Just tgt)]  where
-  SimpleFigure attr figureCaption tgt =
-    Para [Image attr figureCaption (second ("fig:" <>) tgt)]
-
 
 -- | Inline elements.
-data InlineF block inline
+data Inline block inline
     = Str Text            -- ^ Text (string)
     | Emph [inline]         -- ^ Emphasized text (list of inlines)
     | Underline [inline]    -- ^  Underlined text (list of inlines)
@@ -223,7 +192,7 @@ data InlineF block inline
     | Subscript [inline]    -- ^ Subscripted text (list of inlines)
     | SmallCaps [inline]    -- ^ Small caps text (list of inlines)
     | Quoted QuoteType [inline] -- ^ Quoted text (list of inlines)
-    | Cite [CitationF inline]  [inline] -- ^ Citation (list of inlines)
+    | Cite [Citation inline]  [inline] -- ^ Citation (list of inlines)
     | Code Attr Text      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break
@@ -238,7 +207,7 @@ data InlineF block inline
              , Functor, Foldable, Traversable
              )
 
-data CitationF inline = Citation
+data Citation inline = Citation
                          { citationId      :: Text
                          , citationPrefix  :: [inline]
                          , citationSuffix  :: [inline]
@@ -250,7 +219,7 @@ data CitationF inline = Citation
              , Functor, Foldable, Traversable
              )
 
-instance Eq inline => Ord (CitationF inline) where
+instance Eq inline => Ord (Citation inline) where
     compare = comparing citationHash
 
 
@@ -262,26 +231,26 @@ $(let jsonOpts = defaultOptions
         , sumEncoding = TaggedObject { tagFieldName = "t", contentsFieldName = "c" }
         }
   in fmap concat $ traverse (deriveJSON jsonOpts)
-     [ ''MetaValueF
-     , ''CitationF
-     , ''RowF
-     , ''CaptionF
-     , ''TableHeadF
-     , ''TableBodyF
-     , ''TableFootF
-     , ''CellF
-     , ''InlineF
-     , ''BlockF
+     [ ''MetaValue
+     , ''Citation
+     , ''Row
+     , ''Caption
+     , ''TableHead
+     , ''TableBody
+     , ''TableFoot
+     , ''Cell
+     , ''Inline
+     , ''Block
      ])
 
 -- Instances for deepseq
-instance (NFData block, NFData inline, NFData metaValue) => NFData (MetaValueF inline block metaValue)
-instance NFData inline => NFData (CitationF inline)
-instance NFData block => NFData (CellF block)
-instance NFData block => NFData (RowF block)
-instance NFData block => NFData (TableHeadF block)
-instance NFData block => NFData (TableBodyF block)
-instance NFData block => NFData (TableFootF block)
-instance (NFData block, NFData inline) => NFData (CaptionF block inline)
-instance (NFData block, NFData inline) => NFData (InlineF block inline)
-instance (NFData inline, NFData block) => NFData (BlockF inline block)
+instance (NFData block, NFData inline, NFData metaValue) => NFData (MetaValue inline block metaValue)
+instance NFData inline => NFData (Citation inline)
+instance NFData block => NFData (Cell block)
+instance NFData block => NFData (Row block)
+instance NFData block => NFData (TableHead block)
+instance NFData block => NFData (TableBody block)
+instance NFData block => NFData (TableFoot block)
+instance (NFData block, NFData inline) => NFData (Caption block inline)
+instance (NFData block, NFData inline) => NFData (Inline block inline)
+instance (NFData inline, NFData block) => NFData (Block inline block)

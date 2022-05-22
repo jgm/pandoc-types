@@ -10,6 +10,7 @@ import Control.Monad (forM)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Pandoc.Definition
+import qualified Text.Pandoc.Definition.Functors as F
 import Text.Pandoc.Builder
 
 realString :: Gen Text
@@ -39,10 +40,10 @@ instance Arbitrary Inlines where
   arbitrary = (fromList :: [Inline] -> Inlines) <$> arbitrary
   shrink = fmap fromList . ((++) <$> shrink <*> flattenShrinkInlines) . toList
     where flattenShrinkInlines (x:xs) =
-            let x' = flattenInline $ unInline x
+            let x' = flattenInline x
             in (if null x' then [] else [x' ++ xs]) ++ [x:xs' | xs' <- flattenShrinkInlines xs]
           flattenShrinkInlines [] = []
-          flattenInline :: InlineF Block Inline -> [Inline]
+          flattenInline :: Inline -> [Inline]
           flattenInline (Str _) = []
           flattenInline (Emph ils) = ils
           flattenInline (Underline ils) = ils
@@ -68,20 +69,20 @@ instance Arbitrary Blocks where
   arbitrary = (fromList :: [Block] -> Blocks) <$> arbitrary
   shrink = fmap fromList . ((++) <$> shrink <*> flattenShrinkBlocks) . toList
     where flattenShrinkBlocks (x:xs) =
-            let x' = flattenBlock $ unBlock x
+            let x' = flattenBlock x
             in (if null x' then [] else [x' ++ xs]) ++ [x:xs' | xs' <- flattenShrinkBlocks xs]
           flattenShrinkBlocks [] = []
-          flattenBlock :: BlockF Inline Block -> [Block]
+          flattenBlock :: Block -> [Block]
           flattenBlock Plain{} = []
           flattenBlock Para{} = []
-          flattenBlock (LineBlock lns) = [Block $ Para x | x <- lns]
+          flattenBlock (LineBlock lns) = [Para x | x <- lns]
           flattenBlock CodeBlock{} = []
           flattenBlock RawBlock{} = []
           flattenBlock (BlockQuote blks) = blks
           flattenBlock (OrderedList _ blksList) = concat blksList
           flattenBlock (BulletList blksList) = concat blksList
-          flattenBlock (DefinitionList defs) = concat [Block (Para ils) : concat blks | (ils, blks) <- defs]
-          flattenBlock (Header _ _ ils) = [Block $ Para ils]
+          flattenBlock (DefinitionList defs) = concat [Para ils:concat blks | (ils, blks) <- defs]
+          flattenBlock (Header _ _ ils) = [Para ils]
           flattenBlock HorizontalRule = []
           flattenBlock (Table _ capt _ hd bd ft) = flattenCaption capt <>
                                                    flattenTableHead hd <>
@@ -91,7 +92,7 @@ instance Arbitrary Blocks where
           flattenBlock Null = []
 
           flattenCaption (Caption Nothing body)    = body
-          flattenCaption (Caption (Just ils) body) = Block (Para ils) : body
+          flattenCaption (Caption (Just ils) body) = Para ils : body
 
           flattenTableHead (TableHead _ body) = flattenRows body
           flattenTableBody (TableBody _ _ hd bd) = flattenRows hd <> flattenRows bd
@@ -113,37 +114,37 @@ instance Arbitrary Inline where
 
 shrinkInline :: ( Arbitrary b, Arbitrary (Many b)
                 , Arbitrary i, Arbitrary (Many i))
-             => InlineF b i -> [InlineF b i]
-shrinkInline (Str s) = Str <$> shrinkText s
-shrinkInline (Emph ils) = Emph <$> shrinkList ils
-shrinkInline (Underline ils) = Underline <$> shrinkList ils
-shrinkInline (Strong ils) = Strong <$> shrinkList ils
-shrinkInline (Strikeout ils) = Strikeout <$> shrinkList ils
-shrinkInline (Superscript ils) = Superscript <$> shrinkList ils
-shrinkInline (Subscript ils) = Subscript <$> shrinkList ils
-shrinkInline (SmallCaps ils) = SmallCaps <$> shrinkList ils
-shrinkInline (Quoted qtype ils) = Quoted qtype <$> shrinkList ils
-shrinkInline (Cite cits ils) = (Cite cits <$> shrinkList ils)
-                            ++ (flip Cite ils <$> QC.shrinkList shrinkCitation cits)
-shrinkInline (Code attr s) = (Code attr <$> shrinkText s)
-                          ++ (flip Code s <$> shrinkAttr attr)
-shrinkInline Space = []
-shrinkInline SoftBreak = []
-shrinkInline LineBreak = []
-shrinkInline (Math mtype s) = Math mtype <$> shrinkText s
-shrinkInline (RawInline fmt s) = RawInline fmt <$> shrinkText s
-shrinkInline (Link attr ils target) = [Link attr ils' target | ils' <- shrinkList ils]
-                                   ++ [Link attr ils target' | target' <- shrinkText2 target]
-                                   ++ [Link attr' ils target | attr' <- shrinkAttr attr]
-shrinkInline (Image attr ils target) = [Image attr ils' target | ils' <- shrinkList ils]
-                                    ++ [Image attr ils target' | target' <- shrinkText2 target]
-                                    ++ [Image attr' ils target | attr' <- shrinkAttr attr]
-shrinkInline (Note blks) = Note <$> shrinkList blks
-shrinkInline (Span attr s) = (Span attr <$> shrink s)
-                          ++ (flip Span s <$> shrinkAttr attr)
+             => F.Inline b i -> [F.Inline b i]
+shrinkInline (F.Str s) = F.Str <$> shrinkText s
+shrinkInline (F.Emph ils) = F.Emph <$> shrinkList ils
+shrinkInline (F.Underline ils) = F.Underline <$> shrinkList ils
+shrinkInline (F.Strong ils) = F.Strong <$> shrinkList ils
+shrinkInline (F.Strikeout ils) = F.Strikeout <$> shrinkList ils
+shrinkInline (F.Superscript ils) = F.Superscript <$> shrinkList ils
+shrinkInline (F.Subscript ils) = F.Subscript <$> shrinkList ils
+shrinkInline (F.SmallCaps ils) = F.SmallCaps <$> shrinkList ils
+shrinkInline (F.Quoted qtype ils) = F.Quoted qtype <$> shrinkList ils
+shrinkInline (F.Cite cits ils) = (F.Cite cits <$> shrinkList ils)
+                              ++ (flip F.Cite ils <$> QC.shrinkList shrinkCitation cits)
+shrinkInline (F.Code attr s) = (F.Code attr <$> shrinkText s)
+                            ++ (flip F.Code s <$> shrinkAttr attr)
+shrinkInline F.Space = []
+shrinkInline F.SoftBreak = []
+shrinkInline F.LineBreak = []
+shrinkInline (F.Math mtype s) = F.Math mtype <$> shrinkText s
+shrinkInline (F.RawInline fmt s) = F.RawInline fmt <$> shrinkText s
+shrinkInline (F.Link attr ils target) = [F.Link attr ils' target | ils' <- shrinkList ils]
+                                     ++ [F.Link attr ils target' | target' <- shrinkText2 target]
+                                     ++ [F.Link attr' ils target | attr' <- shrinkAttr attr]
+shrinkInline (F.Image attr ils target) = [F.Image attr ils' target | ils' <- shrinkList ils]
+                                      ++ [F.Image attr ils target' | target' <- shrinkText2 target]
+                                      ++ [F.Image attr' ils target | attr' <- shrinkAttr attr]
+shrinkInline (F.Note blks) = F.Note <$> shrinkList blks
+shrinkInline (F.Span attr s) = (F.Span attr <$> shrink s)
+                            ++ (flip F.Span s <$> shrinkAttr attr)
 
 arbInlines :: Int -> Gen [Inline]
-arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace . fmap unInline)
+arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
   where startsWithSpace (Space:_)     = True
         startsWithSpace (SoftBreak:_) = True
         -- Note: no LineBreak, similarly to Text.Pandoc.Builder (trimInlines)
@@ -156,30 +157,30 @@ arbInline = fmap Inline . arbInline' arbBlock arbInlines
 -- bogged down in indefinitely large structures
 arbInline' :: Arbitrary inline
            => (Int -> Gen block) -> (Int -> Gen [inline])
-           -> Int -> Gen (InlineF block inline)
+           -> Int -> Gen (F.Inline block inline)
 arbInline' arbB arbIs n = frequency $
-                          [ (60, Str <$> realString)
-                          , (40, pure Space)
-                          , (10, pure SoftBreak)
-                          , (10, pure LineBreak)
-                          , (10, Code <$> arbAttr <*> realString)
-                          , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
-                                          , RawInline (Format "latex") "\\my{command}" ])
+                          [ (60, F.Str <$> realString)
+                          , (40, pure F.Space)
+                          , (10, pure F.SoftBreak)
+                          , (10, pure F.LineBreak)
+                          , (10, F.Code <$> arbAttr <*> realString)
+                          , (5,  elements [ F.RawInline (Format "html") "<a id=\"eek\">"
+                                          , F.RawInline (Format "latex") "\\my{command}" ])
                           ] ++ [ x | n > 1, x <- nesters]
-   where nesters = [ (10, Emph <$> arbIs (n-1))
-                   , (10, Underline <$> arbIs (n-1))
-                   , (10, Strong <$> arbIs (n-1))
-                   , (10, Strikeout <$> arbIs (n-1))
-                   , (10, Superscript <$> arbIs (n-1))
-                   , (10, Subscript <$> arbIs (n-1))
-                   , (10, SmallCaps <$> arbIs (n-1))
-                   , (10, Span <$> arbAttr <*> arbIs (n-1))
-                   , (10, Quoted <$> arbitrary <*> arbIs (n-1))
-                   , (10, Math <$> arbitrary <*> realString)
-                   , (10, Link <$> arbAttr <*> arbIs (n-1) <*> ((,) <$> realString <*> realString))
-                   , (10, Image <$> arbAttr <*> arbIs (n-1) <*> ((,) <$> realString <*> realString))
-                   , (2,  Cite <$> listOf (arbitraryCitation $ arbIs 1) <*> arbIs 1)
-                   , (2,  Note <$> resize 3 (listOf1 $ arbB (n-1)))
+   where nesters = [ (10, F.Emph <$> arbIs (n-1))
+                   , (10, F.Underline <$> arbIs (n-1))
+                   , (10, F.Strong <$> arbIs (n-1))
+                   , (10, F.Strikeout <$> arbIs (n-1))
+                   , (10, F.Superscript <$> arbIs (n-1))
+                   , (10, F.Subscript <$> arbIs (n-1))
+                   , (10, F.SmallCaps <$> arbIs (n-1))
+                   , (10, F.Span <$> arbAttr <*> arbIs (n-1))
+                   , (10, F.Quoted <$> arbitrary <*> arbIs (n-1))
+                   , (10, F.Math <$> arbitrary <*> realString)
+                   , (10, F.Link <$> arbAttr <*> arbIs (n-1) <*> ((,) <$> realString <*> realString))
+                   , (10, F.Image <$> arbAttr <*> arbIs (n-1) <*> ((,) <$> realString <*> realString))
+                   , (2,  F.Cite <$> listOf (arbitraryCitation $ arbIs 1) <*> arbIs 1)
+                   , (2,  F.Note <$> resize 3 (listOf1 $ arbB (n-1)))
                    ]
 
 instance Arbitrary Block where
@@ -188,109 +189,109 @@ instance Arbitrary Block where
 
 shrinkBlock :: ( Arbitrary b, Arbitrary (Many b)
                , Arbitrary i, Arbitrary (Many i))
-             => BlockF i b -> [BlockF i b]
-shrinkBlock (Plain ils) = Plain <$> shrinkList ils
-shrinkBlock (Para ils) = Para <$> shrinkList ils
-shrinkBlock (LineBlock lns) = LineBlock <$> shrinkLists lns
-shrinkBlock (CodeBlock attr s) = (CodeBlock attr <$> shrinkText s)
-                         ++ (flip CodeBlock s <$> shrinkAttr attr)
-shrinkBlock (RawBlock fmt s) = RawBlock fmt <$> shrinkText s
-shrinkBlock (BlockQuote blks) = BlockQuote <$> shrinkList blks
-shrinkBlock (OrderedList listAttrs blksList) = OrderedList listAttrs <$> shrinkLists blksList
-shrinkBlock (BulletList blksList) = BulletList <$> shrinkLists blksList
-shrinkBlock (DefinitionList defs) = DefinitionList <$> shrinkDefinitionList defs
+            => F.Block i b -> [F.Block i b]
+shrinkBlock (F.Plain ils) = F.Plain <$> shrinkList ils
+shrinkBlock (F.Para ils) = F.Para <$> shrinkList ils
+shrinkBlock (F.LineBlock lns) = F.LineBlock <$> shrinkLists lns
+shrinkBlock (F.CodeBlock attr s) = (F.CodeBlock attr <$> shrinkText s)
+                           ++ (flip F.CodeBlock s <$> shrinkAttr attr)
+shrinkBlock (F.RawBlock fmt s) = F.RawBlock fmt <$> shrinkText s
+shrinkBlock (F.BlockQuote blks) = F.BlockQuote <$> shrinkList blks
+shrinkBlock (F.OrderedList listAttrs blksList) = F.OrderedList listAttrs <$> shrinkLists blksList
+shrinkBlock (F.BulletList blksList) = F.BulletList <$> shrinkLists blksList
+shrinkBlock (F.DefinitionList defs) = F.DefinitionList <$> shrinkDefinitionList defs
   where shrinkDefinition (ils, blksList) = [(ils', blksList) | ils' <- shrinkList ils]
                                         ++ [(ils, blksList') | blksList' <- shrinkLists blksList]
         shrinkDefinitionList (x:xs) = [xs]
                                    ++ [x':xs | x' <- shrinkDefinition x]
                                    ++ [x:xs' | xs' <- shrinkDefinitionList xs]
         shrinkDefinitionList [] = []
-shrinkBlock (Header n attr ils) = (Header n attr <$> shrinkList ils)
-                          ++ (flip (Header n) ils <$> shrinkAttr attr)
-shrinkBlock HorizontalRule = []
-shrinkBlock (Table attr capt specs thead tbody tfoot) =
-  -- TODO: shrink number of columns
-  [Table attr' capt specs thead tbody tfoot | attr' <- shrinkAttr attr] ++
-  [Table attr capt specs thead' tbody tfoot | thead' <- shrinkTableHead thead] ++
-  [Table attr capt specs thead tbody' tfoot | tbody' <- QC.shrinkList shrinkTableBody tbody] ++
-  [Table attr capt specs thead tbody tfoot' | tfoot' <- shrinkTableFoot tfoot] ++
-  [Table attr capt' specs thead tbody tfoot | capt' <- shrinkCaption capt]
-shrinkBlock (Div attr blks) = (Div attr <$> shrinkList blks)
-                      ++ (flip Div blks <$> shrinkAttr attr)
-shrinkBlock Null = []
+shrinkBlock (F.Header n attr ils) = (F.Header n attr <$> shrinkList ils)
+                           ++ (flip (F.Header n) ils <$> shrinkAttr attr)
+shrinkBlock F.HorizontalRule = []
+shrinkBlock (F.Table attr capt specs thead tbody tfoot) =
+  -- F.TODO: shrink number of columns
+  [F.Table attr' capt specs thead tbody tfoot | attr' <- shrinkAttr attr] ++
+  [F.Table attr capt specs thead' tbody tfoot | thead' <- shrinkTableHead thead] ++
+  [F.Table attr capt specs thead tbody' tfoot | tbody' <- QC.shrinkList shrinkTableBody tbody] ++
+  [F.Table attr capt specs thead tbody tfoot' | tfoot' <- shrinkTableFoot tfoot] ++
+  [F.Table attr capt' specs thead tbody tfoot | capt' <- shrinkCaption capt]
+shrinkBlock (F.Div attr blks) = (F.Div attr <$> shrinkList blks)
+                        ++ (flip F.Div blks <$> shrinkAttr attr)
+shrinkBlock F.Null = []
 
 arbBlock :: Int -> Gen Block
 arbBlock = fmap Block . arbBlock' arbInline arbInlines arbBlock
 
 arbBlock' :: (Int -> Gen inline) -> (Int -> Gen [inline])
           -> (Int -> Gen block)
-          -> Int -> Gen (BlockF inline block)
+          -> Int -> Gen (F.Block inline block)
 arbBlock' arbI arbIs arbB n = frequency $
-                         [ (10, Plain <$> arbIs (n-1))
-                         , (15, Para <$> arbIs (n-1))
-                         , (5,  CodeBlock <$> arbAttr <*> realString)
-                         , (3,  LineBlock <$>
-                                ((:) <$>
-                                  arbIs ((n - 1) `mod` 3) <*>
-                                  forM [1..((n - 1) `div` 3)] (const (arbIs 3))))
-                         , (2,  elements [ RawBlock (Format "html")
+                         [ (10, F.Plain <$> arbIs (n-1))
+                         , (15, F.Para <$> arbIs (n-1))
+                         , (5,  F.CodeBlock <$> arbAttr <*> realString)
+                         , (3,  F.LineBlock <$>
+                                  ((:) <$>
+                                    arbIs ((n - 1) `mod` 3) <*>
+                                    forM [1..((n - 1) `div` 3)] (const (arbIs 3))))
+                         , (2,  elements [ F.RawBlock (F.Format "html")
                                             "<div>\n*&amp;*\n</div>"
-                                         , RawBlock (Format "latex")
+                                         , F.RawBlock (F.Format "latex")
                                             "\\begin[opt]{env}\nhi\n{\\end{env}"
                                          ])
-                         , (5,  Header <$> choose (1 :: Int, 6)
-                                       <*> pure nullAttr
-                                       <*> arbIs (n-1))
-                         , (2,  pure HorizontalRule)
+                         , (5,  F.Header <$> choose (1 :: Int, 6)
+                                         <*> pure nullAttr
+                                         <*> arbIs (n-1))
+                         , (2,  pure F.HorizontalRule)
                          ] ++ [x | n > 0, x <- nesters]
-   where nesters = [ (5, BlockQuote <$> listOf1 (arbB (n-1)))
-                   , (5, OrderedList <$> ((,,) <$> (arbitrary `suchThat` (> 0))
-                                                <*> arbitrary
-                                                <*> arbitrary)
+   where nesters = [ (5, F.BlockQuote <$> listOf1 (arbB (n-1)))
+                   , (5, F.OrderedList <$> ((,,) <$> (arbitrary `suchThat` (> 0))
+                                                 <*> arbitrary
+                                                 <*> arbitrary)
                                       <*> listOf1 (listOf1 $ arbB (n-1)))
-                   , (5, BulletList <$> listOf1 (listOf1 $ arbB (n-1)))
-                   , (5, DefinitionList <$> listOf1 ((,) <$> arbIs (n-1)
-                                                          <*> listOf1 (listOf1 $ arbB (n-1))))
-                   , (5, Div <$> arbAttr <*> listOf1 (arbB (n-1)))
+                   , (5, F.BulletList <$> listOf1 (listOf1 $ arbB (n-1)))
+                   , (5, F.DefinitionList <$> listOf1 ((,) <$> arbIs (n-1)
+                                                           <*> listOf1 (listOf1 $ arbB (n-1))))
+                   , (5, F.Div <$> arbAttr <*> listOf1 (arbB (n-1)))
                    , (2, do cs <- choose (1 :: Int, 6)
                             bs <- choose (0 :: Int, 2)
-                            Table <$> arbAttr
-                                  <*> arbitraryCaption' (sized arbI) (sized arbB)
-                                  <*> vectorOf cs ((,) <$> arbitrary
-                                                       <*> elements [ ColWidthDefault
-                                                                    , ColWidth (1/3)
-                                                                    , ColWidth 0.25 ])
-                                  <*> arbTableHead' arbB (n-1)
-                                  <*> vectorOf bs (arbTableBody' arbB (n-1))
-                                  <*> arbTableFoot' arbB (n-1))
+                            F.Table <$> arbAttr
+                                    <*> arbitraryCaption' (sized arbI) (sized arbB)
+                                    <*> vectorOf cs ((,) <$> arbitrary
+                                                         <*> elements [ F.ColWidthDefault
+                                                                      , F.ColWidth (1/3)
+                                                                      , F.ColWidth 0.25 ])
+                                    <*> arbTableHead' arbB (n-1)
+                                    <*> vectorOf bs (arbTableBody' arbB (n-1))
+                                    <*> arbTableFoot' arbB (n-1))
                    ]
 
-arbRow :: Int -> Gen (RowF Block)
+arbRow :: Int -> Gen (F.Row Block)
 arbRow = arbRow' arbBlock
 
-arbTableHead :: Int -> Gen (TableHeadF Block)
+arbTableHead :: Int -> Gen (F.TableHead Block)
 arbTableHead = arbTableHead' arbBlock
 
-arbTableBody :: Int -> Gen (TableBodyF Block)
+arbTableBody :: Int -> Gen (F.TableBody Block)
 arbTableBody = arbTableBody' arbBlock
 
-arbTableFoot :: Int -> Gen (TableFootF Block)
+arbTableFoot :: Int -> Gen (F.TableFoot Block)
 arbTableFoot = arbTableFoot' arbBlock
 
-arbCell :: Int -> Gen (CellF Block)
+arbCell :: Int -> Gen (F.Cell Block)
 arbCell = arbCell' arbBlock
 
-arbRow' :: (Int -> Gen block) -> Int -> Gen (RowF block)
+arbRow' :: (Int -> Gen block) -> Int -> Gen (F.Row block)
 arbRow' arbB n = do
   cs <- choose (0, 5)
   Row <$> arbAttr <*> vectorOf cs (arbCell' arbB n)
 
-arbTableHead' :: (Int -> Gen block) -> Int -> Gen (TableHeadF block)
+arbTableHead' :: (Int -> Gen block) -> Int -> Gen (F.TableHead block)
 arbTableHead' arbB n = do
   rs <- choose (0, 5)
   TableHead <$> arbAttr <*> vectorOf rs (arbRow' arbB n)
 
-arbTableBody' :: (Int -> Gen block) -> Int -> Gen (TableBodyF block)
+arbTableBody' :: (Int -> Gen block) -> Int -> Gen (F.TableBody block)
 arbTableBody' arbB n = do
   hrs <- choose (0 :: Int, 2)
   rs <- choose (0, 5)
@@ -300,12 +301,12 @@ arbTableBody' arbB n = do
             <*> vectorOf hrs (arbRow' arbB n)
             <*> vectorOf rs (arbRow' arbB n)
 
-arbTableFoot' :: (Int -> Gen block) -> Int -> Gen (TableFootF block)
+arbTableFoot' :: (Int -> Gen block) -> Int -> Gen (F.TableFoot block)
 arbTableFoot' arbB n = do
     rs <- choose (0, 5)
     TableFoot <$> arbAttr <*> vectorOf rs (arbRow' arbB n)
 
-arbCell' :: (Int -> Gen block) -> Int -> Gen (CellF block)
+arbCell' :: (Int -> Gen block) -> Int -> Gen (F.Cell block)
 arbCell' arbB n = Cell
                  <$> arbAttr
                  <*> arbitrary
@@ -329,7 +330,7 @@ instance Arbitrary Citation where
         arbitrary = arbitraryCitation $ arbInlines 1
         shrink = shrinkCitation
 
-arbitraryCitation :: Gen [inline] -> Gen (CitationF inline)
+arbitraryCitation :: Gen [inline] -> Gen (F.Citation inline)
 arbitraryCitation arbIs
           = Citation <$> fmap T.pack (listOf $ elements $ ['a'..'z'] ++ ['0'..'9'] ++ ['_'])
                      <*> arbIs
@@ -338,14 +339,14 @@ arbitraryCitation arbIs
                      <*> arbitrary
                      <*> arbitrary
 
-shrinkCitation :: CitationF inline -> [CitationF inline]
+shrinkCitation :: F.Citation inline -> [F.Citation inline]
 shrinkCitation _ = []
 
 instance Arbitrary Row where
   arbitrary = resize 3 $ arbRow 2
   shrink = shrinkRow
 
-shrinkRow :: Arbitrary (Many block) => RowF block -> [RowF block]
+shrinkRow :: Arbitrary (Many block) => F.Row block -> [F.Row block]
 shrinkRow (Row attr body)
     = [Row attr' body | attr' <- shrinkAttr attr] ++
       [Row attr body' | body' <- QC.shrinkList shrinkCell body]
@@ -354,7 +355,7 @@ instance Arbitrary TableHead where
   arbitrary = resize 3 $ arbTableHead 2
   shrink = shrinkTableHead
 
-shrinkTableHead :: Arbitrary (Many b) => TableHeadF b -> [TableHeadF b]
+shrinkTableHead :: Arbitrary (Many b) => F.TableHead b -> [F.TableHead b]
 shrinkTableHead (TableHead attr body)
     = [TableHead attr' body | attr' <- shrinkAttr attr] ++
       [TableHead attr body' | body' <- QC.shrinkList shrinkRow body]
@@ -364,7 +365,7 @@ instance Arbitrary TableBody where
   shrink = shrinkTableBody
 
 -- TODO: shrink rhc?
-shrinkTableBody :: Arbitrary (Many b) => TableBodyF b -> [TableBodyF b]
+shrinkTableBody :: Arbitrary (Many b) => F.TableBody b -> [F.TableBody b]
 shrinkTableBody (TableBody attr rhc hd bd)
     = [TableBody attr' rhc hd bd | attr' <- shrinkAttr attr] ++
       [TableBody attr rhc hd' bd | hd' <- QC.shrinkList shrinkRow hd] ++
@@ -374,7 +375,7 @@ instance Arbitrary TableFoot where
   arbitrary = resize 3 $ arbTableFoot 2
   shrink = shrinkTableFoot
 
-shrinkTableFoot :: Arbitrary (Many b) => TableFootF b -> [TableFootF b]
+shrinkTableFoot :: Arbitrary (Many b) => F.TableFoot b -> [F.TableFoot b]
 shrinkTableFoot (TableFoot attr body)
     = [TableFoot attr' body | attr' <- shrinkAttr attr] ++
       [TableFoot attr body' | body' <- QC.shrinkList shrinkRow body]
@@ -383,7 +384,7 @@ instance Arbitrary Cell where
   arbitrary = resize 3 $ arbCell 2
   shrink = shrinkCell
 
-shrinkCell :: Arbitrary (Many b) => CellF b -> [CellF b]
+shrinkCell :: Arbitrary (Many b) => F.Cell b -> [F.Cell b]
 shrinkCell (Cell attr malign h w body)
     = [Cell attr malign h w body' | body' <- shrinkList body] ++
       [Cell attr' malign h w body | attr' <- shrinkAttr attr] ++
@@ -393,11 +394,11 @@ instance Arbitrary Caption where
   arbitrary = arbitraryCaption' arbitrary arbitrary
   shrink = shrinkCaption
 
-arbitraryCaption' :: Gen inline -> Gen block -> Gen (CaptionF inline block)
+arbitraryCaption' :: Gen inline -> Gen block -> Gen (F.Caption inline block)
 arbitraryCaption' arbI arbB = Caption <$> liftArbitrary (liftArbitrary arbI) <*> liftArbitrary arbB
 
 shrinkCaption :: (Arbitrary inline, Arbitrary (Many block))
-              => CaptionF inline block -> [CaptionF inline block]
+              => F.Caption inline block -> [F.Caption inline block]
 shrinkCaption (Caption mshort body)
     = [Caption mshort' body | mshort' <- shrink mshort] ++
       [Caption mshort body' | body' <- shrinkList body]

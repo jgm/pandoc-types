@@ -226,24 +226,24 @@ instance Semigroup Inlines where
     case (viewr xs, viewl ys) of
       (EmptyR, _) -> Many ys
       (_, EmptyL) -> Many xs
-      (xs' :> Inline x, Inline y :< ys') -> Many (meld <> ys')
+      (xs' :> x, y :< ys') -> Many (meld <> ys')
         where meld = case (x, y) of
-                          (Space, Space)     -> xs' |> Inline Space
-                          (Space, SoftBreak) -> xs' |> Inline SoftBreak
-                          (SoftBreak, Space) -> xs' |> Inline SoftBreak
-                          (Str t1, Str t2)   -> xs' |> Inline (Str (t1 <> t2))
-                          (Emph i1, Emph i2) -> xs' |> Inline (Emph (i1 <> i2))
-                          (Underline i1, Underline i2) -> xs' |> Inline (Underline (i1 <> i2))
-                          (Strong i1, Strong i2) -> xs' |> Inline (Strong (i1 <> i2))
-                          (Subscript i1, Subscript i2) -> xs' |> Inline (Subscript (i1 <> i2))
-                          (Superscript i1, Superscript i2) -> xs' |> Inline (Superscript (i1 <> i2))
-                          (Strikeout i1, Strikeout i2) -> xs' |> Inline (Strikeout (i1 <> i2))
-                          (Space, LineBreak) -> xs' |> Inline LineBreak
-                          (LineBreak, Space) -> xs' |> Inline LineBreak
-                          (SoftBreak, LineBreak) -> xs' |> Inline LineBreak
-                          (LineBreak, SoftBreak) -> xs' |> Inline LineBreak
-                          (SoftBreak, SoftBreak) -> xs' |> Inline SoftBreak
-                          _                  -> xs' |> Inline x |> Inline y
+                          (Space, Space)     -> xs' |> Space
+                          (Space, SoftBreak) -> xs' |> SoftBreak
+                          (SoftBreak, Space) -> xs' |> SoftBreak
+                          (Str t1, Str t2)   -> xs' |> Str (t1 <> t2)
+                          (Emph i1, Emph i2) -> xs' |> Emph (i1 <> i2)
+                          (Underline i1, Underline i2) -> xs' |> Underline (i1 <> i2)
+                          (Strong i1, Strong i2) -> xs' |> Strong (i1 <> i2)
+                          (Subscript i1, Subscript i2) -> xs' |> Subscript (i1 <> i2)
+                          (Superscript i1, Superscript i2) -> xs' |> Superscript (i1 <> i2)
+                          (Strikeout i1, Strikeout i2) -> xs' |> Strikeout (i1 <> i2)
+                          (Space, LineBreak) -> xs' |> LineBreak
+                          (LineBreak, Space) -> xs' |> LineBreak
+                          (SoftBreak, LineBreak) -> xs' |> LineBreak
+                          (LineBreak, SoftBreak) -> xs' |> LineBreak
+                          (SoftBreak, SoftBreak) -> xs' |> SoftBreak
+                          _                  -> xs' |> x |> y
 instance Monoid Inlines where
   mempty = Many mempty
   mappend = (<>)
@@ -263,10 +263,9 @@ trimInlines (Many ils) = Many $ Seq.dropWhileL isSp $
                             Seq.reverse $ Seq.dropWhileL isSp $
                             Seq.reverse ils
 #endif
-  where isSp = isSp' . unInline
-        isSp' Space = True
-        isSp' SoftBreak = True
-        isSp' _ = False
+  where isSp Space = True
+        isSp SoftBreak = True
+        isSp _ = False
 
 -- Document builders
 
@@ -280,28 +279,28 @@ instance ToMetaValue MetaValue where
   toMetaValue = id
 
 instance ToMetaValue Blocks where
-  toMetaValue = MetaValue . MetaBlocks . toList
+  toMetaValue = MetaBlocks . toList
 
 instance ToMetaValue Inlines where
-  toMetaValue = MetaValue . MetaInlines . toList
+  toMetaValue = MetaInlines . toList
 
 instance ToMetaValue Bool where
-  toMetaValue = MetaValue . MetaBool
+  toMetaValue = MetaBool
 
 instance ToMetaValue Text where
-  toMetaValue = MetaValue . MetaString
+  toMetaValue = MetaString
 
 instance {-# OVERLAPPING #-} ToMetaValue String where
-  toMetaValue = MetaValue . MetaString . T.pack
+  toMetaValue = MetaString . T.pack
 
 instance ToMetaValue a => ToMetaValue [a] where
-  toMetaValue = MetaValue . MetaList . map toMetaValue
+  toMetaValue = MetaList . map toMetaValue
 
 instance ToMetaValue a => ToMetaValue (M.Map Text a) where
-  toMetaValue = MetaValue . MetaMap . M.map toMetaValue
+  toMetaValue = MetaMap . M.map toMetaValue
 
 instance ToMetaValue a => ToMetaValue (M.Map String a) where
-  toMetaValue = MetaValue . MetaMap . M.map toMetaValue . M.mapKeys T.pack
+  toMetaValue = MetaMap . M.map toMetaValue . M.mapKeys T.pack
 
 class HasMeta a where
   setMeta :: ToMetaValue b => Text -> b -> a -> a
@@ -335,11 +334,10 @@ text = fromList . map conv . breakBySpaces
   where breakBySpaces = T.groupBy sameCategory
         sameCategory x y = is_space x == is_space y
         conv xs | T.all is_space xs =
-           Inline $
            if T.any is_newline xs
               then SoftBreak
               else Space
-        conv xs = Inline $ Str xs
+        conv xs = Str xs
         is_space ' '    = True
         is_space '\r'   = True
         is_space '\n'   = True
@@ -350,28 +348,28 @@ text = fromList . map conv . breakBySpaces
         is_newline _    = False
 
 str :: Text -> Inlines
-str = singleton . Inline . Str
+str = singleton . Str
 
 emph :: Inlines -> Inlines
-emph = singleton . Inline . Emph . toList
+emph = singleton . Emph . toList
 
 underline :: Inlines -> Inlines
-underline = singleton . Inline . Underline . toList
+underline = singleton . Underline . toList
 
 strong :: Inlines -> Inlines
-strong = singleton . Inline . Strong . toList
+strong = singleton . Strong . toList
 
 strikeout :: Inlines -> Inlines
-strikeout = singleton . Inline . Strikeout . toList
+strikeout = singleton . Strikeout . toList
 
 superscript :: Inlines -> Inlines
-superscript = singleton . Inline . Superscript . toList
+superscript = singleton . Superscript . toList
 
 subscript :: Inlines -> Inlines
-subscript = singleton . Inline . Subscript . toList
+subscript = singleton . Subscript . toList
 
 smallcaps :: Inlines -> Inlines
-smallcaps = singleton . Inline . SmallCaps . toList
+smallcaps = singleton . SmallCaps . toList
 
 singleQuoted :: Inlines -> Inlines
 singleQuoted = quoted SingleQuote
@@ -380,38 +378,38 @@ doubleQuoted :: Inlines -> Inlines
 doubleQuoted = quoted DoubleQuote
 
 quoted :: QuoteType -> Inlines -> Inlines
-quoted qt = singleton . Inline . Quoted qt . toList
+quoted qt = singleton . Quoted qt . toList
 
 cite :: [Citation] -> Inlines -> Inlines
-cite cts = singleton . Inline . Cite cts . toList
+cite cts = singleton . Cite cts . toList
 
 -- | Inline code with attributes.
 codeWith :: Attr -> Text -> Inlines
-codeWith attrs = singleton . Inline . Code attrs
+codeWith attrs = singleton . Code attrs
 
 -- | Plain inline code.
 code :: Text -> Inlines
 code = codeWith nullAttr
 
 space :: Inlines
-space = singleton $ Inline Space
+space = singleton Space
 
 softbreak :: Inlines
-softbreak = singleton $ Inline SoftBreak
+softbreak = singleton SoftBreak
 
 linebreak :: Inlines
-linebreak = singleton $ Inline LineBreak
+linebreak = singleton LineBreak
 
 -- | Inline math
 math :: Text -> Inlines
-math = singleton . Inline . Math InlineMath
+math = singleton . Math InlineMath
 
 -- | Display math
 displayMath :: Text -> Inlines
-displayMath = singleton . Inline . Math DisplayMath
+displayMath = singleton . Math DisplayMath
 
 rawInline :: Text -> Text -> Inlines
-rawInline format = singleton . Inline . RawInline (Format format)
+rawInline format = singleton . RawInline (Format format)
 
 link :: Text  -- ^ URL
      -> Text  -- ^ Title
@@ -424,7 +422,7 @@ linkWith :: Attr    -- ^ Attributes
          -> Text  -- ^ Title
          -> Inlines -- ^ Label
          -> Inlines
-linkWith attr url title x = singleton $ Inline $ Link attr (toList x) (url, title)
+linkWith attr url title x = singleton $ Link attr (toList x) (url, title)
 
 image :: Text  -- ^ URL
       -> Text  -- ^ Title
@@ -437,54 +435,54 @@ imageWith :: Attr -- ^ Attributes
           -> Text  -- ^ Title
           -> Inlines -- ^ Alt text
           -> Inlines
-imageWith attr url title x = singleton $ Inline $ Image attr (toList x) (url, title)
+imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
 
 note :: Blocks -> Inlines
-note = singleton . Inline . Note . toList
+note = singleton . Note . toList
 
 spanWith :: Attr -> Inlines -> Inlines
-spanWith attr = singleton . Inline . Span attr . toList
+spanWith attr = singleton . Span attr . toList
 
 -- Block list builders
 
 para :: Inlines -> Blocks
-para = singleton . Block . Para . toList
+para = singleton . Para . toList
 
 plain :: Inlines -> Blocks
 plain ils = if isNull ils
                then mempty
-               else singleton . Block . Plain . toList $ ils
+               else singleton . Plain . toList $ ils
 
 lineBlock :: [Inlines] -> Blocks
-lineBlock = singleton . Block . LineBlock . map toList
+lineBlock = singleton . LineBlock . map toList
 
 -- | A code block with attributes.
 codeBlockWith :: Attr -> Text -> Blocks
-codeBlockWith attrs = singleton . Block . CodeBlock attrs
+codeBlockWith attrs = singleton . CodeBlock attrs
 
 -- | A plain code block.
 codeBlock :: Text -> Blocks
 codeBlock = codeBlockWith nullAttr
 
 rawBlock :: Text -> Text -> Blocks
-rawBlock format = singleton . Block . RawBlock (Format format)
+rawBlock format = singleton . RawBlock (Format format)
 
 blockQuote :: Blocks -> Blocks
-blockQuote = singleton . Block . BlockQuote . toList
+blockQuote = singleton . BlockQuote . toList
 
 -- | Ordered list with attributes.
 orderedListWith :: ListAttributes -> [Blocks] -> Blocks
-orderedListWith attrs = singleton . Block . OrderedList attrs .  map toList
+orderedListWith attrs = singleton . OrderedList attrs .  map toList
 
 -- | Ordered list with default attributes.
 orderedList :: [Blocks] -> Blocks
 orderedList = orderedListWith (1, DefaultStyle, DefaultDelim)
 
 bulletList :: [Blocks] -> Blocks
-bulletList = singleton . Block . BulletList . map toList
+bulletList = singleton . BulletList . map toList
 
 definitionList :: [(Inlines, [Blocks])] -> Blocks
-definitionList = singleton . Block . DefinitionList .  map (toList *** map toList)
+definitionList = singleton . DefinitionList .  map (toList *** map toList)
 
 header :: Int  -- ^ Level
        -> Inlines
@@ -492,10 +490,10 @@ header :: Int  -- ^ Level
 header = headerWith nullAttr
 
 headerWith :: Attr -> Int -> Inlines -> Blocks
-headerWith attr level = singleton . Block . Header level attr . toList
+headerWith attr level = singleton . Header level attr . toList
 
 horizontalRule :: Blocks
-horizontalRule = singleton $ Block HorizontalRule
+horizontalRule = singleton HorizontalRule
 
 cellWith :: Attr
          -> Alignment
@@ -539,7 +537,7 @@ tableWith :: Attr
           -> TableFoot
           -> Blocks
 tableWith attr capt specs th tbs tf
-  = singleton $ Block $ Table attr capt specs th' tbs' tf'
+  = singleton $ Table attr capt specs th' tbs' tf'
   where
     twidth = length specs
     th'  = normalizeTableHead twidth th
@@ -579,7 +577,7 @@ simpleFigure :: Inlines -> Text -> Text -> Blocks
 simpleFigure = simpleFigureWith nullAttr
 
 divWith :: Attr -> Blocks -> Blocks
-divWith attr = singleton . Block . Div attr . toList
+divWith attr = singleton . Div attr . toList
 
 -- | Normalize the 'TableHead' with 'clipRows' and 'placeRowSection'
 -- so that when placed on a grid with the given width and a height

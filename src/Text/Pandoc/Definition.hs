@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
-    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData,
-    DeriveTraversable
-  #-}
+    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData #-}
 
 {-
 Copyright (c) 2006-2019, John MacFarlane
@@ -51,50 +49,91 @@ of documents.
 -}
 module Text.Pandoc.Definition ( Pandoc(..)
                               , Meta(..)
-                              , MetaValue(..)
-                              , MetaValueF(..)
+                              , MetaValue
+                                ( ..
+                                , MetaMap
+                                , MetaList
+                                , MetaBool
+                                , MetaString
+                                , MetaInlines
+                                , MetaBlocks
+                                )
                               , nullMeta
                               , isNullMeta
                               , lookupMeta
                               , docTitle
                               , docAuthors
                               , docDate
-                              , Block(..)
-                              , BlockF(..)
+                              , Block
+                                ( ..
+                                , Plain
+                                , Para
+                                , LineBlock
+                                , CodeBlock
+                                , RawBlock
+                                , BlockQuote
+                                , OrderedList
+                                , BulletList
+                                , DefinitionList
+                                , Header
+                                , HorizontalRule
+                                , Table
+                                , Div
+                                , Null
+                                )
                               , pattern SimpleFigure
-                              , Inline(..)
-                              , InlineF(..)
+                              , Inline
+                                ( ..
+                                , Str
+                                , Emph
+                                , Underline
+                                , Strong
+                                , Strikeout
+                                , Superscript
+                                , Subscript
+                                , SmallCaps
+                                , Quoted
+                                , Cite
+                                , Code
+                                , Space
+                                , SoftBreak
+                                , LineBreak
+                                , Math
+                                , RawInline
+                                , Link
+                                , Image
+                                , Note
+                                , Span
+                                )
                               , ListAttributes
                               , ListNumberStyle(..)
                               , ListNumberDelim(..)
                               , Format(..)
                               , Attr
                               , nullAttr
-                              , Caption
-                              , CaptionF(..)
+                              , Caption, pattern F.Caption
                               , ShortCaption
-                              , ShortCaptionF
                               , RowHeadColumns(..)
                               , Alignment(..)
                               , ColWidth(..)
                               , ColSpec
-                              , Row
-                              , RowF(..)
-                              , TableHead
-                              , TableHeadF(..)
-                              , TableBody
-                              , TableBodyF(..)
-                              , TableFoot
-                              , TableFootF(..)
-                              , Cell
-                              , CellF(..)
+                              , Row, pattern F.Row
+                              , TableHead, pattern F.TableHead
+                              , TableBody, pattern F.TableBody
+                              , TableFoot, pattern F.TableFoot
+                              , Cell, pattern F.Cell
                               , RowSpan(..)
                               , ColSpan(..)
                               , QuoteType(..)
                               , Target
                               , MathType(..)
-                              , Citation
-                              , CitationF(..)
+                              , Citation, pattern F.Citation
+                              , F.citationId
+                              , F.citationPrefix
+                              , F.citationSuffix
+                              , F.citationMode
+                              , F.citationNoteNum
+                              , F.citationHash
                               , CitationMode(..)
                               , pandocTypesVersion
                               ) where
@@ -105,12 +144,15 @@ import Data.Aeson.TH (deriveJSON)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Map as M
 import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics (Generic)
 import Control.DeepSeq
 import Data.Version (versionBranch)
 import Data.Semigroup (Semigroup(..))
+import Control.Arrow (second)
 
-import Text.Pandoc.Definition.Functors
+import qualified Text.Pandoc.Definition.Functors as F
+import Text.Pandoc.Definition.Misc
 
 data Pandoc = Pandoc Meta [Block]
               deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
@@ -135,8 +177,34 @@ instance Monoid Meta where
   mappend = (<>)
 
 newtype MetaValue = MetaValue
-  { unMetaValue :: MetaValueF Inline Block MetaValue }
+  { unMetaValue :: F.MetaValue Inline Block MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
+
+{-# COMPLETE MetaMap
+           , MetaList
+           , MetaBool
+           , MetaString
+           , MetaInlines
+           , MetaBlocks
+           :: MetaValue #-}
+
+pattern MetaMap :: M.Map Text MetaValue -> MetaValue
+pattern MetaMap m = MetaValue (F.MetaMap m)
+
+pattern MetaList :: [MetaValue] -> MetaValue
+pattern MetaList l = MetaValue (F.MetaList l)
+
+pattern MetaBool :: Bool -> MetaValue
+pattern MetaBool b = MetaValue (F.MetaBool b)
+
+pattern MetaString :: Text -> MetaValue
+pattern MetaString t = MetaValue (F.MetaString t)
+
+pattern MetaInlines :: [Inline] -> MetaValue
+pattern MetaInlines is = MetaValue (F.MetaInlines is)
+
+pattern MetaBlocks :: [Block] -> MetaValue
+pattern MetaBlocks bs = MetaValue (F.MetaBlocks bs)
 
 nullMeta :: Meta
 nullMeta = Meta M.empty
@@ -153,69 +221,275 @@ lookupMeta key (Meta m) = M.lookup key m
 -- | Extract document title from metadata; works just like the old @docTitle@.
 docTitle :: Meta -> [Inline]
 docTitle meta =
-  case unMetaValue <$> lookupMeta "title" meta of
-         Just (MetaString s)           -> [Inline $ Str s]
+  case lookupMeta "title" meta of
+         Just (MetaString s)           -> [Str s]
          Just (MetaInlines ils)        -> ils
-         Just (MetaBlocks [Block (Plain ils)]) -> ils
-         Just (MetaBlocks [Block (Para ils)])  -> ils
+         Just (MetaBlocks [Plain ils]) -> ils
+         Just (MetaBlocks [Para ils])  -> ils
          _                             -> []
 
 -- | Extract document authors from metadata; works just like the old
 -- @docAuthors@.
 docAuthors :: Meta -> [[Inline]]
 docAuthors meta =
-  case unMetaValue <$> lookupMeta "author" meta of
-        Just (MetaString s)    -> [[Inline $ Str s]]
+  case lookupMeta "author" meta of
+        Just (MetaString s)    -> [[Str s]]
         Just (MetaInlines ils) -> [ils]
-        Just (MetaList   ms)   -> [ils | MetaValue (MetaInlines ils) <- ms] ++
-                                  [ils | MetaValue (MetaBlocks [Block (Plain ils)]) <- ms] ++
-                                  [ils | MetaValue (MetaBlocks [Block (Para ils)])  <- ms] ++
-                                  [[Inline $ Str x] | MetaValue (MetaString x) <- ms]
+        Just (MetaList   ms)   -> [ils | MetaInlines ils <- ms] ++
+                                  [ils | MetaBlocks [Plain ils] <- ms] ++
+                                  [ils | MetaBlocks [Para ils]  <- ms] ++
+                                  [[Str x] | MetaString x <- ms]
         _                      -> []
 
 -- | Extract date from metadata; works just like the old @docDate@.
 docDate :: Meta -> [Inline]
 docDate meta =
-  case unMetaValue <$> lookupMeta "date" meta of
-         Just (MetaString s)           -> [Inline $ Str s]
+  case lookupMeta "date" meta of
+         Just (MetaString s)           -> [Str s]
          Just (MetaInlines ils)        -> ils
-         Just (MetaBlocks [Block (Plain ils)]) -> ils
-         Just (MetaBlocks [Block (Para ils)])  -> ils
+         Just (MetaBlocks [Plain ils]) -> ils
+         Just (MetaBlocks [Para ils])  -> ils
          _                             -> []
 
 -- | A table row.
-type Row = RowF Block
+type Row = F.Row Block
 
 -- | The head of a table.
-type TableHead = TableHeadF Block
+type TableHead = F.TableHead Block
 
 -- | A body of a table, with an intermediate head, intermediate body,
 -- and the specified number of row header columns in the intermediate
 -- body.
-type TableBody = TableBodyF Block
+type TableBody = F.TableBody Block
 
 -- | The foot of a table.
-type TableFoot = TableFootF Block
+type TableFoot = F.TableFoot Block
 
 -- | A short caption, for use in, for instance, lists of figures.
-type ShortCaption = ShortCaptionF Inline
+type ShortCaption = F.ShortCaption Inline
 
 -- | The caption of a table, with an optional short caption.
-type Caption = CaptionF Inline Block
+type Caption = F.Caption Inline Block
 
 -- | A table cell.
-type Cell = CellF Block
+type Cell = F.Cell Block
 
 -- | Block element.
-newtype Block = Block { unBlock :: BlockF Inline Block }
+newtype Block = Block { unBlock :: F.Block Inline Block }
     deriving (Eq, Ord, Read, Show, Typeable, Data, Generic)
 
+{-# COMPLETE Plain
+           , Para
+           , LineBlock
+           , CodeBlock
+           , RawBlock
+           , BlockQuote
+           , OrderedList
+           , BulletList
+           , DefinitionList
+           , Header
+           , HorizontalRule
+           , Table
+           , Div
+           , Null
+           :: Block #-}
+
+-- | Plain text, not a paragraph
+pattern Plain :: [Inline] -> Block
+pattern Plain is = Block (F.Plain is)
+
+-- | Paragraph
+pattern Para :: [Inline] -> Block
+pattern Para is = Block (F.Para is)
+
+-- | Multiple non-breaking lines
+pattern LineBlock :: [[Inline]] -> Block
+pattern LineBlock iss = Block (F.LineBlock iss)
+
+-- | Code block (literal) with attributes
+pattern CodeBlock :: Attr -> Text -> Block
+pattern CodeBlock a t = Block (F.CodeBlock a t)
+
+-- | Raw block
+pattern RawBlock :: Format -> Text -> Block
+pattern RawBlock f t = Block (F.RawBlock f t)
+
+-- | Block quote (list of blocks)
+pattern BlockQuote :: [Block] -> Block
+pattern BlockQuote bs = Block (F.BlockQuote bs)
+
+-- | Ordered list (attributes and a list of items, each a list of
+-- blocks)
+pattern OrderedList :: ListAttributes -> [[Block]] -> Block
+pattern OrderedList as bs = Block (F.OrderedList as bs)
+
+-- | Bullet list (list of items, each a list of blocks)
+pattern BulletList :: [[Block]] -> Block
+pattern BulletList bss = Block (F.BulletList bss)
+
+-- | Definition list. Each list item is a pair consisting of a
+-- term (a list of inlines) and one or more definitions (each a
+-- list of blocks)
+pattern DefinitionList :: [([Inline], [[Block]])] -> Block
+pattern DefinitionList l = Block (F.DefinitionList l)
+
+-- | Header - level (integer) and text (inlines)
+pattern Header :: Int -> Attr -> [Inline] -> Block
+pattern Header i a is = Block (F.Header i a is)
+
+-- | Horizontal rule
+pattern HorizontalRule :: Block
+pattern HorizontalRule = Block F.HorizontalRule
+
+-- | Table, with attributes, caption, optional short caption,
+-- column alignments and widths (required), table head, table
+-- bodies, and table foot
+pattern Table :: Attr -> Caption -> [ColSpec] -> TableHead -> [TableBody] -> TableFoot -> Block
+pattern Table i c css th tbs tf = Block (F.Table i c css th tbs tf)
+
+-- | Generic block container with attributes
+pattern Div :: Attr -> [Block] -> Block
+pattern Div as bs = Block (F.Div as bs)
+
+-- | Nothing
+pattern Null :: Block
+pattern Null = Block F.Null
+
+isFigureTarget :: Target -> Maybe Target
+isFigureTarget tgt
+  | (src, Just tit) <- second (T.stripPrefix "fig:") tgt = Just (src, tit)
+  | otherwise = Nothing
+
+-- | Bidirectional patter synonym
+--
+-- It can pass as a Block constructor
+--
+-- >>> SimpleFigure nullAttr [] (T.pack "", T.pack "title")
+-- Para [Image ("",[],[]) [] ("","fig:title")]
+--
+--
+-- It can be used to pattern match
+-- >>> let img = Para [Image undefined undefined (undefined, T.pack "title")]
+-- >>> case img of { SimpleFigure _ _ _ -> True; _ -> False }
+-- False
+-- >>> let fig = Para [Image undefined undefined (undefined, T.pack "fig:title")]
+-- >>> case fig of { SimpleFigure _ _ tit -> snd tit; _ -> T.pack "" }
+-- "title"
+pattern SimpleFigure :: Attr -> [Inline] -> Target -> Block
+pattern SimpleFigure attr figureCaption tgt <-
+    Para [Image attr figureCaption
+        (isFigureTarget -> Just tgt)]  where
+  SimpleFigure attr figureCaption tgt =
+    Para [Image attr figureCaption (second ("fig:" <>) tgt)]
+
+{-# COMPLETE Str
+           , Emph
+           , Underline
+           , Strong
+           , Strikeout
+           , Superscript
+           , Subscript
+           , SmallCaps
+           , Quoted
+           , Cite
+           , Code
+           , Space
+           , SoftBreak
+           , LineBreak
+           , Math
+           , RawInline
+           , Link
+           , Image
+           , Note
+           , Span
+           :: Inline #-}
 
 -- | Inline elements.
-newtype Inline = Inline { unInline :: InlineF Block Inline }
+newtype Inline = Inline { unInline :: F.Inline Block Inline }
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
-type Citation = CitationF Inline
+-- | Text (string)
+pattern Str :: Text -> Inline
+pattern Str t = Inline (F.Str t)
+
+-- | Emphasized text (list of inlines)
+pattern Emph :: [Inline] -> Inline
+pattern Emph is = Inline (F.Emph is)
+
+-- | Underlined text (list of inlines)
+pattern Underline :: [Inline] -> Inline
+pattern Underline is = Inline (F.Underline is)
+
+-- | Strongly emphasized text (list of inlines)
+pattern Strong :: [Inline] -> Inline
+pattern Strong is = Inline (F.Strong is)
+
+-- | Strikeout text (list of inlines)
+pattern Strikeout :: [Inline] -> Inline
+pattern Strikeout is = Inline (F.Strikeout is)
+
+-- | Superscripted text (list of inlines)
+pattern Superscript :: [Inline] -> Inline
+pattern Superscript is = Inline (F.Superscript is)
+
+-- | Subscripted text (list of inlines)
+pattern Subscript :: [Inline] -> Inline
+pattern Subscript is = Inline (F.Subscript is)
+
+-- | Small caps text (list of inlines)
+pattern SmallCaps :: [Inline] -> Inline
+pattern SmallCaps is = Inline (F.SmallCaps is)
+
+-- | Quoted text (list of inlines)
+pattern Quoted :: QuoteType -> [Inline] -> Inline
+pattern Quoted qt is = Inline (F.Quoted qt is)
+
+-- | Citation (list of inlines)
+pattern Cite :: [F.Citation Inline] -> [Inline] -> Inline
+pattern Cite cs is = Inline (F.Cite cs is)
+
+-- | Inline code (literal)
+pattern Code :: Attr -> Text -> Inline
+pattern Code a is = Inline (F.Code a is)
+
+-- | Inter-word space
+pattern Space :: Inline
+pattern Space = Inline F.Space
+
+-- | Soft line break
+pattern SoftBreak :: Inline
+pattern SoftBreak = Inline F.SoftBreak
+
+-- | Hard line break
+pattern LineBreak :: Inline
+pattern LineBreak = Inline F.LineBreak
+
+-- | TeX math (literal)
+pattern Math :: MathType -> Text -> Inline
+pattern Math mt t = Inline (F.Math mt t)
+
+-- | Raw inline
+pattern RawInline :: Format -> Text -> Inline
+pattern RawInline f t = Inline (F.RawInline f t)
+
+-- | Hyperlink: alt text (list of inlines), target
+pattern Link :: Attr -> [Inline] -> Target -> Inline
+pattern Link a is t = Inline (F.Link a is t)
+
+-- | Image:  alt text (list of inlines), target
+pattern Image :: Attr -> [Inline] -> Target -> Inline
+pattern Image a is t = Inline (F.Image a is t)
+
+-- | Footnote or endnote
+pattern Note :: [Block] -> Inline
+pattern Note bs = Inline (F.Note bs)
+
+-- | Generic inline container with attributes
+pattern Span :: Attr -> [Inline] -> Inline
+pattern Span a is = Inline (F.Span a is)
+
+
+type Citation = F.Citation Inline
 
 
 -- ToJSON/FromJSON instances. Some are defined by hand so that we have

@@ -497,6 +497,7 @@ type Citation = F.Citation Inline
 
 $(let jsonOpts = defaultOptions
         { allNullaryToStringTag = False
+        , unwrapUnaryRecords = True
         , sumEncoding = TaggedObject { tagFieldName = "t", contentsFieldName = "c" }
         }
   in fmap concat $ traverse (deriveJSON jsonOpts)

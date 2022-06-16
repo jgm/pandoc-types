@@ -28,6 +28,19 @@ jobs:
             cabal: '3.6'
     steps:
     - uses: actions/checkout@v2
+    - name: Cache
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-cabal
+      with:
+        path: ~/.cabal
+        key: ${{ runner.os }}-${{ matrix.ghc }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.ghc }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-${{ matrix.ghc }}-build-
+          ${{ runner.os }}-${{ matrix.ghc }}-
+          ${{ runner.os }}
+
     - name: Install cabal/ghc
       run: |
         ghcup install ghc --set ${{ matrix.versions.ghc }}

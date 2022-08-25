@@ -1,6 +1,6 @@
 cabal-version:       2.2
 Name:                pandoc-types
-version:             1.22.2
+version:             1.22.2.1
 Synopsis:            Types for representing a structured document
 Description:         @Text.Pandoc.Definition@ defines the 'Pandoc' data
                      structure, which is used by pandoc to represent
@@ -94,6 +94,6 @@ benchmark benchmark-pandoc-types
   build-depends:   pandoc-types,
                    base >= 4.5 && < 5,
                    text,
-                   criterion >= 1.0 && < 1.6
+                   criterion >= 1.0
   ghc-options:   -rtsopts -Wall -fno-warn-unused-do-bind -O2
   default-language:  Haskell2010

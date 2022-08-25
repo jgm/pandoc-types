@@ -43,12 +43,14 @@ Source-repository    head
 Library
   hs-source-dirs:    src
   Exposed-modules:   Text.Pandoc.Definition
+                     Text.Pandoc.Definition.Functors
                      Text.Pandoc.Generic
                      Text.Pandoc.Walk
                      Text.Pandoc.Builder
                      Text.Pandoc.JSON
                      Text.Pandoc.Arbitrary
   Other-modules:     Paths_pandoc_types
+                     Text.Pandoc.Definition.Misc
   Autogen-modules:   Paths_pandoc_types
   Build-depends:     base >= 4.5 && < 5,
                      containers >= 0.3,

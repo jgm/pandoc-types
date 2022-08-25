@@ -119,6 +119,7 @@ import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
 import qualified Data.Map as M
 import Text.Pandoc.Definition
+import qualified Text.Pandoc.Definition.Functors as F
 import qualified Data.Traversable as T
 import Data.Traversable (Traversable)
 import qualified Data.Foldable as F
@@ -137,7 +138,8 @@ class Walkable a b where
   query :: Monoid c => (a -> c) -> b -> c
   {-# MINIMAL walkM, query #-}
 
-instance (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
+instance {-# OVERLAPPABLE #-}
+        (Foldable t, Traversable t, Walkable a b) => Walkable a (t b) where
   walk f  = T.fmapDefault (walk f)
   walkM f = T.mapM (walkM f)
   query f = F.foldMap (query f)
@@ -150,6 +152,10 @@ instance OVERLAPS
                      y' <- walkM f y
                      return (x',y')
   query f (x,y) = mappend (query f x) (query f y)
+
+-- instance {-# OVERLAPPABLE #-} Walkable a a where
+--   walkM f x = f x
+--   query f x = f x
 
 instance Walkable Inline Inline where
   walkM f x = walkInlineM f x >>= f
@@ -416,52 +422,62 @@ instance Walkable [Block] Citation where
 walkInlineM :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monad m, Applicative m, Functor m)
             => (a -> m a) -> Inline -> m Inline
-walkInlineM _ (Str xs)         = return (Str xs)
-walkInlineM f (Emph xs)        = Emph <$> walkM f xs
-walkInlineM f (Underline xs)   = Underline <$> walkM f xs
-walkInlineM f (Strong xs)      = Strong <$> walkM f xs
-walkInlineM f (Strikeout xs)   = Strikeout <$> walkM f xs
-walkInlineM f (Subscript xs)   = Subscript <$> walkM f xs
-walkInlineM f (Superscript xs) = Superscript <$> walkM f xs
-walkInlineM f (SmallCaps xs)   = SmallCaps <$> walkM f xs
-walkInlineM f (Quoted qt xs)   = Quoted qt <$> walkM f xs
-walkInlineM f (Link atr xs t)  = Link atr <$> walkM f xs <*> pure t
-walkInlineM f (Image atr xs t) = Image atr <$> walkM f xs <*> pure t
-walkInlineM f (Note bs)        = Note <$> walkM f bs
-walkInlineM f (Span attr xs)   = Span attr <$> walkM f xs
-walkInlineM f (Cite cs xs)     = Cite <$> walkM f cs <*> walkM f xs
-walkInlineM _ LineBreak        = return LineBreak
-walkInlineM _ SoftBreak        = return SoftBreak
-walkInlineM _ Space            = return Space
-walkInlineM _ x@Code {}        = return x
-walkInlineM _ x@Math {}        = return x
-walkInlineM _ x@RawInline {}   = return x
+walkInlineM f (Inline i) = Inline <$> walkInlineFM f i
+
+walkInlineFM :: (Walkable a (F.Citation inline), Walkable a [block],
+                 Walkable a [inline], Monad m, Applicative m, Functor m)
+              => (a -> m a) -> F.Inline block inline -> m (F.Inline block inline)
+walkInlineFM _ (F.Str xs)         = return (F.Str xs)
+walkInlineFM f (F.Emph xs)        = F.Emph <$> walkM f xs
+walkInlineFM f (F.Underline xs)   = F.Underline <$> walkM f xs
+walkInlineFM f (F.Strong xs)      = F.Strong <$> walkM f xs
+walkInlineFM f (F.Strikeout xs)   = F.Strikeout <$> walkM f xs
+walkInlineFM f (F.Subscript xs)   = F.Subscript <$> walkM f xs
+walkInlineFM f (F.Superscript xs) = F.Superscript <$> walkM f xs
+walkInlineFM f (F.SmallCaps xs)   = F.SmallCaps <$> walkM f xs
+walkInlineFM f (F.Quoted qt xs)   = F.Quoted qt <$> walkM f xs
+walkInlineFM f (F.Link atr xs t)  = F.Link atr <$> walkM f xs <*> pure t
+walkInlineFM f (F.Image atr xs t) = F.Image atr <$> walkM f xs <*> pure t
+walkInlineFM f (F.Note bs)        = F.Note <$> walkM f bs
+walkInlineFM f (F.Span attr xs)   = F.Span attr <$> walkM f xs
+walkInlineFM f (F.Cite cs xs)     = F.Cite <$> walkM f cs <*> walkM f xs
+walkInlineFM _ F.LineBreak        = return F.LineBreak
+walkInlineFM _ F.SoftBreak        = return F.SoftBreak
+walkInlineFM _ F.Space            = return F.Space
+walkInlineFM _ x@F.Code {}        = return x
+walkInlineFM _ x@F.Math {}        = return x
+walkInlineFM _ x@F.RawInline {}   = return x
 
 -- | Perform a query on elements nested below an @'Inline'@ element by
 -- querying nested lists of @Inline@s, @Block@s, or @Citation@s.
 queryInline :: (Walkable a Citation, Walkable a [Block],
                 Walkable a [Inline], Monoid c)
             => (a -> c) -> Inline -> c
-queryInline _ (Str _)         = mempty
-queryInline f (Emph xs)       = query f xs
-queryInline f (Underline xs)  = query f xs
-queryInline f (Strong xs)     = query f xs
-queryInline f (Strikeout xs)  = query f xs
-queryInline f (Subscript xs)  = query f xs
-queryInline f (Superscript xs)= query f xs
-queryInline f (SmallCaps xs)  = query f xs
-queryInline f (Quoted _ xs)   = query f xs
-queryInline f (Cite cs xs)    = query f cs <> query f xs
-queryInline _ (Code _ _)      = mempty
-queryInline _ Space           = mempty
-queryInline _ SoftBreak       = mempty
-queryInline _ LineBreak       = mempty
-queryInline _ (Math _ _)      = mempty
-queryInline _ (RawInline _ _) = mempty
-queryInline f (Link _ xs _)   = query f xs
-queryInline f (Image _ xs _)  = query f xs
-queryInline f (Note bs)       = query f bs
-queryInline f (Span _ xs)     = query f xs
+queryInline f (Inline i) = queryInlineF f i
+
+queryInlineF :: (Walkable a (F.Citation inline), Walkable a [block],
+                 Walkable a [inline], Monoid c)
+             => (a -> c) -> F.Inline block inline -> c
+queryInlineF _ (F.Str _)         = mempty
+queryInlineF f (F.Emph xs)       = query f xs
+queryInlineF f (F.Underline xs)  = query f xs
+queryInlineF f (F.Strong xs)     = query f xs
+queryInlineF f (F.Strikeout xs)  = query f xs
+queryInlineF f (F.Subscript xs)  = query f xs
+queryInlineF f (F.Superscript xs)= query f xs
+queryInlineF f (F.SmallCaps xs)  = query f xs
+queryInlineF f (F.Quoted _ xs)   = query f xs
+queryInlineF f (F.Cite cs xs)    = query f cs <> query f xs
+queryInlineF _ (F.Code _ _)      = mempty
+queryInlineF _ F.Space           = mempty
+queryInlineF _ F.SoftBreak       = mempty
+queryInlineF _ F.LineBreak       = mempty
+queryInlineF _ (F.Math _ _)      = mempty
+queryInlineF _ (F.RawInline _ _) = mempty
+queryInlineF f (F.Link _ xs _)   = query f xs
+queryInlineF f (F.Image _ xs _)  = query f xs
+queryInlineF f (F.Note bs)       = query f bs
+queryInlineF f (F.Span _ xs)     = query f xs
 
 
 -- | Helper method to walk to elements nested below @'Block'@ nodes.
@@ -473,25 +489,32 @@ walkBlockM :: (Walkable a [Block], Walkable a [Inline], Walkable a Row,
                Walkable a Caption, Walkable a TableHead, Walkable a TableBody,
                Walkable a TableFoot, Monad m, Applicative m, Functor m)
            => (a -> m a) -> Block -> m Block
-walkBlockM f (Para xs)                = Para <$> walkM f xs
-walkBlockM f (Plain xs)               = Plain <$> walkM f xs
-walkBlockM f (LineBlock xs)           = LineBlock <$> walkM f xs
-walkBlockM f (BlockQuote xs)          = BlockQuote <$> walkM f xs
-walkBlockM f (OrderedList a cs)       = OrderedList a <$> walkM f cs
-walkBlockM f (BulletList cs)          = BulletList <$> walkM f cs
-walkBlockM f (DefinitionList xs)      = DefinitionList <$> walkM f xs
-walkBlockM f (Header lev attr xs)     = Header lev attr <$> walkM f xs
-walkBlockM f (Div attr bs')           = Div attr <$> walkM f bs'
-walkBlockM _ x@CodeBlock {}           = return x
-walkBlockM _ x@RawBlock {}            = return x
-walkBlockM _ HorizontalRule           = return HorizontalRule
-walkBlockM _ Null                     = return Null
-walkBlockM f (Table attr capt as hs bs fs)
+walkBlockM f (Block b) = Block <$> walkBlockFM f b
+
+walkBlockFM :: (Monad m, Walkable a (F.Caption inline block),
+                Walkable a [inline], Walkable a [block],
+                Walkable a (F.TableHead block), Walkable a (F.TableBody block),
+                Walkable a (F.TableFoot block))
+            => (a -> m a) -> F.Block inline block -> m (F.Block inline block)
+walkBlockFM f (F.Para xs)                = F.Para <$> walkM f xs
+walkBlockFM f (F.Plain xs)               = F.Plain <$> walkM f xs
+walkBlockFM f (F.LineBlock xs)           = F.LineBlock <$> walkM f xs
+walkBlockFM f (F.BlockQuote xs)          = F.BlockQuote <$> walkM f xs
+walkBlockFM f (F.OrderedList a cs)       = F.OrderedList a <$> walkM f cs
+walkBlockFM f (F.BulletList cs)          = F.BulletList <$> walkM f cs
+walkBlockFM f (F.DefinitionList xs)      = F.DefinitionList <$> walkM f xs
+walkBlockFM f (F.Header lev attr xs)     = F.Header lev attr <$> walkM f xs
+walkBlockFM f (F.Div attr bs')           = F.Div attr <$> walkM f bs'
+walkBlockFM _ x@F.CodeBlock {}           = return x
+walkBlockFM _ x@F.RawBlock {}            = return x
+walkBlockFM _ F.HorizontalRule           = return F.HorizontalRule
+walkBlockFM _ F.Null                     = return F.Null
+walkBlockFM f (F.Table attr capt as hs bs fs)
   = do capt' <- walkM f capt
        hs' <- walkM f hs
        bs' <- walkM f bs
        fs' <- walkM f fs
-       return $ Table attr capt' as hs' bs' fs'
+       return $ F.Table attr capt' as hs' bs' fs'
 
 -- | Perform a query on elements nested below a @'Block'@ element by
 -- querying all directly nested lists of @Inline@s or @Block@s.
@@ -499,24 +522,31 @@ queryBlock :: (Walkable a Citation, Walkable a [Block], Walkable a Row,
                Walkable a Caption, Walkable a TableHead, Walkable a TableBody,
                Walkable a TableFoot, Walkable a [Inline], Monoid c)
            => (a -> c) -> Block -> c
-queryBlock f (Para xs)                = query f xs
-queryBlock f (Plain xs)               = query f xs
-queryBlock f (LineBlock xs)           = query f xs
-queryBlock _ (CodeBlock _ _)          = mempty
-queryBlock _ (RawBlock _ _)           = mempty
-queryBlock f (BlockQuote bs)          = query f bs
-queryBlock f (OrderedList _ cs)       = query f cs
-queryBlock f (BulletList cs)          = query f cs
-queryBlock f (DefinitionList xs)      = query f xs
-queryBlock f (Header _ _ xs)          = query f xs
-queryBlock _ HorizontalRule           = mempty
-queryBlock f (Table _ capt _ hs bs fs)
+queryBlock f (Block b) = queryBlockF f b
+
+queryBlockF :: (Monoid c, Walkable a (F.Caption inline block),
+                Walkable a [inline], Walkable a [block],
+                Walkable a (F.TableHead block), Walkable a (F.TableBody block),
+                Walkable a (F.TableFoot block))
+            => (a -> c) -> F.Block inline block -> c
+queryBlockF f (F.Para xs)                = query f xs
+queryBlockF f (F.Plain xs)               = query f xs
+queryBlockF f (F.LineBlock xs)           = query f xs
+queryBlockF _ (F.CodeBlock _ _)          = mempty
+queryBlockF _ (F.RawBlock _ _)           = mempty
+queryBlockF f (F.BlockQuote bs)          = query f bs
+queryBlockF f (F.OrderedList _ cs)       = query f cs
+queryBlockF f (F.BulletList cs)          = query f cs
+queryBlockF f (F.DefinitionList xs)      = query f xs
+queryBlockF f (F.Header _ _ xs)          = query f xs
+queryBlockF _ F.HorizontalRule           = mempty
+queryBlockF f (F.Table _ capt _ hs bs fs)
   = query f capt <>
     query f hs <>
     query f bs <>
     query f fs
-queryBlock f (Div _ bs)               = query f bs
-queryBlock _ Null                     = mempty
+queryBlockF f (F.Div _ bs)               = query f bs
+queryBlockF _ F.Null                     = mempty
 
 -- | Helper method to walk to elements nested below @'MetaValue'@ nodes.
 --
@@ -526,20 +556,33 @@ queryBlock _ Null                     = mempty
 walkMetaValueM :: (Walkable a MetaValue, Walkable a [Block],
                   Walkable a [Inline], Monad f, Applicative f, Functor f)
                => (a -> f a) -> MetaValue -> f MetaValue
-walkMetaValueM f (MetaList xs)    = MetaList <$> walkM f xs
-walkMetaValueM _ (MetaBool b)     = return $ MetaBool b
-walkMetaValueM _ (MetaString s)   = return $ MetaString s
-walkMetaValueM f (MetaInlines xs) = MetaInlines <$> walkM f xs
-walkMetaValueM f (MetaBlocks bs)  = MetaBlocks <$> walkM f bs
-walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
+walkMetaValueM f (MetaValue b) = MetaValue <$> walkMetaValueFM f b
+
+walkMetaValueFM :: (Monad f, Walkable a metaValue,
+                    Walkable a [metaValue], Walkable a [inline], Walkable a [block])
+                => (a -> f a)
+                -> F.MetaValue inline block metaValue
+                -> f (F.MetaValue inline block metaValue)
+walkMetaValueFM f (F.MetaList xs)    = F.MetaList <$> walkM f xs
+walkMetaValueFM _ (F.MetaBool b)     = return $ F.MetaBool b
+walkMetaValueFM _ (F.MetaString s)   = return $ F.MetaString s
+walkMetaValueFM f (F.MetaInlines xs) = F.MetaInlines <$> walkM f xs
+walkMetaValueFM f (F.MetaBlocks bs)  = F.MetaBlocks <$> walkM f bs
+walkMetaValueFM f (F.MetaMap m)      = F.MetaMap <$> walkM f m
 
 -- | Helper method to walk @'MetaValue'@ nodes nested below @'MetaValue'@ nodes.
 walkMetaValueM' :: (Monad f, Applicative f, Functor f)
                 => (MetaValue -> f MetaValue) -> MetaValue -> f MetaValue
-walkMetaValueM' f (MetaMap m) =
-    MetaMap . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList m)
-walkMetaValueM' f (MetaList xs) = MetaList <$> mapM (walkM f) xs
-walkMetaValueM' _ x = return x
+walkMetaValueM' f (MetaValue b) = MetaValue <$> walkMetaValueFM' f b
+
+walkMetaValueFM' :: (Monad f, Walkable a metaValue)
+                 => (a -> f a)
+                 -> F.MetaValue inline block metaValue
+                 -> f (F.MetaValue inline block metaValue)
+walkMetaValueFM' f (F.MetaMap m) =
+    F.MetaMap . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList m)
+walkMetaValueFM' f (F.MetaList xs) = F.MetaList <$> mapM (walkM f) xs
+walkMetaValueFM' _ x = return x
 
 -- | Perform a query on elements nested below a @'MetaValue'@ element by
 -- querying all directly nested lists of @Inline@s, list of @Block@s, or
@@ -547,28 +590,37 @@ walkMetaValueM' _ x = return x
 queryMetaValue :: (Walkable a MetaValue, Walkable a [Block],
                    Walkable a [Inline], Monoid c)
                => (a -> c) -> MetaValue -> c
-queryMetaValue f (MetaList xs)    = query f xs
-queryMetaValue _ (MetaBool _)     = mempty
-queryMetaValue _ (MetaString _)   = mempty
-queryMetaValue f (MetaInlines xs) = query f xs
-queryMetaValue f (MetaBlocks bs)  = query f bs
-queryMetaValue f (MetaMap m)      = query f m
+queryMetaValue f (MetaValue b) = queryMetaValueF f b
+
+queryMetaValueF :: (Monoid c, Walkable a metaValue,
+                    Walkable a [metaValue], Walkable a [inline], Walkable a [block])
+                => (a -> c) -> F.MetaValue inline block metaValue -> c
+queryMetaValueF f (F.MetaList xs)    = query f xs
+queryMetaValueF _ (F.MetaBool _)     = mempty
+queryMetaValueF _ (F.MetaString _)   = mempty
+queryMetaValueF f (F.MetaInlines xs) = query f xs
+queryMetaValueF f (F.MetaBlocks bs)  = query f bs
+queryMetaValueF f (F.MetaMap m)      = query f m
 
 -- | Perform a query on @'MetaValue'@ elements nested below a @'MetaValue'@
 -- element
 queryMetaValue' :: Monoid c
                 => (MetaValue -> c) -> MetaValue -> c
-queryMetaValue' f (MetaMap m)   = M.foldMapWithKey (const $ query f) m
-queryMetaValue' f (MetaList xs) = mconcat $ map (query f) xs
-queryMetaValue' _ _             = mempty
+queryMetaValue' f (MetaValue b) = queryMetaValue'F f b
+
+queryMetaValue'F :: (Monoid c, Walkable a b)
+                 => (a -> c) -> F.MetaValue inline block b -> c
+queryMetaValue'F f (F.MetaMap m)   = M.foldMapWithKey (const $ query f) m
+queryMetaValue'F f (F.MetaList xs) = mconcat $ map (query f) xs
+queryMetaValue'F _ _               = mempty
 
 -- | Helper method to walk to elements nested below @'Citation'@ nodes.
 --
 -- The non-inline contents of a citation will remain unchanged during traversal.
 -- Only the inline contents, viz. the citation's prefix and postfix, will be
 -- traversed further and can thus be changed during this operation.
-walkCitationM :: (Walkable a [Inline], Monad m, Applicative m, Functor m)
-              => (a -> m a) -> Citation -> m Citation
+walkCitationM :: (Walkable a [inline], Monad m, Applicative m, Functor m)
+              => (a -> m a) -> F.Citation inline -> m (F.Citation inline)
 walkCitationM f (Citation id' pref suff mode notenum hash) =
     do pref' <- walkM f pref
        suff' <- walkM f suff
@@ -576,8 +628,8 @@ walkCitationM f (Citation id' pref suff mode notenum hash) =
 
 -- | Perform a query on elements nested below a @'Citation'@ element by
 -- querying the prefix and postfix @Inline@ lists.
-queryCitation :: (Walkable a [Inline], Monoid c)
-              => (a -> c) -> Citation -> c
+queryCitation :: (Walkable a [inline], Monoid c)
+              => (a -> c) -> F.Citation inline -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
 
 -- | Helper method to walk the elements nested below @'Row'@ nodes. The

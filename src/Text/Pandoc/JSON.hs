@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts, MultiParamTypeClasses #-}
 {-
 Copyright (c) 2013-2019, John MacFarlane
 
@@ -74,6 +74,7 @@ module Text.Pandoc.JSON ( module Text.Pandoc.Definition
 where
 import Text.Pandoc.Definition
 import Text.Pandoc.Walk
+import Control.Monad.IO.Class(MonadIO(liftIO))
 import Data.Maybe (listToMaybe)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text as T
@@ -99,32 +100,33 @@ import System.Environment (getArgs)
 -- provides the target format as argument when scripts are called using
 -- the `--filter` option.
 
-class ToJSONFilter a where
-  toJSONFilter :: a -> IO ()
+class ToJSONFilter m a where
+  toJSONFilter :: a -> m ()
 
-instance (Walkable a Pandoc) => ToJSONFilter (a -> a) where
+instance (Walkable a Pandoc) => ToJSONFilter IO (a -> a) where
   toJSONFilter f = BL.getContents >>=
     BL.putStr . encode . (walk f :: Pandoc -> Pandoc) . either error id .
     eitherDecode'
 
-instance (Walkable a Pandoc) => ToJSONFilter (a -> IO a) where
-  toJSONFilter f = BL.getContents >>=
-     (walkM f :: Pandoc -> IO Pandoc) . either error id . eitherDecode' >>=
-     BL.putStr . encode
+instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (a -> m a) where
+  toJSONFilter f = do
+     c <- liftIO BL.getContents
+     r <- walkM f (either error id (eitherDecode' c) :: Pandoc)
+     liftIO (BL.putStr (encode (r :: Pandoc)))
 
-instance (Walkable [a] Pandoc) => ToJSONFilter (a -> [a]) where
+instance (Walkable [a] Pandoc) => ToJSONFilter IO (a -> [a]) where
   toJSONFilter f = BL.getContents >>=
     BL.putStr . encode . (walk (concatMap f) :: Pandoc -> Pandoc) .
     either error id . eitherDecode'
 
-instance (Walkable [a] Pandoc) => ToJSONFilter (a -> IO [a]) where
-  toJSONFilter f = BL.getContents >>=
-     (walkM (fmap concat . mapM f) :: Pandoc -> IO Pandoc) .
-     either error id . eitherDecode' >>=
-     BL.putStr . encode
+instance (Walkable [a] Pandoc, MonadIO m) => ToJSONFilter m (a -> m [a]) where
+  toJSONFilter f = do
+     c <- liftIO BL.getContents
+     r <- (walkM (fmap concat . mapM f)) (either error id (eitherDecode' c) :: Pandoc)
+     liftIO (BL.putStr (encode (r :: Pandoc)))
 
-instance (ToJSONFilter a) => ToJSONFilter ([String] -> a) where
-  toJSONFilter f = getArgs >>= toJSONFilter . f
+instance (ToJSONFilter m a, MonadIO m) => ToJSONFilter m ([String] -> a) where
+  toJSONFilter f = liftIO getArgs >>= toJSONFilter . f
 
-instance (ToJSONFilter a) => ToJSONFilter (Maybe Format -> a) where
-  toJSONFilter f = getArgs >>= toJSONFilter . f . fmap (Format . T.pack) . listToMaybe
+instance (ToJSONFilter m a, MonadIO m) => ToJSONFilter m (Maybe Format -> a) where
+  toJSONFilter f = liftIO getArgs >>= toJSONFilter . f . fmap (Format . T.pack) . listToMaybe

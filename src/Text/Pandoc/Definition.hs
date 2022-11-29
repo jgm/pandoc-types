@@ -391,7 +391,7 @@ $(let jsonOpts = defaultOptions
         { allNullaryToStringTag = False
         , sumEncoding = TaggedObject { tagFieldName = "t", contentsFieldName = "c" }
         }
-  in fmap concat $ traverse (deriveJSON jsonOpts)
+  in concat <$> traverse (deriveJSON jsonOpts)
      [ ''MetaValue
      , ''CitationMode
      , ''Citation

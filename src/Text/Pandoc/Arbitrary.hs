@@ -39,7 +39,7 @@ instance Arbitrary Inlines where
   shrink = fmap fromList . ((++) <$> shrink <*> flattenShrinkInlines) . toList
     where flattenShrinkInlines (x:xs) =
             let x' = flattenInline x
-            in (if null x' then [] else [x' ++ xs]) ++ [x:xs' | xs' <- flattenShrinkInlines xs]
+            in [x' ++ xs | not (null x')] ++ [x:xs' | xs' <- flattenShrinkInlines xs]
           flattenShrinkInlines [] = []
           flattenInline :: Inline -> [Inline]
           flattenInline (Str _) = []
@@ -68,7 +68,7 @@ instance Arbitrary Blocks where
   shrink = fmap fromList . ((++) <$> shrink <*> flattenShrinkBlocks) . toList
     where flattenShrinkBlocks (x:xs) =
             let x' = flattenBlock x
-            in (if null x' then [] else [x' ++ xs]) ++ [x:xs' | xs' <- flattenShrinkBlocks xs]
+            in [x' ++ xs | not (null x')] ++ [x:xs' | xs' <- flattenShrinkBlocks xs]
           flattenShrinkBlocks [] = []
           flattenBlock :: Block -> [Block]
           flattenBlock Plain{} = []

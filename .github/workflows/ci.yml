@@ -45,6 +45,7 @@ jobs:
 
     - name: Install cabal/ghc
       run: |
+        sudo apt install libtinfo5 # required for GHC 8.0 and 8.2.
         ghcup install ghc --set ${{ matrix.versions.ghc }}
         ghcup install cabal --set ${{ matrix.versions.cabal }}
 

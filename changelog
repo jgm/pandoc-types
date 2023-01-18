@@ -1,3 +1,14 @@
+[1.23]
+
+  * Remove Null constructor from Block (#91) [API change].
+
+  * ToJSONFilter: Add instance for MonadIO (#105, Willem Van Onsem)
+    [API change].
+
+  * Add `Figure` block constructor (Albert Krewinkel, Aner Lucero,
+    and Christian Despres) [API change]. The new Figure block represents
+    a figure with attributes, caption, and arbitrary block content.
+
 [1.22.2.1]
 
   * Allow aeson 2.1.* and criterion 1.6.

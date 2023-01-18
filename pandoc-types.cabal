@@ -29,7 +29,7 @@ License-file:        LICENSE
 Author:              John MacFarlane
 Maintainer:          jgm@berkeley.edu
 Bug-Reports:         https://github.com/jgm/pandoc-types/issues
-Copyright:           (c) 2006-2019 John MacFarlane
+Copyright:           (c) 2006-2023 John MacFarlane
 Category:            Text
 Build-type:          Simple
 Tested-With:         GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.2,

@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-
-Copyright (c) 2006-2019, John MacFarlane
+Copyright (c) 2006-2023, John MacFarlane
 
 All rights reserved.
 
@@ -34,7 +34,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 {- |
    Module      : Text.Pandoc.Generic
-   Copyright   : Copyright (C) 2006-2019 John MacFarlane
+   Copyright   : Copyright (C) 2006-2023 John MacFarlane
    License     : BSD3
 
    Maintainer  : John MacFarlane <jgm@berkeley.edu>

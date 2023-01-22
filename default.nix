@@ -16,7 +16,7 @@ in hsPkgs.developPackage {
   ] ./.;
   modifier = drv: pkgs.haskell.lib.overrideCabal drv (attrs: {
     buildTools =
-      let extraPackages = extraHaskellPackages pkgs.haskellPackages;
+      let extraPackages = extraHaskellPackages hsPkgs;
       in (attrs.buildTools or []) ++ extraPackages;
   });
 }

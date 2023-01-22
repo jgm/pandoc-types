@@ -1,6 +1,6 @@
 -- | This module is based off the QQ implementation from string-qq
 -- (https://github.com/audreyt/string-qq).
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 {-# LANGUAGE RankNTypes #-}
 module Data.String.QQ (s) where
 import Data.String (IsString(..))

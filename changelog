@@ -1,3 +1,9 @@
+[1.23.0.1]
+
+  * Allow aeson 2.2.
+
+  * Remove dependency on string-qq (recbecca skinner).
+
 [1.23]
 
   * Remove Null constructor from Block (#91) [API change].

@@ -10,24 +10,16 @@ jobs:
       fail-fast: false
       matrix:
         versions:
-          - ghc: '8.0.2'
-            cabal: '2.4'
-          - ghc: '8.2.2'
-            cabal: '2.4'
-          - ghc: '8.4.4'
-            cabal: '2.4'
-          - ghc: '8.6.5'
-            cabal: '2.4'
-          - ghc: '8.8.4'
-            cabal: '3.0'
-          - ghc: '8.10.7'
+          - ghc: '8.10'
             cabal: '3.2'
-          - ghc: '9.0.2'
+          - ghc: '9.0'
             cabal: '3.4'
-          - ghc: '9.2.5'
+          - ghc: '9.2'
             cabal: '3.6'
-          - ghc: '9.4.4'
+          - ghc: '9.4'
             cabal: '3.8'
+          - ghc: '9.6'
+            cabal: '3.10'
     steps:
     - uses: actions/checkout@v2
     - name: Cache
@@ -35,7 +27,8 @@ jobs:
       env:
         cache-name: cache-cabal
       with:
-        path: ~/.cabal
+        path: |
+          ~/.local/state/cabal
         key: ${{ runner.os }}-${{ matrix.ghc }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.ghc }}-build-${{ env.cache-name }}-

@@ -103,8 +103,8 @@ import System.Environment (getArgs)
 class ToJSONFilter m a where
   toJSONFilter :: a -> m ()
 
-instance (Walkable a Pandoc) => ToJSONFilter IO (a -> a) where
-  toJSONFilter f = BL.getContents >>=
+instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (a -> a) where
+  toJSONFilter f = liftIO $ BL.getContents >>=
     BL.putStr . encode . (walk f :: Pandoc -> Pandoc) . either error id .
     eitherDecode'
 

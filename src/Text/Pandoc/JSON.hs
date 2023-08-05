@@ -108,6 +108,12 @@ instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (a -> a) where
     BL.putStr . encode . (walk f :: Pandoc -> Pandoc) . either error id .
     eitherDecode'
 
+instance (Walkable [a] Pandoc, MonadIO m) => ToJSONFilter m (a -> [a]) where
+  toJSONFilter f = liftIO $ BL.getContents >>=
+    BL.putStr . encode . (walk (concatMap f) :: Pandoc -> Pandoc) .
+    either error id .
+    eitherDecode'
+
 instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (a -> m a) where
   toJSONFilter f = do
      c <- liftIO BL.getContents

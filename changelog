@@ -1,3 +1,13 @@
+[1.23.1]
+
+  * Restore toJSONFilter instance for pure `a -> [a]`.
+    This went missing after my ill-considered revision to #105,
+    commit 183af9d9f1066be974ac55fd23a4c985999d3ce8 . See jgm/pandoc#8976.
+
+  * Generalize ToJSONFilter instance. Previously a pure function `a -> a`
+    could only be promoted to a filter in IO. Now we allow it to work with
+    any instance of MonadIO.  (This adds to #105.)
+
 [1.23.0.1]
 
   * Allow aeson 2.2.

@@ -53,7 +53,7 @@ Library
                      deepseq >= 1.4.1 && < 1.5,
                      syb >= 0.1 && < 0.8,
                      ghc-prim >= 0.2,
-                     bytestring >= 0.9 && < 0.12,
+                     bytestring >= 0.9 && < 0.13,
                      aeson >= 0.6.2 && < 2.3,
                      transformers >= 0.2 && < 0.7,
                      QuickCheck >= 2.10 && < 2.15
@@ -73,7 +73,7 @@ test-suite test-pandoc-types
                        aeson >= 0.6.2 && < 2.3,
                        containers >= 0.3,
                        text,
-                       bytestring >= 0.9 && < 0.12,
+                       bytestring >= 0.9 && < 0.13,
                        test-framework >= 0.3 && < 0.9,
                        test-framework-hunit >= 0.2 && < 0.4,
                        test-framework-quickcheck2 >= 0.2.9 && < 0.4,

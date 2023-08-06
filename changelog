@@ -8,6 +8,8 @@
     could only be promoted to a filter in IO. Now we allow it to work with
     any instance of MonadIO.  (This adds to #105.)
 
+  * Allow bytestring 0.12.
+
 [1.23.0.1]
 
   * Allow aeson 2.2.

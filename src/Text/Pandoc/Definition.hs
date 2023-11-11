@@ -318,7 +318,7 @@ isFigureTarget tgt
   | (src, Just tit) <- second (T.stripPrefix "fig:") tgt = Just (src, tit)
   | otherwise = Nothing
 
--- | Bidirectional patter synonym
+-- | Bidirectional pattern synonym
 --
 -- It can pass as a Block constructor
 --

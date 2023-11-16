@@ -342,7 +342,10 @@ pattern SimpleFigure attr figureCaption tgt <-
 
 
 -- | Type of math element (display or inline).
-data MathType = DisplayMath | InlineMath deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
+data MathType = DisplayMath Text  -- ^ Visually separated from other text;
+                                  -- has an (possibly empty) label
+              | InlineMath        -- ^ Math within the flow of a paragraph.
+  deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 
 -- | Inline elements.
 data Inline

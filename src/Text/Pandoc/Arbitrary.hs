@@ -348,10 +348,11 @@ instance Arbitrary Caption where
 
 instance Arbitrary MathType where
         arbitrary
-          = do x <- choose (0 :: Int, 1)
+          = do x <- choose (0 :: Int, 2)
                case x of
-                   0 -> return DisplayMath
-                   1 -> return InlineMath
+                   0 -> return (DisplayMath "")
+                   1 -> return (DisplayMath "1")
+                   2 -> return InlineMath
                    _ -> error "FATAL ERROR: Arbitrary instance, logic bug"
 
 instance Arbitrary QuoteType where

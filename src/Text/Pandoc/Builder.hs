@@ -131,6 +131,8 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , singleQuoted
                            , doubleQuoted
                            , cite
+                           , ref
+                           , refWith
                            , codeWith
                            , code
                            , space
@@ -384,6 +386,12 @@ quoted qt = singleton . Quoted qt . toList
 
 cite :: [Citation] -> Inlines -> Inlines
 cite cts = singleton . Cite cts . toList
+
+ref :: RefType -> [Reference] -> Inlines -> Inlines
+ref = refWith nullAttr
+
+refWith :: Attr -> RefType -> [Reference] -> Inlines -> Inlines
+refWith a rt rfs = singleton . Ref a rt rfs . toList
 
 -- | Inline code with attributes.
 codeWith :: Attr -> Text -> Inlines

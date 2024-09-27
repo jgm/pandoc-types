@@ -100,6 +100,9 @@ import System.Environment (getArgs)
 -- provides the target format as argument when scripts are called using
 -- the `--filter` option.
 
+_withMeta :: Walkable a Pandoc => ((a -> b) -> Pandoc -> c) -> (Meta -> a -> b) -> Pandoc -> c
+_withMeta g f ~(p@(Pandoc m _)) = g (f m) p
+
 class ToJSONFilter m a where
   toJSONFilter :: a -> m ()
 
@@ -108,9 +111,20 @@ instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (a -> a) where
     BL.putStr . encode . (walk f :: Pandoc -> Pandoc) . either error id .
     eitherDecode'
 
+instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (Meta -> a -> a) where
+  toJSONFilter f = liftIO $ BL.getContents >>=
+    BL.putStr . encode . (_withMeta walk f :: Pandoc -> Pandoc) . either error id .
+    eitherDecode'
+
 instance (Walkable [a] Pandoc, MonadIO m) => ToJSONFilter m (a -> [a]) where
   toJSONFilter f = liftIO $ BL.getContents >>=
     BL.putStr . encode . (walk (concatMap f) :: Pandoc -> Pandoc) .
+    either error id .
+    eitherDecode'
+
+instance (Walkable [a] Pandoc, MonadIO m) => ToJSONFilter m (Meta -> a -> [a]) where
+  toJSONFilter f = liftIO $ BL.getContents >>=
+    BL.putStr . encode . (_withMeta walk (concatMap . f) :: Pandoc -> Pandoc) .
     either error id .
     eitherDecode'
 
@@ -120,10 +134,22 @@ instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (a -> m a) where
      r <- walkM f (either error id (eitherDecode' c) :: Pandoc)
      liftIO (BL.putStr (encode (r :: Pandoc)))
 
+instance (Walkable a Pandoc, MonadIO m) => ToJSONFilter m (Meta -> a -> m a) where
+  toJSONFilter f = do
+     c <- liftIO BL.getContents
+     r <- _withMeta walkM f (either error id (eitherDecode' c) :: Pandoc)
+     liftIO (BL.putStr (encode (r :: Pandoc)))
+
 instance (Walkable [a] Pandoc, MonadIO m) => ToJSONFilter m (a -> m [a]) where
   toJSONFilter f = do
      c <- liftIO BL.getContents
      r <- (walkM (fmap concat . mapM f)) (either error id (eitherDecode' c) :: Pandoc)
+     liftIO (BL.putStr (encode (r :: Pandoc)))
+
+instance (Walkable [a] Pandoc, MonadIO m) => ToJSONFilter m (Meta -> a -> m [a]) where
+  toJSONFilter f = do
+     c <- liftIO BL.getContents
+     r <- _withMeta walkM ((fmap concat .) . mapM . f) (either error id (eitherDecode' c) :: Pandoc)
      liftIO (BL.putStr (encode (r :: Pandoc)))
 
 instance (ToJSONFilter m a, MonadIO m) => ToJSONFilter m ([String] -> a) where

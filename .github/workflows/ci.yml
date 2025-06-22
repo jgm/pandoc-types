@@ -20,10 +20,14 @@ jobs:
             cabal: '3.8'
           - ghc: '9.6'
             cabal: '3.10'
+          - ghc: '9.8'
+            cabal: 'latest'
+          - ghc: '9.10'
+            cabal: 'latest'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       env:
         cache-name: cache-cabal
       with:
@@ -38,7 +42,6 @@ jobs:
 
     - name: Install cabal/ghc
       run: |
-        sudo apt install libtinfo5 # required for GHC 8.0 and 8.2.
         ghcup install ghc --set ${{ matrix.versions.ghc }}
         ghcup install cabal --set ${{ matrix.versions.cabal }}
 
@@ -56,7 +59,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Install stack
       shell: cmd
       run: |
@@ -75,7 +78,7 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Install stack
       run: |
           curl -L https://get.haskellstack.org/stable/osx-x86_64.tar.gz -o stack.tar.gz

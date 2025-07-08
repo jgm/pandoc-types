@@ -138,6 +138,7 @@ module Text.Pandoc.Builder ( module Text.Pandoc.Definition
                            , linebreak
                            , math
                            , displayMath
+                           , labeledDisplayMath
                            , rawInline
                            , link
                            , linkWith
@@ -408,7 +409,11 @@ math = singleton . Math InlineMath
 
 -- | Display math
 displayMath :: Text -> Inlines
-displayMath = singleton . Math DisplayMath
+displayMath = singleton . Math (DisplayMath "")
+
+-- | Labeled display math
+labeledDisplayMath :: Text {-^ label -} -> Text {-^ math -} -> Inlines
+labeledDisplayMath label = singleton . Math (DisplayMath label)
 
 rawInline :: Text -> Text -> Inlines
 rawInline format = singleton . RawInline (Format format)

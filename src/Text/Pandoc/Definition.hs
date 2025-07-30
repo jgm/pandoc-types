@@ -364,7 +364,7 @@ data Inline
     | RawInline Format Text -- ^ Raw inline
     | Link Attr [Inline] Target  -- ^ Hyperlink: alt text (list of inlines), target
     | Image Attr [Inline] Target -- ^ Image:  alt text (list of inlines), target
-    | Note (Maybe Text) [Block]  -- ^ Footnote or endnote with optional label
+    | Note Text [Block]  -- ^ Footnote or endnote with (possibly empty) label
     | Span Attr [Inline]    -- ^ Generic inline container with attributes
     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)
 

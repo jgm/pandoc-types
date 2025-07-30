@@ -441,10 +441,10 @@ imageWith :: Attr -- ^ Attributes
 imageWith attr url title x = singleton $ Image attr (toList x) (url, title)
 
 note :: Blocks -> Inlines
-note = singleton . Note Nothing . toList
+note = singleton . Note mempty. toList
 
 noteLabeled :: Text -> Blocks -> Inlines
-noteLabeled lab = singleton . Note (Just lab) . toList
+noteLabeled lab = singleton . Note lab . toList
 
 spanWith :: Attr -> Inlines -> Inlines
 spanWith attr = singleton . Span attr . toList

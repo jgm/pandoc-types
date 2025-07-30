@@ -138,9 +138,16 @@ instance Arbitrary Inline where
   shrink (Image attr ils target) = [Image attr ils' target | ils' <- shrinkInlineList ils]
                                 ++ [Image attr ils target' | target' <- shrinkText2 target]
                                 ++ [Image attr' ils target | attr' <- shrinkAttr attr]
-  shrink (Note blks) = Note <$> shrinkBlockList blks
+  shrink (Note lab blks) = Note lab <$> shrinkBlockList blks
   shrink (Span attr s) = (Span attr <$> shrink s)
                       ++ (flip Span s <$> shrinkAttr attr)
+
+arbLabel :: Gen (Maybe Text)
+arbLabel = do
+  x <- choose (0, 1 :: Int)
+  if x == 0
+     then pure Nothing
+     else Just <$> realString
 
 arbInlines :: Int -> Gen [Inline]
 arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
@@ -173,7 +180,8 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                    , (10, Link <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (10, Image <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (2,  Cite <$> arbitrary <*> arbInlines 1)
-                   , (2,  Note <$> resize 3 (listOf1 $ arbBlock (n-1)))
+                   , (2,  Note <$> arbLabel
+                               <*> resize 3 (listOf1 $ arbBlock (n-1)))
                    ]
 
 instance Arbitrary Block where

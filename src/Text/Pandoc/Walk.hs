@@ -427,7 +427,7 @@ walkInlineM f (SmallCaps xs)   = SmallCaps <$> walkM f xs
 walkInlineM f (Quoted qt xs)   = Quoted qt <$> walkM f xs
 walkInlineM f (Link atr xs t)  = Link atr <$> walkM f xs <*> pure t
 walkInlineM f (Image atr xs t) = Image atr <$> walkM f xs <*> pure t
-walkInlineM f (Note bs)        = Note <$> walkM f bs
+walkInlineM f (Note lab bs)    = Note lab <$> walkM f bs
 walkInlineM f (Span attr xs)   = Span attr <$> walkM f xs
 walkInlineM f (Cite cs xs)     = Cite <$> walkM f cs <*> walkM f xs
 walkInlineM _ LineBreak        = return LineBreak
@@ -460,7 +460,7 @@ queryInline _ (Math _ _)      = mempty
 queryInline _ (RawInline _ _) = mempty
 queryInline f (Link _ xs _)   = query f xs
 queryInline f (Image _ xs _)  = query f xs
-queryInline f (Note bs)       = query f bs
+queryInline f (Note _ bs)     = query f bs
 queryInline f (Span _ xs)     = query f xs
 
 

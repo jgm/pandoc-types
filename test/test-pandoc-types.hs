@@ -277,8 +277,8 @@ t_image = ( Image ("id",["kls"],[("k1", "v1"), ("k2", "v2")])
          )
 
 t_note :: (Inline, ByteString)
-t_note = ( Note [Para [Str "Hello"]]
-         , [s|{"t":"Note","c":[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]}|]
+t_note = ( Note (Just "label") [Para [Str "Hello"]]
+         , [s|{"t":"Note","c":["label",[{"t":"Para","c":[{"t":"Str","c":"Hello"}]}]]}|]
          )
 
 t_span :: (Inline, ByteString)

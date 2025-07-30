@@ -51,7 +51,7 @@ instance Arbitrary Inlines where
           flattenInline (Subscript ils) = ils
           flattenInline (SmallCaps ils) = ils
           flattenInline (Quoted _ ils) = ils
-          flattenInline (Cite _ ils) = ils
+          flattenInline (Cite _ _ _ ils) = ils
           flattenInline Code{} = []
           flattenInline Space = []
           flattenInline SoftBreak = []
@@ -123,8 +123,10 @@ instance Arbitrary Inline where
   shrink (Subscript ils) = Subscript <$> shrinkInlineList ils
   shrink (SmallCaps ils) = SmallCaps <$> shrinkInlineList ils
   shrink (Quoted qtype ils) = Quoted qtype <$> shrinkInlineList ils
-  shrink (Cite cits ils) = (Cite cits <$> shrinkInlineList ils)
-                        ++ (flip Cite ils <$> shrink cits)
+  shrink (Cite cits pref suff ils) = Cite <$> shrink cits
+                                      <*> shrinkInlineList pref
+                                      <*> shrinkInlineList suff
+                                      <*> shrinkInlineList ils
   shrink (Code attr s) = (Code attr <$> shrinkText s)
                       ++ (flip Code s <$> shrinkAttr attr)
   shrink Space = []
@@ -172,7 +174,7 @@ arbInline n = frequency $ [ (60, Str <$> realString)
                    , (10, Math <$> arbitrary <*> realString)
                    , (10, Link <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
                    , (10, Image <$> arbAttr <*> arbInlines (n-1) <*> ((,) <$> realString <*> realString))
-                   , (2,  Cite <$> arbitrary <*> arbInlines 1)
+                   , (2,  Cite <$> arbitrary <*> arbInlines 1 <*> arbInlines 1 <*> arbInlines 1)
                    , (2,  Note <$> resize 3 (listOf1 $ arbBlock (n-1)))
                    ]
 

@@ -235,12 +235,14 @@ t_cite = ( Cite [Citation { citationId = "jameson:unconscious"
                           , citationMode = NormalCitation
                           , citationNoteNum = 0
                           , citationHash = 0}]
+                []
+                []
                 [ Str "[cf"
                 , Space
                 , Str "@jameson:unconscious"
                 , Space
                 , Str "12]"]
-         ,[s|{"t":"Cite","c":[[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
+         ,[s|{"t":"Cite","c":[[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[],[],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
              )
 
 t_code :: (Inline, ByteString)

@@ -382,8 +382,8 @@ doubleQuoted = quoted DoubleQuote
 quoted :: QuoteType -> Inlines -> Inlines
 quoted qt = singleton . Quoted qt . toList
 
-cite :: [Citation] -> Inlines -> Inlines
-cite cts = singleton . Cite cts . toList
+cite :: [Citation] -> Inlines -> Inlines -> Inlines -> Inlines
+cite cts pref suff = singleton . Cite cts (toList pref) (toList suff) . toList
 
 -- | Inline code with attributes.
 codeWith :: Attr -> Text -> Inlines

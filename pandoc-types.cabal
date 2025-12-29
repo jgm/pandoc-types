@@ -32,7 +32,7 @@ Bug-Reports:         https://github.com/jgm/pandoc-types/issues
 Copyright:           (c) 2006-2023 John MacFarlane
 Category:            Text
 Build-type:          Simple
-Extra-Source-Files:  changelog
+Extra-doc-files:     changelog
 Source-repository    head
   type:              git
   location:          https://github.com/jgm/pandoc-types.git

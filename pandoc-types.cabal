@@ -35,7 +35,7 @@ Build-type:          Simple
 Extra-Source-Files:  changelog
 Source-repository    head
   type:              git
-  location:          git://github.com/jgm/pandoc-types.git
+  location:          https://github.com/jgm/pandoc-types.git
 
 Library
   hs-source-dirs:    src

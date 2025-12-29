@@ -1,3 +1,13 @@
+[1.23.1.1]
+
+  * Remove unused `ghc-prim` dependency (konsumlam).
+
+  * Bump bound for QuickCheck.
+
+  * Allow deepseq-1.5 (Bodigrim).
+
+  * Fix 'patter' typo in SimpleFigure haddock (Owen Shepherd).
+
 [1.23.1]
 
   * Restore toJSONFilter instance for pure `a -> [a]`.

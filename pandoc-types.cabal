@@ -47,7 +47,7 @@ Library
                      Text.Pandoc.Arbitrary
   Other-modules:     Paths_pandoc_types
   Autogen-modules:   Paths_pandoc_types
-  Build-depends:     base >= 4.5 && < 5,
+  Build-depends:     base >= 4.15 && < 5,
                      containers >= 0.3,
                      text,
                      deepseq >= 1.4.1 && < 1.6,
@@ -87,7 +87,7 @@ benchmark benchmark-pandoc-types
   main-is:         bench.hs
   hs-source-dirs:  benchmark
   build-depends:   pandoc-types,
-                   base >= 4.5 && < 5,
+                   base >= 4.15 && < 5,
                    text,
                    criterion >= 1.0
   ghc-options:   -rtsopts -Wall -fno-warn-unused-do-bind -O2

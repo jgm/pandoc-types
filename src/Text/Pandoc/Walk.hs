@@ -96,6 +96,7 @@ module Text.Pandoc.Walk
   , queryTableFoot
   , queryCell
   , queryCitation
+  , queryReference
   , queryInline
   , queryMetaValue
   , queryMetaValue'
@@ -108,6 +109,7 @@ module Text.Pandoc.Walk
   , walkTableFootM
   , walkCellM
   , walkCitationM
+  , walkReferenceM
   , walkInlineM
   , walkMetaValueM
   , walkMetaValueM'
@@ -408,12 +410,31 @@ instance Walkable [Block] Citation where
   walkM = walkCitationM
   query = queryCitation
 
+--
+-- Walk Reference
+--
+instance Walkable Inline Reference where
+  walkM = walkReferenceM
+  query = queryReference
+
+instance Walkable [Inline] Reference where
+  walkM = walkReferenceM
+  query = queryReference
+
+instance Walkable Block Reference where
+  walkM = walkReferenceM
+  query = queryReference
+
+instance Walkable [Block] Reference where
+  walkM = walkReferenceM
+  query = queryReference
+
 -- | Helper method to walk to elements nested below @'Inline'@ nodes.
 --
 -- When walking an inline with this function, only the contents of the traversed
 -- inline element may change. The element itself, i.e. its constructor, cannot
 -- be changed.
-walkInlineM :: (Walkable a Citation, Walkable a [Block],
+walkInlineM :: (Walkable a Citation, Walkable a Reference, Walkable a [Block],
                 Walkable a [Inline], Monad m, Applicative m, Functor m)
             => (a -> m a) -> Inline -> m Inline
 walkInlineM _ (Str xs)         = return (Str xs)
@@ -430,6 +451,7 @@ walkInlineM f (Image atr xs t) = Image atr <$> walkM f xs <*> pure t
 walkInlineM f (Note bs)        = Note <$> walkM f bs
 walkInlineM f (Span attr xs)   = Span attr <$> walkM f xs
 walkInlineM f (Cite cs xs)     = Cite <$> walkM f cs <*> walkM f xs
+walkInlineM f (Ref a rt cs xs) = Ref a rt <$> walkM f cs <*> walkM f xs
 walkInlineM _ LineBreak        = return LineBreak
 walkInlineM _ SoftBreak        = return SoftBreak
 walkInlineM _ Space            = return Space
@@ -440,7 +462,7 @@ walkInlineM _ x@RawInline {}   = return x
 -- | Perform a query on elements nested below an @'Inline'@ element by
 -- querying nested lists of @Inline@s, @Block@s, or @Citation@s.
 queryInline :: (Walkable a Citation, Walkable a [Block],
-                Walkable a [Inline], Monoid c)
+                Walkable a Reference, Walkable a [Inline], Monoid c)
             => (a -> c) -> Inline -> c
 queryInline _ (Str _)         = mempty
 queryInline f (Emph xs)       = query f xs
@@ -452,6 +474,7 @@ queryInline f (Superscript xs)= query f xs
 queryInline f (SmallCaps xs)  = query f xs
 queryInline f (Quoted _ xs)   = query f xs
 queryInline f (Cite cs xs)    = query f cs <> query f xs
+queryInline f (Ref _ _ cs xs) = query f cs <> query f xs
 queryInline _ (Code _ _)      = mempty
 queryInline _ Space           = mempty
 queryInline _ SoftBreak       = mempty
@@ -584,6 +607,24 @@ walkCitationM f (Citation id' pref suff mode notenum hash) =
 queryCitation :: (Walkable a [Inline], Monoid c)
               => (a -> c) -> Citation -> c
 queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
+
+-- | Helper method to walk to elements nested below @'Reference'@ nodes.
+--
+-- The non-inline contents of a reference will remain unchanged during traversal.
+-- Only the inline contents, viz. the reference's prefix and postfix, will be
+-- traversed further and can thus be changed during this operation.
+walkReferenceM :: (Walkable a [Inline], Monad m, Applicative m, Functor m)
+              => (a -> m a) -> Reference -> m Reference
+walkReferenceM f (Reference id' pref suff mode hash) =
+    do pref' <- walkM f pref
+       suff' <- walkM f suff
+       return $ Reference id' pref' suff' mode hash
+
+-- | Perform a query on elements nested below a @'Reference'@ element by
+-- querying the prefix and postfix @Inline@ lists.
+queryReference :: (Walkable a [Inline], Monoid c)
+              => (a -> c) -> Reference -> c
+queryReference f (Reference _ pref suff _ _) = query f pref <> query f suff
 
 -- | Helper method to walk the elements nested below @'Row'@ nodes. The
 -- @'Attr'@ component is not changed by this operation.

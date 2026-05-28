@@ -53,7 +53,7 @@ Library
                      deepseq >= 1.4.1 && < 1.6,
                      syb >= 0.1 && < 0.8,
                      bytestring >= 0.9 && < 0.13,
-                     aeson >= 0.6.2 && < 2.3,
+                     aeson >= 0.6.2 && < 2.4,
                      transformers >= 0.2 && < 0.7,
                      QuickCheck >= 2.10 && < 2.18
   if !impl(ghc >= 8.0)
@@ -69,7 +69,7 @@ test-suite test-pandoc-types
   build-depends:       base,
                        pandoc-types,
                        syb,
-                       aeson >= 0.6.2 && < 2.3,
+                       aeson >= 0.6.2 && < 2.4,
                        containers >= 0.3,
                        text,
                        bytestring >= 0.9 && < 0.13,

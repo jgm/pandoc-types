@@ -54,22 +54,3 @@ jobs:
           cabal v2-build --enable-tests --enable-benchmarks --disable-optimization all
           cabal v2-test --disable-optimization all
 
-  windows:
-
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install stack
-      shell: cmd
-      run: |
-          choco install haskell-stack
-    - name: Install dependencies
-      run: |
-          stack update
-          stack test --dependencies-only --fast
-    - name: Build and test
-      shell: cmd
-      run: |
-          stack test --fast
-

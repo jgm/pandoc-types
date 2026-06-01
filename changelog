@@ -1,3 +1,17 @@
+[1.23.1.2]
+
+  * Bump upper bound for QuickCheck.
+
+  * Remove obsolete semigroups clause for ghc < 8.
+
+  * Allow aeson 2.3 (Francesco Gazzetta).
+
+  * CI: remove ghc 8.10 from testing
+
+  * Use lts-26 in stack.yaml.
+
+  * Set minimum base version 4.15.
+
 [1.23.1.1]
 
   * Remove unused `ghc-prim` dependency (konsumlam).

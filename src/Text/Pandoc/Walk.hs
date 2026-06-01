@@ -114,16 +114,12 @@ module Text.Pandoc.Walk
   , walkPandocM
   )
 where
-import Control.Applicative (Applicative ((<*>), pure), (<$>))
 import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
 import qualified Data.Map as M
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
-import Data.Traversable (Traversable)
 import qualified Data.Foldable as F
-import Data.Foldable (Foldable)
-import Data.Monoid ((<>))
 
 class Walkable a b where
   -- | @walk f x@ walks the structure @x@ (bottom up) and replaces every

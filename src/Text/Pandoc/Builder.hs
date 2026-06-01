@@ -191,13 +191,10 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
 import qualified Data.Sequence as Seq
-import Data.Traversable (Traversable)
-import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.Data
 import Control.Arrow ((***))
 import GHC.Generics (Generic)
-import Data.Semigroup (Semigroup(..))
 
 newtype Many a = Many { unMany :: Seq a }
                  deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)

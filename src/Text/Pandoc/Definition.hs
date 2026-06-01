@@ -99,7 +99,6 @@ import Data.String
 import Control.DeepSeq
 import Paths_pandoc_types (version)
 import Data.Version (Version, versionBranch)
-import Data.Semigroup (Semigroup(..))
 import Control.Arrow (second)
 
 data Pandoc = Pandoc Meta [Block]

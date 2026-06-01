@@ -51,7 +51,7 @@ jobs:
           cabal v2-build --dependencies-only --enable-tests --enable-benchmarks --disable-optimization all
     - name: Build and test
       run: |
-          cabal v2-build --enable-tests --enable-benchmarks --disable-optimization all
+          cabal v2-build --enable-tests --enable-benchmarks --disable-optimization --ghc-option=-Werror all
           cabal v2-test --disable-optimization all
 
   windows:

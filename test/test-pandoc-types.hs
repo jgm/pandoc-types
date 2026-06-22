@@ -177,7 +177,7 @@ t_citation = ( Citation { citationId = "jameson:unconscious",
              )
 
 t_displaymath :: (MathType, ByteString)
-t_displaymath = ( DisplayMath, [s|{"t":"DisplayMath"}|])
+t_displaymath = ( DisplayMath "1", [s|{"t":"DisplayMath","c":"1"}|])
 
 t_inlinemath :: (MathType, ByteString)
 t_inlinemath = ( InlineMath, [s|{"t":"InlineMath"}|])

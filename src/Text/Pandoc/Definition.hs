@@ -354,7 +354,8 @@ data Inline
     | Subscript [Inline]    -- ^ Subscripted text (list of inlines)
     | SmallCaps [Inline]    -- ^ Small caps text (list of inlines)
     | Quoted QuoteType [Inline] -- ^ Quoted text (list of inlines)
-    | Cite [Citation]  [Inline] -- ^ Citation (list of inlines)
+    | Cite [Inline] [Citation] [Inline] [Inline] -- ^ Global prefix;
+                                -- citations; global suffix; formatted inlines
     | Code Attr Text      -- ^ Inline code (literal)
     | Space                 -- ^ Inter-word space
     | SoftBreak             -- ^ Soft line break

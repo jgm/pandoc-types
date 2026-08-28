@@ -425,7 +425,8 @@ walkInlineM f (Link atr xs t)  = Link atr <$> walkM f xs <*> pure t
 walkInlineM f (Image atr xs t) = Image atr <$> walkM f xs <*> pure t
 walkInlineM f (Note bs)        = Note <$> walkM f bs
 walkInlineM f (Span attr xs)   = Span attr <$> walkM f xs
-walkInlineM f (Cite cs xs)     = Cite <$> walkM f cs <*> walkM f xs
+walkInlineM f (Cite pr cs su xs) = Cite <$> walkM f pr <*> walkM f cs
+                                        <*> walkM f su <*> walkM f xs
 walkInlineM _ LineBreak        = return LineBreak
 walkInlineM _ SoftBreak        = return SoftBreak
 walkInlineM _ Space            = return Space
@@ -447,7 +448,8 @@ queryInline f (Subscript xs)  = query f xs
 queryInline f (Superscript xs)= query f xs
 queryInline f (SmallCaps xs)  = query f xs
 queryInline f (Quoted _ xs)   = query f xs
-queryInline f (Cite cs xs)    = query f cs <> query f xs
+queryInline f (Cite pr cs su xs) = query f pr <> query f cs
+                                   <> query f su <> query f xs
 queryInline _ (Code _ _)      = mempty
 queryInline _ Space           = mempty
 queryInline _ SoftBreak       = mempty

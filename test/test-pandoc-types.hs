@@ -171,9 +171,8 @@ t_citation = ( Citation { citationId = "jameson:unconscious",
                           citationPrefix = [Str "cf"],
                           citationSuffix = [Space,Str "123"],
                           citationMode = NormalCitation,
-                          citationNoteNum = 0,
-                          citationHash = 0}
-             , [s|{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}|]
+                          citationNoteNum = 0}
+             , [s|{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"123"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0}|]
              )
 
 t_displaymath :: (MathType, ByteString)
@@ -234,15 +233,14 @@ t_cite = ( Cite []
                           , citationPrefix = [Str "cf"]
                           , citationSuffix = [Space,Str "12"]
                           , citationMode = NormalCitation
-                          , citationNoteNum = 0
-                          , citationHash = 0}]
+                          , citationNoteNum = 0 }]
                 []
                 [ Str "[cf"
                 , Space
                 , Str "@jameson:unconscious"
                 , Space
                 , Str "12]"]
-         ,[s|{"t":"Cite","c":[[],[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0,"citationHash":0}],[],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
+         ,[s|{"t":"Cite","c":[[],[{"citationId":"jameson:unconscious","citationPrefix":[{"t":"Str","c":"cf"}],"citationSuffix":[{"t":"Space"},{"t":"Str","c":"12"}],"citationMode":{"t":"NormalCitation"},"citationNoteNum":0}],[],[{"t":"Str","c":"[cf"},{"t":"Space"},{"t":"Str","c":"@jameson:unconscious"},{"t":"Space"},{"t":"Str","c":"12]"}]]}|]
              )
 
 t_code :: (Inline, ByteString)

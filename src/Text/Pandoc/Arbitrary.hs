@@ -306,7 +306,6 @@ instance Arbitrary Citation where
                      <*> arbInlines 1
                      <*> arbitrary
                      <*> arbitrary
-                     <*> arbitrary
 
 instance Arbitrary Row where
   arbitrary = resize 3 $ arbRow 2

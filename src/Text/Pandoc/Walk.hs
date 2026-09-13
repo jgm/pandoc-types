@@ -572,16 +572,16 @@ queryMetaValue' _ _             = mempty
 -- traversed further and can thus be changed during this operation.
 walkCitationM :: (Walkable a [Inline], Monad m, Applicative m, Functor m)
               => (a -> m a) -> Citation -> m Citation
-walkCitationM f (Citation id' pref suff mode notenum hash) =
+walkCitationM f (Citation id' pref suff mode notenum) =
     do pref' <- walkM f pref
        suff' <- walkM f suff
-       return $ Citation id' pref' suff' mode notenum hash
+       return $ Citation id' pref' suff' mode notenum
 
 -- | Perform a query on elements nested below a @'Citation'@ element by
 -- querying the prefix and postfix @Inline@ lists.
 queryCitation :: (Walkable a [Inline], Monoid c)
               => (a -> c) -> Citation -> c
-queryCitation f (Citation _ pref suff _ _ _) = query f pref <> query f suff
+queryCitation f (Citation _ pref suff _ _) = query f pref <> query f suff
 
 -- | Helper method to walk the elements nested below @'Row'@ nodes. The
 -- @'Attr'@ component is not changed by this operation.

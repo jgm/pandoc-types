@@ -373,12 +373,11 @@ data Citation = Citation { citationId      :: Text
                          , citationSuffix  :: [Inline]
                          , citationMode    :: CitationMode
                          , citationNoteNum :: Int
-                         , citationHash    :: Int
                          }
                 deriving (Show, Eq, Read, Typeable, Data, Generic)
 
 instance Ord Citation where
-    compare = comparing citationHash
+    compare = comparing citationId
 
 data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
                     deriving (Show, Eq, Ord, Read, Typeable, Data, Generic)

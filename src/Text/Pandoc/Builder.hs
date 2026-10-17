@@ -187,6 +187,7 @@ where
 import Text.Pandoc.Definition
 import Data.String
 import qualified Data.Map as M
+import qualified Data.Map.Ordered as OM
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Sequence (Seq, (|>), viewr, viewl, ViewR(..), ViewL(..))
@@ -296,24 +297,30 @@ instance ToMetaValue a => ToMetaValue [a] where
   toMetaValue = MetaList . map toMetaValue
 
 instance ToMetaValue a => ToMetaValue (M.Map Text a) where
-  toMetaValue = MetaMap . M.map toMetaValue
+  toMetaValue = MetaMap . OM.fromList . M.toList . M.map toMetaValue
 
 instance ToMetaValue a => ToMetaValue (M.Map String a) where
-  toMetaValue = MetaMap . M.map toMetaValue . M.mapKeys T.pack
+  toMetaValue = MetaMap . OM.fromList . M.toList . M.map toMetaValue . M.mapKeys T.pack
+
+instance ToMetaValue a => ToMetaValue (OM.OMap Text a) where
+  toMetaValue = MetaMap . fmap toMetaValue
+
+instance ToMetaValue a => ToMetaValue (OM.OMap String a) where
+  toMetaValue = MetaMap . OM.fromList . map (\(k, v) -> (T.pack k, toMetaValue v)) . OM.assocs
 
 class HasMeta a where
   setMeta :: ToMetaValue b => Text -> b -> a -> a
   deleteMeta :: Text -> a -> a
 
 instance HasMeta Meta where
-  setMeta key val (Meta ms) = Meta $ M.insert key (toMetaValue val) ms
-  deleteMeta key (Meta ms) = Meta $ M.delete key ms
+  setMeta key val (Meta ms) = Meta $ ms OM.|> (key, toMetaValue val)
+  deleteMeta key (Meta ms) = Meta $ OM.delete key ms
 
 instance HasMeta Pandoc where
   setMeta key val (Pandoc (Meta ms) bs) =
-    Pandoc (Meta $ M.insert key (toMetaValue val) ms) bs
+    Pandoc (Meta $ ms OM.|> (key, toMetaValue val)) bs
   deleteMeta key (Pandoc (Meta ms) bs) =
-    Pandoc (Meta $ M.delete key ms) bs
+    Pandoc (Meta $ OM.delete key ms) bs
 
 setTitle :: Inlines -> Pandoc -> Pandoc
 setTitle = setMeta "title"

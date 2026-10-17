@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
-    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData #-}
+    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData,
+    FlexibleInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 {-
 Copyright (c) 2006-2023, John MacFarlane
@@ -84,6 +86,7 @@ module Text.Pandoc.Definition ( Pandoc(..)
                               , Citation(..)
                               , CitationMode(..)
                               , pandocTypesVersion
+                              , decodePandoc
                               ) where
 
 import Data.Generics (Data, Typeable)
@@ -91,7 +94,14 @@ import Data.Ord (comparing)
 import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
 import qualified Data.Aeson.Types as Aeson
+import qualified Data.Aeson.Key as K
+import Data.Aeson.Decoding.ByteString.Lazy (lbsToTokens)
+import Data.Aeson.Decoding.Tokens (Tokens(..), TkArray(..), TkRecord(..),
+                                   Lit(..), Number(..))
+import qualified Data.ByteString.Lazy as BL
+import Control.Monad (unless)
 import qualified Data.Map as M
+import qualified Data.Map.Ordered as OM
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Generics (Generic)
@@ -112,18 +122,19 @@ instance Monoid Pandoc where
   mappend = (<>)
 
 -- | Metadata for the document:  title, authors, date.
-newtype Meta = Meta { unMeta :: M.Map Text MetaValue }
+-- Fields are kept in the order in which they were added.
+newtype Meta = Meta { unMeta :: OM.OMap Text MetaValue }
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 instance Semigroup Meta where
-  (Meta m1) <> (Meta m2) = Meta (M.union m2 m1)
-  -- note: M.union is left-biased, so if there are fields in both m2
-  -- and m1, m2 wins.
+  (Meta m1) <> (Meta m2) = Meta (OM.unionWithL (\_ _ v2 -> v2) m1 m2)
+  -- note: if there are fields in both m1 and m2, m2's value wins,
+  -- but the field keeps its position in m1.
 instance Monoid Meta where
-  mempty = Meta M.empty
+  mempty = Meta OM.empty
   mappend = (<>)
 
-data MetaValue = MetaMap (M.Map Text MetaValue)
+data MetaValue = MetaMap (OM.OMap Text MetaValue)
                | MetaList [MetaValue]
                | MetaBool Bool
                | MetaString Text
@@ -132,16 +143,16 @@ data MetaValue = MetaMap (M.Map Text MetaValue)
                deriving (Eq, Ord, Show, Read, Typeable, Data, Generic)
 
 nullMeta :: Meta
-nullMeta = Meta M.empty
+nullMeta = Meta OM.empty
 
 isNullMeta :: Meta -> Bool
-isNullMeta (Meta m) = M.null m
+isNullMeta (Meta m) = OM.null m
 
 -- Helper functions to extract metadata
 
 -- | Retrieve the metadata value for a given @key@.
 lookupMeta :: Text -> Meta -> Maybe MetaValue
-lookupMeta key (Meta m) = M.lookup key m
+lookupMeta key (Meta m) = OM.lookup key m
 
 -- | Extract document title from metadata; works just like the old @docTitle@.
 docTitle :: Meta -> [Inline]
@@ -386,6 +397,17 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- ToJSON/FromJSON instances. Some are defined by hand so that we have
 -- more control over the format.
 
+-- Encoding preserves the order of fields. Decoding cannot, because
+-- aeson's 'Object' does not record the order of its keys.
+instance ToJSON v => ToJSON (OM.OMap Text v) where
+  toJSON = toJSON . OM.toMap
+  toEncoding m = pairs $ mconcat [fromString (T.unpack k) .= v | (k, v) <- OM.assocs m]
+-- An array of key/value pairs is also accepted; this is what
+-- 'decodePandoc' uses to preserve the order of metadata fields.
+instance FromJSON v => FromJSON (OM.OMap Text v) where
+  parseJSON v@(Array _) = OM.fromList <$> parseJSON v
+  parseJSON v = OM.fromList . M.toList <$> parseJSON v
+
 $(let jsonOpts = defaultOptions
         { allNullaryToStringTag = False
         , sumEncoding = TaggedObject { tagFieldName = "t", contentsFieldName = "c" }
@@ -447,6 +469,8 @@ instance ToJSON Pandoc where
                     ]
 
 -- Instances for deepseq
+instance (NFData k, NFData v) => NFData (OM.OMap k v) where
+  rnf = rnf . OM.assocs
 instance NFData MetaValue
 instance NFData Meta
 instance NFData Citation
@@ -473,3 +497,92 @@ instance NFData Pandoc
 
 pandocTypesVersion :: Version
 pandocTypesVersion = version
+
+-- | Decode a 'Pandoc' document from JSON, preserving the order of
+-- metadata fields.  (Decoding with aeson's 'decode' cannot preserve
+-- this order, because aeson's 'Object' does not record the order of
+-- its keys.)  The JSON is parsed into a tree that keeps keys in order;
+-- objects representing metadata maps are then converted to arrays of
+-- key/value pairs before the usual 'FromJSON' instances are applied.
+decodePandoc :: BL.ByteString -> Either String Pandoc
+decodePandoc bs = do
+  (ov, rest) <- tokensToOValue (lbsToTokens bs)
+  unless (BL.all isJSONSpace rest) $
+    Left "Unexpected data after the JSON document"
+  either (\(path, msg) -> Left (Aeson.formatError path msg)) Right $
+    Aeson.iparseEither parseJSON (pandocToValue ov)
+ where
+  isJSONSpace w = w == 32 || w == 10 || w == 13 || w == 9
+
+-- | A JSON value whose objects keep their keys in order.
+data OValue = OObject [(Key, OValue)]
+            | OArray [OValue]
+            | OLeaf Value
+
+tokensToOValue :: Tokens k String -> Either String (OValue, k)
+tokensToOValue toks =
+  case toks of
+    TkLit LitNull k  -> Right (OLeaf Null, k)
+    TkLit LitTrue k  -> Right (OLeaf (Bool True), k)
+    TkLit LitFalse k -> Right (OLeaf (Bool False), k)
+    TkText t k       -> Right (OLeaf (String t), k)
+    TkNumber n k     -> Right (OLeaf (Number (toScientific n)), k)
+    TkArrayOpen arr  -> arrayToOValue [] arr
+    TkRecordOpen rec -> recordToOValue [] rec
+    TkErr e          -> Left e
+ where
+  toScientific (NumInteger i)    = fromInteger i
+  toScientific (NumDecimal x)    = x
+  toScientific (NumScientific x) = x
+
+arrayToOValue :: [OValue] -> TkArray k String -> Either String (OValue, k)
+arrayToOValue acc arr =
+  case arr of
+    TkItem toks -> do
+      (v, rest) <- tokensToOValue toks
+      arrayToOValue (v : acc) rest
+    TkArrayEnd k -> Right (OArray (reverse acc), k)
+    TkArrayErr e -> Left e
+
+recordToOValue :: [(Key, OValue)] -> TkRecord k String -> Either String (OValue, k)
+recordToOValue acc rec =
+  case rec of
+    TkPair key toks -> do
+      (v, rest) <- tokensToOValue toks
+      recordToOValue ((key, v) : acc) rest
+    TkRecordEnd k -> Right (OObject (reverse acc), k)
+    TkRecordErr e -> Left e
+
+-- | Convert to an ordinary 'Value', unchanged.
+oValueToValue :: OValue -> Value
+oValueToValue (OObject kvs) = object [(k, oValueToValue v) | (k, v) <- kvs]
+oValueToValue (OArray vs)   = toJSON (map oValueToValue vs)
+oValueToValue (OLeaf v)     = v
+
+-- | Convert a serialized 'Pandoc' document, turning its metadata maps
+-- into arrays of key/value pairs.
+pandocToValue :: OValue -> Value
+pandocToValue (OObject kvs) =
+  object [ (k, if k == "meta" then metaMapToValue v else oValueToValue v)
+         | (k, v) <- kvs ]
+pandocToValue v = oValueToValue v
+
+metaMapToValue :: OValue -> Value
+metaMapToValue (OObject kvs) =
+  toJSON [toJSON [String (K.toText k), metaValueToValue v] | (k, v) <- kvs]
+metaMapToValue v = oValueToValue v
+
+-- | Convert a serialized 'MetaValue', handling metadata maps nested in
+-- @MetaMap@ and @MetaList@ values.
+metaValueToValue :: OValue -> Value
+metaValueToValue (OObject kvs) =
+  case lookup "t" kvs of
+    Just (OLeaf (String "MetaMap"))  -> withContents metaMapToValue
+    Just (OLeaf (String "MetaList")) -> withContents metaListToValue
+    _ -> oValueToValue (OObject kvs)
+ where
+  withContents f =
+    object [ (k, if k == "c" then f v else oValueToValue v) | (k, v) <- kvs ]
+  metaListToValue (OArray vs) = toJSON (map metaValueToValue vs)
+  metaListToValue v = oValueToValue v
+metaValueToValue v = oValueToValue v

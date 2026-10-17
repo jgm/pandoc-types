@@ -116,7 +116,6 @@ module Text.Pandoc.Walk
 where
 import Control.Monad ((>=>))
 import Data.Functor.Identity (Identity (runIdentity))
-import qualified Data.Map as M
 import Text.Pandoc.Definition
 import qualified Data.Traversable as T
 import qualified Data.Foldable as F
@@ -245,8 +244,8 @@ instance Walkable [Block] Meta where
 
 instance Walkable MetaValue Meta where
   walkM f (Meta metamap) =
-    Meta . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList metamap)
-  query f (Meta metamap) = M.foldMapWithKey (const $ query f) metamap
+    Meta <$> T.mapM (walkM f) metamap
+  query f (Meta metamap) = F.foldMap (query f) metamap
 
 --
 -- Walk MetaValue
@@ -538,7 +537,7 @@ walkMetaValueM f (MetaMap m)      = MetaMap <$> walkM f m
 walkMetaValueM' :: (Monad f, Applicative f, Functor f)
                 => (MetaValue -> f MetaValue) -> MetaValue -> f MetaValue
 walkMetaValueM' f (MetaMap m) =
-    MetaMap . M.fromAscList <$> mapM (\(k, v) -> (,) k <$> walkM f v) (M.toAscList m)
+    MetaMap <$> T.mapM (walkM f) m
 walkMetaValueM' f (MetaList xs) = MetaList <$> mapM (walkM f) xs
 walkMetaValueM' _ x = return x
 
@@ -559,7 +558,7 @@ queryMetaValue f (MetaMap m)      = query f m
 -- element
 queryMetaValue' :: Monoid c
                 => (MetaValue -> c) -> MetaValue -> c
-queryMetaValue' f (MetaMap m)   = M.foldMapWithKey (const $ query f) m
+queryMetaValue' f (MetaMap m)   = F.foldMap (query f) m
 queryMetaValue' f (MetaList xs) = mconcat $ map (query f) xs
 queryMetaValue' _ _             = mempty
 

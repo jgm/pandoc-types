@@ -15,7 +15,7 @@ import Test.Framework
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.QuickCheck (forAll, choose, Property, Arbitrary, Testable, arbitrary, Gen)
-import qualified Data.Map as M
+import qualified Data.Map.Ordered as OM
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.String.QQ
@@ -73,7 +73,8 @@ metaValueTrans (MetaString xs) = MetaString $ T.toUpper xs
 metaValueTrans x = x
 
 metaTrans :: Meta -> Meta
-metaTrans (Meta metamap) = Meta $ M.mapKeys T.toUpper metamap
+metaTrans (Meta metamap) =
+  Meta $ OM.fromList [(T.toUpper k, v) | (k, v) <- OM.assocs metamap]
 
 inlineQuery :: Inline -> Text
 inlineQuery (Str xs) = xs
@@ -94,12 +95,28 @@ metaValueQuery (MetaString xs) = xs
 metaValueQuery _ = ""
 
 metaQuery :: Meta -> Monoid.Sum Int
-metaQuery (Meta metamap) = Monoid.Sum $ M.size metamap
+metaQuery (Meta metamap) = Monoid.Sum $ OM.size metamap
 
 prop_roundtrip :: Pandoc -> Bool
-prop_roundtrip doc = case decode $ encode doc :: (Maybe Pandoc) of
-  Just doc' -> doc == doc'
-  _         -> False
+prop_roundtrip doc = case decodePandoc $ encode doc of
+  Right doc' -> doc == doc'
+  _          -> False
+
+-- | Metadata fields keep their order through encoding and decoding,
+-- including fields of nested maps.
+t_metaOrder :: Assertion
+t_metaOrder =
+  let nested = MetaMap $ OM.fromList [("z", MetaBool True), ("a", MetaBool False)]
+      doc = Pandoc (Meta $ OM.fromList
+                     [ ("title", MetaString "T")
+                     , ("author", MetaList [nested])
+                     , ("abstract", nested) ]) []
+      keys (Pandoc (Meta m) _) = map fst (OM.assocs m)
+  in case decodePandoc (encode doc) of
+       Right doc' -> do
+         assertEqual "top-level key order" (keys doc) (keys doc')
+         assertEqual "document" doc doc'
+       Left e -> assertFailure e
 
 testEncode :: ToJSON a => (a, ByteString) -> Assertion
 testEncode (doc, j) = assertEqual "Encoding error" (encode doc) j
@@ -122,13 +139,13 @@ testEncodeDecode msg pair = testGroup msg [ testCase "Encoding" $ testEncode pai
                                           ]
 
 t_meta :: (Meta, ByteString)
-t_meta = ( Meta $ M.fromList [("foo", MetaBool True)]
+t_meta = ( Meta $ OM.fromList [("foo", MetaBool True)]
          , [s|{"foo":{"t":"MetaBool","c":true}}|]
          )
 
 t_metamap :: (MetaValue, ByteString)
 t_metamap = ( MetaMap $
-              M.fromList [("foo", MetaBool True)]
+              OM.fromList [("foo", MetaBool True)]
             , [s|{"t":"MetaMap","c":{"foo":{"t":"MetaBool","c":true}}}|]
             )
 
@@ -694,6 +711,7 @@ tests =
   , testGroup "JSON"
     [ testGroup "encoding/decoding properties"
       [ testProperty "round-trip" prop_roundtrip
+      , testCase "metadata order" t_metaOrder
       ]
     , testGroup "JSON encoding/decoding"
       [ testGroup "Meta"

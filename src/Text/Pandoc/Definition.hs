@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable, DeriveGeneric,
     FlexibleContexts, GeneralizedNewtypeDeriving, PatternGuards, CPP,
-    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData,
-    FlexibleInstances #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+    TemplateHaskell , PatternSynonyms, ViewPatterns, StrictData #-}
 
 {-
 Copyright (c) 2006-2023, John MacFarlane
@@ -95,6 +93,7 @@ import Data.Aeson
 import Data.Aeson.TH (deriveJSON)
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.Aeson.Key as K
+import Data.Aeson.Encoding (pair)
 import Data.Aeson.Decoding.ByteString.Lazy (lbsToTokens)
 import Data.Aeson.Decoding.Tokens (Tokens(..), TkArray(..), TkRecord(..),
                                    Lit(..), Number(..))
@@ -397,24 +396,12 @@ data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
 -- ToJSON/FromJSON instances. Some are defined by hand so that we have
 -- more control over the format.
 
--- Encoding preserves the order of fields. Decoding cannot, because
--- aeson's 'Object' does not record the order of its keys.
-instance ToJSON v => ToJSON (OM.OMap Text v) where
-  toJSON = toJSON . OM.toMap
-  toEncoding m = pairs $ mconcat [fromString (T.unpack k) .= v | (k, v) <- OM.assocs m]
--- An array of key/value pairs is also accepted; this is what
--- 'decodePandoc' uses to preserve the order of metadata fields.
-instance FromJSON v => FromJSON (OM.OMap Text v) where
-  parseJSON v@(Array _) = OM.fromList <$> parseJSON v
-  parseJSON v = OM.fromList . M.toList <$> parseJSON v
-
 $(let jsonOpts = defaultOptions
         { allNullaryToStringTag = False
         , sumEncoding = TaggedObject { tagFieldName = "t", contentsFieldName = "c" }
         }
   in concat <$> traverse (deriveJSON jsonOpts)
-     [ ''MetaValue
-     , ''CitationMode
+     [ ''CitationMode
      , ''Citation
      , ''QuoteType
      , ''MathType
@@ -432,11 +419,60 @@ $(let jsonOpts = defaultOptions
      , ''Block
      ])
 
+-- The instances for 'Meta' and 'MetaValue' are defined by hand, so that
+-- metadata fields are encoded in order.  Decoding with 'parseJSON'
+-- cannot preserve the order of fields given as an object, because
+-- aeson's 'Object' does not record the order of its keys; so an array
+-- of key/value pairs is also accepted.  This is what 'decodePandoc'
+-- uses to preserve the order of metadata fields.
+
+metaFieldsToJSON :: OM.OMap Text MetaValue -> Value
+metaFieldsToJSON = toJSON . OM.toMap
+
+metaFieldsToEncoding :: OM.OMap Text MetaValue -> Encoding
+metaFieldsToEncoding m =
+  pairs $ mconcat [K.fromText k .= v | (k, v) <- OM.assocs m]
+
+parseMetaFields :: Value -> Aeson.Parser (OM.OMap Text MetaValue)
+parseMetaFields v@(Array _) = OM.fromList <$> parseJSON v
+parseMetaFields v = OM.fromList . M.toList <$> parseJSON v
+
 instance FromJSON Meta where
-  parseJSON = fmap Meta . parseJSON
+  parseJSON = fmap Meta . parseMetaFields
 instance ToJSON Meta where
-  toJSON (Meta m) = toJSON m
-  toEncoding (Meta m) = toEncoding m
+  toJSON (Meta m) = metaFieldsToJSON m
+  toEncoding (Meta m) = metaFieldsToEncoding m
+
+instance FromJSON MetaValue where
+  parseJSON = withObject "MetaValue" $ \o -> do
+    t <- o .: "t"
+    case t :: Text of
+      "MetaMap"     -> MetaMap <$> (o .: "c" >>= parseMetaFields)
+      "MetaList"    -> MetaList <$> o .: "c"
+      "MetaBool"    -> MetaBool <$> o .: "c"
+      "MetaString"  -> MetaString <$> o .: "c"
+      "MetaInlines" -> MetaInlines <$> o .: "c"
+      "MetaBlocks"  -> MetaBlocks <$> o .: "c"
+      _ -> fail $ "Unknown MetaValue constructor " ++ T.unpack t
+instance ToJSON MetaValue where
+  toJSON mv = object ["t" .= t, "c" .= c]
+    where
+      (t, c) = case mv of
+        MetaMap m      -> ("MetaMap" :: Text, metaFieldsToJSON m)
+        MetaList xs    -> ("MetaList", toJSON xs)
+        MetaBool b     -> ("MetaBool", toJSON b)
+        MetaString s   -> ("MetaString", toJSON s)
+        MetaInlines xs -> ("MetaInlines", toJSON xs)
+        MetaBlocks xs  -> ("MetaBlocks", toJSON xs)
+  toEncoding mv = pairs $ ("t" .= t) <> pair "c" c
+    where
+      (t, c) = case mv of
+        MetaMap m      -> ("MetaMap" :: Text, metaFieldsToEncoding m)
+        MetaList xs    -> ("MetaList", toEncoding xs)
+        MetaBool b     -> ("MetaBool", toEncoding b)
+        MetaString s   -> ("MetaString", toEncoding s)
+        MetaInlines xs -> ("MetaInlines", toEncoding xs)
+        MetaBlocks xs  -> ("MetaBlocks", toEncoding xs)
 
 instance FromJSON Pandoc where
   parseJSON (Object v) = do
@@ -469,10 +505,15 @@ instance ToJSON Pandoc where
                     ]
 
 -- Instances for deepseq
-instance (NFData k, NFData v) => NFData (OM.OMap k v) where
-  rnf = rnf . OM.assocs
-instance NFData MetaValue
-instance NFData Meta
+instance NFData MetaValue where
+  rnf (MetaMap m)      = rnf (OM.assocs m)
+  rnf (MetaList xs)    = rnf xs
+  rnf (MetaBool b)     = rnf b
+  rnf (MetaString s)   = rnf s
+  rnf (MetaInlines xs) = rnf xs
+  rnf (MetaBlocks xs)  = rnf xs
+instance NFData Meta where
+  rnf (Meta m) = rnf (OM.assocs m)
 instance NFData Citation
 instance NFData Alignment
 instance NFData RowSpan

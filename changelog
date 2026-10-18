@@ -1,3 +1,33 @@
+[1.24]
+
+  * Metadata fields now keep their order [API change].
+    The fields of `Meta` and `MetaMap` are now an `OMap Text MetaValue`
+    (from `Data.Map.Ordered` in ordered-containers), which keeps the
+    fields in the order in which they were added.  (Previously they
+    were a `Map Text MetaValue`, which sorts its keys.)  Note that `Eq`
+    and `Ord` take the order of the fields into account.
+
+  * The `Semigroup` instance for `Meta`: if a field is in both, the
+    value from the second still wins, but the field keeps its position
+    from the first.
+
+  * Text.Pandoc.Builder: `setMeta` keeps the position of an existing
+    field and adds a new field at the end.  Add `ToMetaValue` instances
+    for `OMap Text a` and `OMap String a`.
+
+  * Add orphan instances of `ToJSON`, `FromJSON` and `NFData` for
+    `OMap`.  JSON: metadata fields are encoded in order (the format is
+    unchanged).  The `FromJSON` instance accepts either an object or an
+    array of key/value pairs.
+
+  * Text.Pandoc.Definition: add `decodePandoc`, which decodes a
+    `Pandoc` document from JSON while preserving the order of metadata
+    fields.  (Decoding with aeson's `decode` cannot preserve it,
+    because aeson's `Object` does not record the order of its keys.)
+    `toJSONFilter` now uses `decodePandoc`.
+
+  * Depend on ordered-containers.  Require aeson >= 2.2.
+
 [1.23.1.2]
 
   * Bump upper bound for QuickCheck.

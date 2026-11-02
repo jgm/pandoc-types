@@ -197,7 +197,7 @@ import Control.Arrow ((***))
 import GHC.Generics (Generic)
 
 newtype Many a = Many { unMany :: Seq a }
-                 deriving (Data, Ord, Eq, Typeable, Foldable, Traversable, Functor, Show, Read)
+                 deriving (Data, Ord, Eq, Foldable, Traversable, Functor, Show, Read)
 
 deriving instance Generic (Many a)
 

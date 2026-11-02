@@ -1,56 +1,14 @@
 name: CI tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [master]
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  linux:
-
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - ghc: '9.0'
-            cabal: '3.10'
-          - ghc: '9.2'
-            cabal: '3.10'
-          - ghc: '9.4'
-            cabal: '3.10'
-          - ghc: '9.6'
-            cabal: '3.10'
-          - ghc: '9.8'
-            cabal: 'latest'
-          - ghc: '9.10'
-            cabal: 'latest'
-          - ghc: '9.12'
-            cabal: 'latest'
-    steps:
-    - uses: actions/checkout@v6
-    - name: Cache
-      uses: actions/cache@v5
-      env:
-        cache-name: cache-cabal
-      with:
-        path: |
-          ~/.local/state/cabal
-        key: ${{ runner.os }}-${{ matrix.ghc }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.ghc }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-${{ matrix.ghc }}-build-
-          ${{ runner.os }}-${{ matrix.ghc }}-
-          ${{ runner.os }}
-
-    - name: Install cabal/ghc
-      run: |
-        ghcup install ghc --set ${{ matrix.versions.ghc }}
-        ghcup install cabal --set ${{ matrix.versions.cabal }}
-
-    - name: Install dependencies
-      run: |
-          cabal v2-update
-          cabal v2-build --dependencies-only --enable-tests --enable-benchmarks --disable-optimization all
-    - name: Build and test
-      run: |
-          cabal v2-build --enable-tests --enable-benchmarks --disable-optimization all
-          cabal v2-test --disable-optimization all
-
+  ci:
+    uses: jgm/workflows/.github/workflows/haskell-ci.yml@main
+    with:
+      cabalopts: '--enable-benchmarks'
